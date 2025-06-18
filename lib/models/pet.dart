@@ -1,10 +1,16 @@
+import 'tracking_metric.dart';
+
 class Pet {
   final int? id;
   final String name;
-  final String species;
+  final String species; // e.g., Dog, Cat, Turtle
   final String? breed;
   final int? age;
-  final String? personality;
+  final String? litterType; // Cat-specific
+  final String? tankSize; // Turtle-specific
+  final String? cageSize; // Bird-specific
+  final String? favoriteToy; // Dog-specific
+  final List<TrackingMetric> metrics;
 
   Pet({
     this.id,
@@ -12,7 +18,11 @@ class Pet {
     required this.species,
     this.breed,
     this.age,
-    this.personality,
+    this.litterType,
+    this.tankSize,
+    this.cageSize,
+    this.favoriteToy,
+    this.metrics = const [],
   });
 
   factory Pet.fromJson(Map<String, dynamic> json) {
@@ -22,7 +32,13 @@ class Pet {
       species: json['species'] as String,
       breed: json['breed'] as String?,
       age: json['age'] as int?,
-      personality: json['personality'] as String?,
+      litterType: json['litterType'] as String?,
+      tankSize: json['tankSize'] as String?,
+      cageSize: json['cageSize'] as String?,
+      favoriteToy: json['favoriteToy'] as String?,
+      metrics: (json['metrics'] as List<dynamic>?)
+          ?.map((m) => TrackingMetric.fromJson(m as Map<String, dynamic>))
+          .toList() ?? [],
     );
   }
 
@@ -33,7 +49,11 @@ class Pet {
       'species': species,
       'breed': breed,
       'age': age,
-      'personality': personality,
+      'litterType': litterType,
+      'tankSize': tankSize,
+      'cageSize': cageSize,
+      'favoriteToy': favoriteToy,
+      'metrics': metrics.map((m) => m.toJson()).toList(),
     };
   }
 }

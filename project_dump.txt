@@ -1,0 +1,1597 @@
+
+--- ./README.md ---
+# petform
+
+A new Flutter project.
+
+## Getting Started
+
+This project is a starting point for a Flutter application.
+
+A few resources to get you started if this is your first Flutter project:
+
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
+
+
+--- ./project_dump.txt ---
+
+
+--- ./ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md ---
+# Launch Screen Assets
+
+You can customize the launch screen with your own desired assets by replacing the image files in this directory.
+
+You can also do it by opening your Flutter project's Xcode project with `open ios/Runner.xcworkspace`, selecting `Runner/Assets.xcassets` in the Project Navigator and dropping in the desired images.
+
+--- ./ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json ---
+{
+  "images" : [
+    {
+      "idiom" : "universal",
+      "filename" : "LaunchImage.png",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "universal",
+      "filename" : "LaunchImage@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "filename" : "LaunchImage@3x.png",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  }
+}
+
+
+--- ./ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json ---
+{
+  "images" : [
+    {
+      "size" : "20x20",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-20x20@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-20x20@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-29x29@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-29x29@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-29x29@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-40x40@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-40x40@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "60x60",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-60x60@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "60x60",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-60x60@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-20x20@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-20x20@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-29x29@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-29x29@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-40x40@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-40x40@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "76x76",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-76x76@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "76x76",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-76x76@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "83.5x83.5",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-83.5x83.5@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "1024x1024",
+      "idiom" : "ios-marketing",
+      "filename" : "Icon-App-1024x1024@1x.png",
+      "scale" : "1x"
+    }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  }
+}
+
+
+--- ./ios/Flutter/ephemeral/flutter_lldb_helper.py ---
+#
+# Generated file, do not edit.
+#
+
+import lldb
+
+def handle_new_rx_page(frame: lldb.SBFrame, bp_loc, extra_args, intern_dict):
+    """Intercept NOTIFY_DEBUGGER_ABOUT_RX_PAGES and touch the pages."""
+    base = frame.register["x0"].GetValueAsAddress()
+    page_len = frame.register["x1"].GetValueAsUnsigned()
+
+    # Note: NOTIFY_DEBUGGER_ABOUT_RX_PAGES will check contents of the
+    # first page to see if handled it correctly. This makes diagnosing
+    # misconfiguration (e.g. missing breakpoint) easier.
+    data = bytearray(page_len)
+    data[0:8] = b'IHELPED!'
+
+    error = lldb.SBError()
+    frame.GetThread().GetProcess().WriteMemory(base, data, error)
+    if not error.Success():
+        print(f'Failed to write into {base}[+{page_len}]', error)
+        return
+
+def __lldb_init_module(debugger: lldb.SBDebugger, _):
+    target = debugger.GetDummyTarget()
+    # Caveat: must use BreakpointCreateByRegEx here and not
+    # BreakpointCreateByName. For some reasons callback function does not
+    # get carried over from dummy target for the later.
+    bp = target.BreakpointCreateByRegex("^NOTIFY_DEBUGGER_ABOUT_RX_PAGES$")
+    bp.SetScriptCallbackFunction('{}.handle_new_rx_page'.format(__name__))
+    bp.SetAutoContinue(True)
+    print("-- LLDB integration loaded --")
+
+
+--- ./ios/Pods/Local Podspecs/shared_preferences_foundation.podspec.json ---
+{
+  "name": "shared_preferences_foundation",
+  "version": "0.0.1",
+  "summary": "iOS and macOS implementation of the shared_preferences plugin.",
+  "description": "Wraps NSUserDefaults, providing a persistent store for simple key-value pairs.",
+  "homepage": "https://github.com/flutter/packages/tree/main/packages/shared_preferences/shared_preferences_foundation",
+  "license": {
+    "type": "BSD",
+    "file": "../LICENSE"
+  },
+  "authors": {
+    "Flutter Team": "flutter-dev@googlegroups.com"
+  },
+  "source": {
+    "http": "https://github.com/flutter/packages/tree/main/packages/shared_preferences/shared_preferences_foundation"
+  },
+  "source_files": "shared_preferences_foundation/Sources/shared_preferences_foundation/**/*.swift",
+  "ios": {
+    "dependencies": {
+      "Flutter": []
+    }
+  },
+  "osx": {
+    "dependencies": {
+      "FlutterMacOS": []
+    }
+  },
+  "platforms": {
+    "ios": "12.0",
+    "osx": "10.14"
+  },
+  "pod_target_xcconfig": {
+    "DEFINES_MODULE": "YES"
+  },
+  "xcconfig": {
+    "LIBRARY_SEARCH_PATHS": "$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)/ $(SDKROOT)/usr/lib/swift",
+    "LD_RUNPATH_SEARCH_PATHS": "/usr/lib/swift"
+  },
+  "swift_versions": "5.0",
+  "resource_bundles": {
+    "shared_preferences_foundation_privacy": [
+      "shared_preferences_foundation/Sources/shared_preferences_foundation/Resources/PrivacyInfo.xcprivacy"
+    ]
+  },
+  "swift_version": "5.0"
+}
+
+
+--- ./ios/Pods/Local Podspecs/Flutter.podspec.json ---
+{
+  "name": "Flutter",
+  "version": "1.0.0",
+  "summary": "A UI toolkit for beautiful and fast apps.",
+  "homepage": "https://flutter.dev",
+  "license": {
+    "type": "BSD"
+  },
+  "authors": {
+    "Flutter Dev Team": "flutter-dev@googlegroups.com"
+  },
+  "source": {
+    "git": "https://github.com/flutter/engine",
+    "tag": "1.0.0"
+  },
+  "platforms": {
+    "ios": "12.0"
+  },
+  "vendored_frameworks": "path/to/nothing"
+}
+
+
+--- ./build/ios/Debug-iphonesimulator/App.framework/flutter_assets/NativeAssetsManifest.json ---
+{"format-version":[1,0,0],"native-assets":{}}
+
+--- ./build/ios/Debug-iphonesimulator/App.framework/flutter_assets/AssetManifest.json ---
+{}
+
+--- ./build/ios/Debug-iphonesimulator/App.framework/flutter_assets/FontManifest.json ---
+[{"family":"MaterialIcons","fonts":[{"asset":"fonts/MaterialIcons-Regular.otf"}]}]
+
+--- ./build/ios/Debug-iphonesimulator/Runner.swiftmodule/arm64-apple-ios-simulator.abi.json ---
+{
+  "ABIRoot": {
+    "kind": "Root",
+    "name": "NO_MODULE",
+    "printedName": "NO_MODULE",
+    "json_format_version": 8
+  },
+  "ConstValues": []
+}
+
+--- ./build/ios/Debug-iphonesimulator/Runner.app/Frameworks/App.framework/flutter_assets/NativeAssetsManifest.json ---
+{"format-version":[1,0,0],"native-assets":{}}
+
+--- ./build/ios/Debug-iphonesimulator/Runner.app/Frameworks/App.framework/flutter_assets/AssetManifest.json ---
+{}
+
+--- ./build/ios/Debug-iphonesimulator/Runner.app/Frameworks/App.framework/flutter_assets/FontManifest.json ---
+[{"family":"MaterialIcons","fonts":[{"asset":"fonts/MaterialIcons-Regular.otf"}]}]
+
+--- ./build/ios/Debug-iphonesimulator/shared_preferences_foundation/shared_preferences_foundation.framework/Modules/shared_preferences_foundation.swiftmodule/arm64-apple-ios-simulator.abi.json ---
+{
+  "ABIRoot": {
+    "kind": "Root",
+    "name": "NO_MODULE",
+    "printedName": "NO_MODULE",
+    "json_format_version": 8
+  },
+  "ConstValues": []
+}
+
+--- ./build/ios/Debug-iphonesimulator/shared_preferences_foundation/shared_preferences_foundation.framework/Modules/shared_preferences_foundation.swiftmodule/x86_64-apple-ios-simulator.abi.json ---
+{
+  "ABIRoot": {
+    "kind": "Root",
+    "name": "NO_MODULE",
+    "printedName": "NO_MODULE",
+    "json_format_version": 8
+  },
+  "ConstValues": []
+}
+
+--- ./build/ios/iphonesimulator/Runner.app/Frameworks/App.framework/flutter_assets/NativeAssetsManifest.json ---
+{"format-version":[1,0,0],"native-assets":{}}
+
+--- ./build/ios/iphonesimulator/Runner.app/Frameworks/App.framework/flutter_assets/AssetManifest.json ---
+{}
+
+--- ./build/ios/iphonesimulator/Runner.app/Frameworks/App.framework/flutter_assets/FontManifest.json ---
+[{"family":"MaterialIcons","fonts":[{"asset":"fonts/MaterialIcons-Regular.otf"}]}]
+
+--- ./.dart_tool/package_config.json ---
+{
+  "configVersion": 2,
+  "packages": [
+    {
+      "name": "async",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/async-2.13.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "boolean_selector",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/boolean_selector-2.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "cached_network_image",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/cached_network_image-3.3.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "cached_network_image_platform_interface",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/cached_network_image_platform_interface-4.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "cached_network_image_web",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/cached_network_image_web-1.2.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "characters",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/characters-1.4.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "clock",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/clock-1.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "collection",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/collection-1.19.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "cross_file",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/cross_file-0.3.4+2",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "crypto",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/crypto-3.0.6",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "fake_async",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/fake_async-1.3.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "ffi",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/ffi-2.1.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "file",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/file-7.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "file_selector_linux",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.3+2",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "file_selector_macos",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/file_selector_macos-0.9.4+2",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "file_selector_platform_interface",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/file_selector_platform_interface-2.6.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "file_selector_windows",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+4",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "fixnum",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/fixnum-1.1.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "flutter",
+      "rootUri": "file:///opt/homebrew/Caskroom/flutter/3.32.4/flutter/packages/flutter",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "flutter_cache_manager",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/flutter_cache_manager-3.3.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "flutter_plugin_android_lifecycle",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.26",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "flutter_test",
+      "rootUri": "file:///opt/homebrew/Caskroom/flutter/3.32.4/flutter/packages/flutter_test",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "flutter_web_plugins",
+      "rootUri": "file:///opt/homebrew/Caskroom/flutter/3.32.4/flutter/packages/flutter_web_plugins",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "http",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/http-0.13.6",
+      "packageUri": "lib/",
+      "languageVersion": "2.19"
+    },
+    {
+      "name": "http_parser",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/http_parser-4.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "image_picker",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/image_picker-0.8.9",
+      "packageUri": "lib/",
+      "languageVersion": "2.18"
+    },
+    {
+      "name": "image_picker_android",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/image_picker_android-0.8.12+21",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "image_picker_for_web",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/image_picker_for_web-2.2.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.18"
+    },
+    {
+      "name": "image_picker_ios",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.12+2",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "image_picker_linux",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.1+2",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "image_picker_macos",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.1+2",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "image_picker_platform_interface",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/image_picker_platform_interface-2.10.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "image_picker_windows",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.1+1",
+      "packageUri": "lib/",
+      "languageVersion": "2.19"
+    },
+    {
+      "name": "leak_tracker",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/leak_tracker-10.0.9",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "leak_tracker_flutter_testing",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/leak_tracker_flutter_testing-3.0.9",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "leak_tracker_testing",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/leak_tracker_testing-3.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "matcher",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/matcher-0.12.17",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "material_color_utilities",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/material_color_utilities-0.11.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "meta",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/meta-1.16.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "mime",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/mime-1.0.6",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "nested",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/nested-1.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "octo_image",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/octo_image-2.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "path",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/path-1.9.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "path_provider",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/path_provider-2.1.5",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "path_provider_android",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/path_provider_android-2.2.15",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "path_provider_foundation",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "path_provider_linux",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.19"
+    },
+    {
+      "name": "path_provider_platform_interface",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/path_provider_platform_interface-2.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "path_provider_windows",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "platform",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/platform-3.1.6",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "plugin_platform_interface",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/plugin_platform_interface-2.1.8",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "provider",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/provider-6.1.5",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "rxdart",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/rxdart-0.27.7",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "shared_preferences",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/shared_preferences-2.5.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "shared_preferences_android",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.7",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "shared_preferences_foundation",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "shared_preferences_linux",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/shared_preferences_linux-2.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "shared_preferences_platform_interface",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/shared_preferences_platform_interface-2.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "shared_preferences_web",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/shared_preferences_web-2.4.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "shared_preferences_windows",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/shared_preferences_windows-2.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "shimmer",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/shimmer-2.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "sky_engine",
+      "rootUri": "file:///opt/homebrew/Caskroom/flutter/3.32.4/flutter/bin/cache/pkg/sky_engine",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "source_span",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/source_span-1.10.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "sprintf",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/sprintf-7.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "sqflite",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/sqflite-2.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "sqflite_android",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/sqflite_android-2.4.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "sqflite_common",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/sqflite_common-2.5.4+6",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "sqflite_darwin",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.1+1",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "sqflite_platform_interface",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/sqflite_platform_interface-2.4.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "stack_trace",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/stack_trace-1.12.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "stream_channel",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/stream_channel-2.1.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "string_scanner",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/string_scanner-1.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "synchronized",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/synchronized-3.3.0+3",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "term_glyph",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/term_glyph-1.2.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "test_api",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/test_api-0.7.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "typed_data",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/typed_data-1.4.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "uuid",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/uuid-4.5.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "vector_math",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/vector_math-2.1.4",
+      "packageUri": "lib/",
+      "languageVersion": "2.14"
+    },
+    {
+      "name": "vm_service",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/vm_service-15.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "web",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/web-1.1.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "xdg_directories",
+      "rootUri": "file:///Users/waleedraza/.pub-cache/hosted/pub.dev/xdg_directories-1.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "petform",
+      "rootUri": "../",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    }
+  ],
+  "generator": "pub",
+  "generatorVersion": "3.8.1",
+  "flutterRoot": "file:///opt/homebrew/Caskroom/flutter/3.32.4/flutter",
+  "flutterVersion": "3.32.4",
+  "pubCache": "file:///Users/waleedraza/.pub-cache"
+}
+
+
+--- ./.dart_tool/package_graph.json ---
+{
+  "roots": [
+    "petform"
+  ],
+  "packages": [
+    {
+      "name": "petform",
+      "version": "1.0.0+1",
+      "dependencies": [
+        "cached_network_image",
+        "flutter",
+        "http",
+        "image_picker",
+        "provider",
+        "shared_preferences",
+        "shimmer"
+      ],
+      "devDependencies": [
+        "flutter_test"
+      ]
+    },
+    {
+      "name": "flutter_test",
+      "version": "0.0.0",
+      "dependencies": [
+        "async",
+        "boolean_selector",
+        "characters",
+        "clock",
+        "collection",
+        "fake_async",
+        "flutter",
+        "leak_tracker",
+        "leak_tracker_flutter_testing",
+        "leak_tracker_testing",
+        "matcher",
+        "material_color_utilities",
+        "meta",
+        "path",
+        "source_span",
+        "stack_trace",
+        "stream_channel",
+        "string_scanner",
+        "term_glyph",
+        "test_api",
+        "vector_math",
+        "vm_service"
+      ]
+    },
+    {
+      "name": "image_picker",
+      "version": "0.8.9",
+      "dependencies": [
+        "flutter",
+        "image_picker_android",
+        "image_picker_for_web",
+        "image_picker_ios",
+        "image_picker_linux",
+        "image_picker_macos",
+        "image_picker_platform_interface",
+        "image_picker_windows"
+      ]
+    },
+    {
+      "name": "shimmer",
+      "version": "2.0.0",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "cached_network_image",
+      "version": "3.3.1",
+      "dependencies": [
+        "cached_network_image_platform_interface",
+        "cached_network_image_web",
+        "flutter",
+        "flutter_cache_manager",
+        "octo_image"
+      ]
+    },
+    {
+      "name": "http",
+      "version": "0.13.6",
+      "dependencies": [
+        "async",
+        "http_parser",
+        "meta"
+      ]
+    },
+    {
+      "name": "shared_preferences",
+      "version": "2.5.3",
+      "dependencies": [
+        "flutter",
+        "shared_preferences_android",
+        "shared_preferences_foundation",
+        "shared_preferences_linux",
+        "shared_preferences_platform_interface",
+        "shared_preferences_web",
+        "shared_preferences_windows"
+      ]
+    },
+    {
+      "name": "provider",
+      "version": "6.1.5",
+      "dependencies": [
+        "collection",
+        "flutter",
+        "nested"
+      ]
+    },
+    {
+      "name": "flutter",
+      "version": "0.0.0",
+      "dependencies": [
+        "characters",
+        "collection",
+        "material_color_utilities",
+        "meta",
+        "sky_engine",
+        "vector_math"
+      ]
+    },
+    {
+      "name": "vm_service",
+      "version": "15.0.0",
+      "dependencies": []
+    },
+    {
+      "name": "term_glyph",
+      "version": "1.2.2",
+      "dependencies": []
+    },
+    {
+      "name": "string_scanner",
+      "version": "1.4.1",
+      "dependencies": [
+        "source_span"
+      ]
+    },
+    {
+      "name": "stream_channel",
+      "version": "2.1.4",
+      "dependencies": [
+        "async"
+      ]
+    },
+    {
+      "name": "source_span",
+      "version": "1.10.1",
+      "dependencies": [
+        "collection",
+        "path",
+        "term_glyph"
+      ]
+    },
+    {
+      "name": "meta",
+      "version": "1.16.0",
+      "dependencies": []
+    },
+    {
+      "name": "material_color_utilities",
+      "version": "0.11.1",
+      "dependencies": [
+        "collection"
+      ]
+    },
+    {
+      "name": "leak_tracker_testing",
+      "version": "3.0.1",
+      "dependencies": [
+        "leak_tracker",
+        "matcher",
+        "meta"
+      ]
+    },
+    {
+      "name": "leak_tracker",
+      "version": "10.0.9",
+      "dependencies": [
+        "clock",
+        "collection",
+        "meta",
+        "path",
+        "vm_service"
+      ]
+    },
+    {
+      "name": "collection",
+      "version": "1.19.1",
+      "dependencies": []
+    },
+    {
+      "name": "characters",
+      "version": "1.4.0",
+      "dependencies": []
+    },
+    {
+      "name": "boolean_selector",
+      "version": "2.1.2",
+      "dependencies": [
+        "source_span",
+        "string_scanner"
+      ]
+    },
+    {
+      "name": "async",
+      "version": "2.13.0",
+      "dependencies": [
+        "collection",
+        "meta"
+      ]
+    },
+    {
+      "name": "leak_tracker_flutter_testing",
+      "version": "3.0.9",
+      "dependencies": [
+        "flutter",
+        "leak_tracker",
+        "leak_tracker_testing",
+        "matcher",
+        "meta"
+      ]
+    },
+    {
+      "name": "vector_math",
+      "version": "2.1.4",
+      "dependencies": []
+    },
+    {
+      "name": "stack_trace",
+      "version": "1.12.1",
+      "dependencies": [
+        "path"
+      ]
+    },
+    {
+      "name": "clock",
+      "version": "1.1.2",
+      "dependencies": []
+    },
+    {
+      "name": "fake_async",
+      "version": "1.3.3",
+      "dependencies": [
+        "clock",
+        "collection"
+      ]
+    },
+    {
+      "name": "path",
+      "version": "1.9.1",
+      "dependencies": []
+    },
+    {
+      "name": "matcher",
+      "version": "0.12.17",
+      "dependencies": [
+        "async",
+        "meta",
+        "stack_trace",
+        "term_glyph",
+        "test_api"
+      ]
+    },
+    {
+      "name": "test_api",
+      "version": "0.7.4",
+      "dependencies": [
+        "async",
+        "boolean_selector",
+        "collection",
+        "meta",
+        "source_span",
+        "stack_trace",
+        "stream_channel",
+        "string_scanner",
+        "term_glyph"
+      ]
+    },
+    {
+      "name": "image_picker_windows",
+      "version": "0.2.1+1",
+      "dependencies": [
+        "file_selector_platform_interface",
+        "file_selector_windows",
+        "flutter",
+        "image_picker_platform_interface"
+      ]
+    },
+    {
+      "name": "image_picker_platform_interface",
+      "version": "2.10.1",
+      "dependencies": [
+        "cross_file",
+        "flutter",
+        "http",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "image_picker_macos",
+      "version": "0.2.1+2",
+      "dependencies": [
+        "file_selector_macos",
+        "file_selector_platform_interface",
+        "flutter",
+        "image_picker_platform_interface"
+      ]
+    },
+    {
+      "name": "image_picker_linux",
+      "version": "0.2.1+2",
+      "dependencies": [
+        "file_selector_linux",
+        "file_selector_platform_interface",
+        "flutter",
+        "image_picker_platform_interface"
+      ]
+    },
+    {
+      "name": "image_picker_ios",
+      "version": "0.8.12+2",
+      "dependencies": [
+        "flutter",
+        "image_picker_platform_interface"
+      ]
+    },
+    {
+      "name": "image_picker_for_web",
+      "version": "2.2.0",
+      "dependencies": [
+        "flutter",
+        "flutter_web_plugins",
+        "image_picker_platform_interface",
+        "mime"
+      ]
+    },
+    {
+      "name": "image_picker_android",
+      "version": "0.8.12+21",
+      "dependencies": [
+        "flutter",
+        "flutter_plugin_android_lifecycle",
+        "image_picker_platform_interface"
+      ]
+    },
+    {
+      "name": "octo_image",
+      "version": "2.1.0",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "flutter_cache_manager",
+      "version": "3.3.1",
+      "dependencies": [
+        "clock",
+        "collection",
+        "file",
+        "flutter",
+        "http",
+        "path",
+        "path_provider",
+        "rxdart",
+        "sqflite",
+        "uuid"
+      ]
+    },
+    {
+      "name": "cached_network_image_web",
+      "version": "1.2.0",
+      "dependencies": [
+        "cached_network_image_platform_interface",
+        "flutter",
+        "flutter_cache_manager"
+      ]
+    },
+    {
+      "name": "cached_network_image_platform_interface",
+      "version": "4.0.0",
+      "dependencies": [
+        "flutter",
+        "flutter_cache_manager"
+      ]
+    },
+    {
+      "name": "http_parser",
+      "version": "4.0.2",
+      "dependencies": [
+        "collection",
+        "source_span",
+        "string_scanner",
+        "typed_data"
+      ]
+    },
+    {
+      "name": "shared_preferences_windows",
+      "version": "2.4.1",
+      "dependencies": [
+        "file",
+        "flutter",
+        "path",
+        "path_provider_platform_interface",
+        "path_provider_windows",
+        "shared_preferences_platform_interface"
+      ]
+    },
+    {
+      "name": "shared_preferences_web",
+      "version": "2.4.3",
+      "dependencies": [
+        "flutter",
+        "flutter_web_plugins",
+        "shared_preferences_platform_interface",
+        "web"
+      ]
+    },
+    {
+      "name": "shared_preferences_platform_interface",
+      "version": "2.4.1",
+      "dependencies": [
+        "flutter",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "shared_preferences_linux",
+      "version": "2.4.1",
+      "dependencies": [
+        "file",
+        "flutter",
+        "path",
+        "path_provider_linux",
+        "path_provider_platform_interface",
+        "shared_preferences_platform_interface"
+      ]
+    },
+    {
+      "name": "shared_preferences_foundation",
+      "version": "2.5.4",
+      "dependencies": [
+        "flutter",
+        "shared_preferences_platform_interface"
+      ]
+    },
+    {
+      "name": "shared_preferences_android",
+      "version": "2.4.7",
+      "dependencies": [
+        "flutter",
+        "shared_preferences_platform_interface"
+      ]
+    },
+    {
+      "name": "nested",
+      "version": "1.0.0",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "sky_engine",
+      "version": "0.0.0",
+      "dependencies": []
+    },
+    {
+      "name": "file_selector_windows",
+      "version": "0.9.3+4",
+      "dependencies": [
+        "cross_file",
+        "file_selector_platform_interface",
+        "flutter"
+      ]
+    },
+    {
+      "name": "file_selector_platform_interface",
+      "version": "2.6.2",
+      "dependencies": [
+        "cross_file",
+        "flutter",
+        "http",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "plugin_platform_interface",
+      "version": "2.1.8",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
+      "name": "cross_file",
+      "version": "0.3.4+2",
+      "dependencies": [
+        "meta",
+        "web"
+      ]
+    },
+    {
+      "name": "file_selector_macos",
+      "version": "0.9.4+2",
+      "dependencies": [
+        "cross_file",
+        "file_selector_platform_interface",
+        "flutter"
+      ]
+    },
+    {
+      "name": "file_selector_linux",
+      "version": "0.9.3+2",
+      "dependencies": [
+        "cross_file",
+        "file_selector_platform_interface",
+        "flutter"
+      ]
+    },
+    {
+      "name": "mime",
+      "version": "1.0.6",
+      "dependencies": []
+    },
+    {
+      "name": "flutter_web_plugins",
+      "version": "0.0.0",
+      "dependencies": [
+        "characters",
+        "collection",
+        "flutter",
+        "material_color_utilities",
+        "meta",
+        "vector_math"
+      ]
+    },
+    {
+      "name": "flutter_plugin_android_lifecycle",
+      "version": "2.0.26",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "uuid",
+      "version": "4.5.1",
+      "dependencies": [
+        "crypto",
+        "fixnum",
+        "meta",
+        "sprintf"
+      ]
+    },
+    {
+      "name": "sqflite",
+      "version": "2.4.1",
+      "dependencies": [
+        "flutter",
+        "path",
+        "sqflite_android",
+        "sqflite_common",
+        "sqflite_darwin",
+        "sqflite_platform_interface"
+      ]
+    },
+    {
+      "name": "rxdart",
+      "version": "0.27.7",
+      "dependencies": []
+    },
+    {
+      "name": "path_provider",
+      "version": "2.1.5",
+      "dependencies": [
+        "flutter",
+        "path_provider_android",
+        "path_provider_foundation",
+        "path_provider_linux",
+        "path_provider_platform_interface",
+        "path_provider_windows"
+      ]
+    },
+    {
+      "name": "file",
+      "version": "7.0.1",
+      "dependencies": [
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "typed_data",
+      "version": "1.4.0",
+      "dependencies": [
+        "collection"
+      ]
+    },
+    {
+      "name": "path_provider_windows",
+      "version": "2.3.0",
+      "dependencies": [
+        "ffi",
+        "flutter",
+        "path",
+        "path_provider_platform_interface"
+      ]
+    },
+    {
+      "name": "path_provider_platform_interface",
+      "version": "2.1.2",
+      "dependencies": [
+        "flutter",
+        "platform",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "web",
+      "version": "1.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "path_provider_linux",
+      "version": "2.2.1",
+      "dependencies": [
+        "ffi",
+        "flutter",
+        "path",
+        "path_provider_platform_interface",
+        "xdg_directories"
+      ]
+    },
+    {
+      "name": "fixnum",
+      "version": "1.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "sprintf",
+      "version": "7.0.0",
+      "dependencies": []
+    },
+    {
+      "name": "crypto",
+      "version": "3.0.6",
+      "dependencies": [
+        "typed_data"
+      ]
+    },
+    {
+      "name": "sqflite_common",
+      "version": "2.5.4+6",
+      "dependencies": [
+        "meta",
+        "path",
+        "synchronized"
+      ]
+    },
+    {
+      "name": "sqflite_platform_interface",
+      "version": "2.4.0",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "platform",
+        "plugin_platform_interface",
+        "sqflite_common"
+      ]
+    },
+    {
+      "name": "sqflite_darwin",
+      "version": "2.4.1+1",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "path",
+        "sqflite_common",
+        "sqflite_platform_interface"
+      ]
+    },
+    {
+      "name": "sqflite_android",
+      "version": "2.4.0",
+      "dependencies": [
+        "flutter",
+        "path",
+        "sqflite_common",
+        "sqflite_platform_interface"
+      ]
+    },
+    {
+      "name": "path_provider_foundation",
+      "version": "2.4.1",
+      "dependencies": [
+        "flutter",
+        "path_provider_platform_interface"
+      ]
+    },
+    {
+      "name": "path_provider_android",
+      "version": "2.2.15",
+      "dependencies": [
+        "flutter",
+        "path_provider_platform_interface"
+      ]
+    },
+    {
+      "name": "ffi",
+      "version": "2.1.3",
+      "dependencies": []
+    },
+    {
+      "name": "platform",
+      "version": "3.1.6",
+      "dependencies": []
+    },
+    {
+      "name": "xdg_directories",
+      "version": "1.1.0",
+      "dependencies": [
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "synchronized",
+      "version": "3.3.0+3",
+      "dependencies": []
+    }
+  ],
+  "configVersion": 1
+}
+
+--- ./.dart_tool/flutter_build/277c40013661c210256f8ed0fba76d00/outputs.json ---
+["/Users/waleedraza/Desktop/petform/ios/Flutter/ephemeral/flutter_lldbinit","/Users/waleedraza/Desktop/petform/build/ios/Debug-iphonesimulator/Flutter.framework/Flutter","/Users/waleedraza/Desktop/petform/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/vm_snapshot_data","/Users/waleedraza/Desktop/petform/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/isolate_snapshot_data","/Users/waleedraza/Desktop/petform/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/kernel_blob.bin","/Users/waleedraza/Desktop/petform/build/ios/Debug-iphonesimulator/App.framework/App","/Users/waleedraza/Desktop/petform/build/ios/Debug-iphonesimulator/App.framework/Info.plist","/Users/waleedraza/Desktop/petform/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/fonts/MaterialIcons-Regular.otf","/Users/waleedraza/Desktop/petform/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/shaders/ink_sparkle.frag","/Users/waleedraza/Desktop/petform/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/AssetManifest.json","/Users/waleedraza/Desktop/petform/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/AssetManifest.bin","/Users/waleedraza/Desktop/petform/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/FontManifest.json","/Users/waleedraza/Desktop/petform/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/NOTICES.Z","/Users/waleedraza/Desktop/petform/build/ios/Debug-iphonesimulator/App.framework/flutter_assets/NativeAssetsManifest.json"]
+
+--- ./.dart_tool/flutter_build/277c40013661c210256f8ed0fba76d00/dart_build_result.json ---
+{"dependencies":[],"code_assets":[]}
+
+--- ./.dart_tool/flutter_build/277c40013661c210256f8ed0fba76d00/native_assets.json ---
+{"format-version":[1,0,0],"native-assets":{}}

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../providers/user_provider.dart';
-import 'main_screen.dart';
+import 'pet_profile_creation_screen.dart';
 import '../widgets/rounded_button.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -25,9 +25,14 @@ class _SignupScreenState extends State<SignupScreen> {
       await _apiService.login(_emailController.text, _passwordController.text);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       await userProvider.setUser(_emailController.text);
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainScreen()));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const PetProfileCreationScreen()),
+      );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Signup failed')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Signup failed')),
+      );
     } finally {
       setState(() => _isLoading = false);
     }
@@ -36,13 +41,21 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: const Text('Sign Up')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email')),
-            TextField(controller: _passwordController, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
+            TextField(
+              controller: _emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
+            ),
+            TextField(
+              controller: _passwordController,
+              decoration: const InputDecoration(labelText: 'Password'),
+              obscureText: true,
+            ),
             const SizedBox(height: 20),
             _isLoading
                 ? const CircularProgressIndicator()
