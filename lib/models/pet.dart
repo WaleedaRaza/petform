@@ -1,5 +1,26 @@
 import 'tracking_metric.dart';
 
+class ShoppingItem {
+  final String name;
+  final bool isPurchased;
+
+  ShoppingItem({required this.name, this.isPurchased = false});
+
+  factory ShoppingItem.fromJson(Map<String, dynamic> json) {
+    return ShoppingItem(
+      name: json['name'] as String,
+      isPurchased: json['isPurchased'] as bool,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'isPurchased': isPurchased,
+    };
+  }
+}
+
 class Pet {
   final int? id;
   final String name;
@@ -11,6 +32,7 @@ class Pet {
   final String? cageSize; // Bird-specific
   final String? favoriteToy; // Dog-specific
   final List<TrackingMetric> metrics;
+  final List<ShoppingItem> shoppingList;
 
   Pet({
     this.id,
@@ -23,6 +45,7 @@ class Pet {
     this.cageSize,
     this.favoriteToy,
     this.metrics = const [],
+    this.shoppingList = const [],
   });
 
   factory Pet.fromJson(Map<String, dynamic> json) {
@@ -39,6 +62,9 @@ class Pet {
       metrics: (json['metrics'] as List<dynamic>?)
           ?.map((m) => TrackingMetric.fromJson(m as Map<String, dynamic>))
           .toList() ?? [],
+      shoppingList: (json['shoppingList'] as List<dynamic>?)
+          ?.map((i) => ShoppingItem.fromJson(i as Map<String, dynamic>))
+          .toList() ?? [],
     );
   }
 
@@ -54,6 +80,7 @@ class Pet {
       'cageSize': cageSize,
       'favoriteToy': favoriteToy,
       'metrics': metrics.map((m) => m.toJson()).toList(),
+      'shoppingList': shoppingList.map((i) => i.toJson()).toList(),
     };
   }
 }

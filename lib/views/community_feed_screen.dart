@@ -49,7 +49,7 @@ class PetFilterDropdown extends StatelessWidget {
     const petTypes = ['All', 'Dog', 'Cat', 'Turtle'];
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.only(top: 54.0, left: 16.0, right: 16.0, bottom: 2.0), // Adjusted for notch
       child: DropdownButtonFormField<String>(
         value: feedProvider.selectedPetType,
         decoration: InputDecoration(
@@ -57,8 +57,7 @@ class PetFilterDropdown extends StatelessWidget {
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          filled: true,
-          fillColor: Colors.white,
+          filled: true, // Rely on inputDecorationTheme.fillColor
         ),
         items: petTypes.map((type) {
           return DropdownMenuItem(
@@ -117,7 +116,7 @@ class PostCard extends StatelessWidget {
                       ),
                       Text(
                         post.petType,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                        style: TextStyle(color: Colors.grey[400], fontSize: 12),
                       ),
                     ],
                   ),
@@ -148,13 +147,13 @@ class PostCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.thumb_up, size: 16, color: Colors.grey[600]),
+                  Icon(Icons.thumb_up, size: 16, color: Colors.grey[400]),
                   const SizedBox(width: 4),
                   Text('${post.upvotes ?? 0}'),
                   const Spacer(),
                   Text(
                     '${post.createdAt.day}/${post.createdAt.month}/${post.createdAt.year}',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
                 ],
               ),
@@ -189,25 +188,22 @@ class CommunityFeedScreen extends StatelessWidget {
                             itemCount: 5,
                             itemBuilder: (context, index) {
                               return Shimmer.fromColors(
-                                baseColor: Colors.grey[300]!,
-                                highlightColor: Colors.grey[100]!,
+                                baseColor: Colors.grey[700]!,
+                                highlightColor: Colors.grey[600]!,
                                 child: Container(
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 8),
+                                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                   height: 150,
-                                  color: Colors.white,
+                                  color: Colors.grey[850],
                                 ),
                               );
                             },
                           )
                         : feedProvider.posts.isEmpty
-                            ? const Center(
-                                child: Text('No posts found for this pet type'))
+                            ? const Center(child: Text('No posts found for this pet type'))
                             : ListView.builder(
                                 itemCount: feedProvider.posts.length,
                                 itemBuilder: (context, index) {
-                                  return PostCard(
-                                      post: feedProvider.posts[index]);
+                                  return PostCard(post: feedProvider.posts[index]);
                                 },
                               ),
                   ),

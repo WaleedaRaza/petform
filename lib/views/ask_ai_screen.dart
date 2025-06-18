@@ -76,8 +76,7 @@ class PromptDropdown extends StatelessWidget {
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          filled: true,
-          fillColor: Colors.white,
+          filled: true, // Rely on inputDecorationTheme.fillColor
         ),
         items: prompts.map((prompt) {
           return DropdownMenuItem(
@@ -108,12 +107,12 @@ class MessageBubble extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
         padding: const EdgeInsets.all(12.0),
         decoration: BoxDecoration(
-          color: message.isUser ? Colors.blue[100] : Colors.grey[200],
+          color: message.isUser ? Colors.blue[800] : Colors.grey[700],
           borderRadius: BorderRadius.circular(12.0),
         ),
         child: Text(
           message.text,
-          style: const TextStyle(fontSize: 14),
+          style: const TextStyle(fontSize: 14, color: Colors.white),
         ),
       ),
     );
@@ -151,8 +150,7 @@ class AskAiScreen extends StatelessWidget {
                     : ListView.builder(
                         itemCount: aiProvider.messages.length,
                         itemBuilder: (context, index) {
-                          return MessageBubble(
-                              message: aiProvider.messages[index]);
+                          return MessageBubble(message: aiProvider.messages[index]);
                         },
                       ),
               ),
@@ -168,8 +166,7 @@ class AskAiScreen extends StatelessWidget {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          filled: true,
-                          fillColor: Colors.white,
+                          filled: true, // Rely on inputDecorationTheme.fillColor
                         ),
                         onSubmitted: (value) {
                           aiProvider.sendMessage(value);
