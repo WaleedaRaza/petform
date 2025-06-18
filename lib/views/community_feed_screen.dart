@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
@@ -12,37 +11,26 @@ import 'post_detail_screen.dart';
 class FeedProvider with ChangeNotifier {
   String _selectedPetType = 'All'; // Default filter
   List<Post> _posts = [];
-  bool _isLoading = true; // Start loading
+  bool _isLoading = false;
 
   String get selectedPetType => _selectedPetType;
   List<Post> get posts => _posts;
   bool get isLoading => _isLoading;
 
-  void setPetType(String petType, BuildContext context) {
-    if (_selectedPetType != petType) {
-      _selectedPetType = petType;
-      fetchPosts(context);
-    }
+  void setPetType(String petType) {
+    _selectedPetType = petType;
+    notifyListeners();
   }
 
   Future<void> fetchPosts(BuildContext context) async {
     _isLoading = true;
-    if (kDebugMode) {
-      print('FeedProvider.fetchPosts: Starting fetch for $_selectedPetType');
-    }
     notifyListeners();
 
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
       _posts = await apiService.getPosts(petType: _selectedPetType);
-      if (kDebugMode) {
-        print('FeedProvider.fetchPosts: Fetched ${_posts.length} posts');
-      }
     } catch (e) {
-      _posts = [];
-      if (kDebugMode) {
-        print('FeedProvider.fetchPosts: Error: $e');
-      }
+      _posts = []; // Clear posts on error
     }
 
     _isLoading = false;
@@ -60,8 +48,8 @@ class PetFilterDropdown extends StatelessWidget {
     final feedProvider = Provider.of<FeedProvider>(context);
     const petTypes = ['All', 'Dog', 'Cat', 'Turtle'];
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 48.0, left: 16.0, right: 16.0, bottom: 8.0), // Adjusted for notch
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: DropdownButtonFormField<String>(
         value: feedProvider.selectedPetType,
         decoration: InputDecoration(
@@ -80,7 +68,8 @@ class PetFilterDropdown extends StatelessWidget {
         }).toList(),
         onChanged: (value) {
           if (value != null) {
-            feedProvider.setPetType(value, context);
+            feedProvider.setPetType(value);
+            feedProvider.fetchPosts(context);
           }
         },
       ),
@@ -185,56 +174,49 @@ class CommunityFeedScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) {
-        final provider = FeedProvider();
-        // Fetch posts immediately
-        provider.fetchPosts(context);
-        return provider;
-      },
-      builder: (context, child) {
-        final feedProvider = Provider.of<FeedProvider>(context);
-        if (kDebugMode) {
-          print('CommunityFeedScreen.build: isLoading: ${feedProvider.isLoading}, posts: ${feedProvider.posts.length}');
-        }
-        return Scaffold(
-          body: RefreshIndicator(
-            onRefresh: () => feedProvider.fetchPosts(context),
-            child: Column(
-              children: [
-                const PetFilterDropdown(),
-                Expanded(
-                  child: feedProvider.isLoading
-                      ? ListView.builder(
-                          itemCount: 5,
-                          itemBuilder: (context, index) {
-                            return Shimmer.fromColors(
-                              baseColor: Colors.grey[300]!,
-                              highlightColor: Colors.grey[100]!,
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
-                                height: 150,
-                                color: Colors.white,
+      create: (context) => FeedProvider()..fetchPosts(context),
+      child: Consumer<FeedProvider>(
+        builder: (context, feedProvider, child) {
+          return Scaffold(
+            body: RefreshIndicator(
+              onRefresh: () => feedProvider.fetchPosts(context),
+              child: Column(
+                children: [
+                  const PetFilterDropdown(),
+                  Expanded(
+                    child: feedProvider.isLoading
+                        ? ListView.builder(
+                            itemCount: 5,
+                            itemBuilder: (context, index) {
+                              return Shimmer.fromColors(
+                                baseColor: Colors.grey[300]!,
+                                highlightColor: Colors.grey[100]!,
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
+                                  height: 150,
+                                  color: Colors.white,
+                                ),
+                              );
+                            },
+                          )
+                        : feedProvider.posts.isEmpty
+                            ? const Center(
+                                child: Text('No posts found for this pet type'))
+                            : ListView.builder(
+                                itemCount: feedProvider.posts.length,
+                                itemBuilder: (context, index) {
+                                  return PostCard(
+                                      post: feedProvider.posts[index]);
+                                },
                               ),
-                            );
-                          },
-                        )
-                      : feedProvider.posts.isEmpty
-                          ? const Center(
-                              child: Text('No posts found for this pet type'))
-                          : ListView.builder(
-                              itemCount: feedProvider.posts.length,
-                              itemBuilder: (context, index) {
-                                return PostCard(
-                                    post: feedProvider.posts[index]);
-                              },
-                            ),
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

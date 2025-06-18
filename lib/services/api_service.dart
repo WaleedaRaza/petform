@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/pet.dart';
 import '../models/post.dart';
+import '../models/tracking_metric.dart';
 
 class ApiService {
   // Five mock posts for the UI foundation
@@ -13,7 +14,7 @@ class ApiService {
       'content': 'Start with treats and patience to teach sit and stay.',
       'author': 'DogLover',
       'petType': 'Dog',
-      'imageUrl': null, // No images for mock posts
+      'imageUrl': null,
       'upvotes': 50,
       'createdAt': DateTime.now().subtract(const Duration(days: 2)).toIso8601String(),
     },
@@ -55,6 +56,30 @@ class ApiService {
     },
   ];
 
+  // Default metrics for each pet species
+  static final Map<String, List<Map<String, String>>> _defaultMetrics = {
+    'Dog': [
+      {'name': 'Walking', 'frequency': 'daily'},
+      {'name': 'Feeding', 'frequency': 'daily'},
+      {'name': 'Grooming', 'frequency': 'weekly'},
+    ],
+    'Cat': [
+      {'name': 'Litter Replacement', 'frequency': 'daily'},
+      {'name': 'Feeding', 'frequency': 'daily'},
+      {'name': 'Playtime', 'frequency': 'daily'},
+    ],
+    'Turtle': [
+      {'name': 'Water Changes', 'frequency': 'weekly'},
+      {'name': 'Feeding', 'frequency': 'daily'},
+      {'name': 'UVB Light Check', 'frequency': 'monthly'},
+    ],
+    'Bird': [
+      {'name': 'Cage Cleaning', 'frequency': 'weekly'},
+      {'name': 'Feeding', 'frequency': 'daily'},
+      {'name': 'Social Interaction', 'frequency': 'daily'},
+    ],
+  };
+
   Future<void> signup(String email, String password) async {
     await Future.delayed(const Duration(seconds: 1));
     final prefs = await SharedPreferences.getInstance();
@@ -62,7 +87,7 @@ class ApiService {
     await prefs.setString('user_password', password);
     await prefs.setInt('user_id', DateTime.now().millisecondsSinceEpoch);
     await prefs.setString('pets', '[]');
-    await prefs.setString('posts', '[]'); // Initialize posts storage
+    await prefs.setString('posts', '[]');
   }
 
   Future<void> login(String email, String password) async {
@@ -88,8 +113,26 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     final petsJson = prefs.getString('pets') ?? '[]';
     final List<dynamic> petsData = jsonDecode(petsJson);
-    final newPet = pet.toJson()..['id'] = petsData.length + 1;
-    petsData.add(newPet);
+    final defaultMetrics = _defaultMetrics[pet.species] ?? [];
+    final newPet = Pet(
+      id: petsData.length + 1,
+      name: pet.name,
+      species: pet.species,
+      breed: pet.breed,
+      age: pet.age,
+      litterType: pet.litterType,
+      tankSize: pet.tankSize,
+      cageSize: pet.cageSize,
+      favoriteToy: pet.favoriteToy,
+      metrics: defaultMetrics.map((m) => TrackingMetric(
+        id: '${petsData.length + 1}-${m['name']}',
+        petId: '${petsData.length + 1}',
+        name: m['name'],
+        frequency: m['frequency'],
+        createdAt: DateTime.now(),
+      )).toList(),
+    );
+    petsData.add(newPet.toJson());
     await prefs.setString('pets', jsonEncode(petsData));
   }
 
