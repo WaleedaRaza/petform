@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/pet.dart';
 import '../providers/user_provider.dart';
+import '../services/api_service.dart';
 import 'welcome_screen.dart';
 import '../widgets/rounded_button.dart';
 
@@ -16,6 +18,46 @@ class ProfileSettingsScreen extends StatelessWidget {
     final petsList = jsonDecode(pets) as List;
     if (petsList.isEmpty) return null;
     return Pet.fromJson(petsList.first as Map<String, dynamic>);
+  }
+
+  Future<void> _addShoppingItem(BuildContext context, Pet pet) async {
+    String name = '';
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Add Shopping Item'),
+          content: TextField(
+            decoration: const InputDecoration(labelText: 'Item Name'),
+            onChanged: (value) => name = value,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (name.trim().isNotEmpty) {
+                  Navigator.pop(context, name);
+                }
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null) {
+      pet.shoppingList.add(ShoppingItem(name: result, isPurchased: false));
+      await Provider.of<ApiService>(context, listen: false).updatePet(pet);
+      if (kDebugMode) {
+        print('ProfileSettingsScreen: Added shopping item $result');
+      }
+      // Force rebuild
+      (context as Element).markNeedsBuild();
+    }
   }
 
   @override
@@ -56,9 +98,8 @@ class ProfileSettingsScreen extends StatelessWidget {
                   if (pet.tankSize != null) Text('Tank Size: ${pet.tankSize}', style: const TextStyle(fontSize: 16)),
                   if (pet.cageSize != null) Text('Cage Size: ${pet.cageSize}', style: const TextStyle(fontSize: 16)),
                   if (pet.favoriteToy != null) Text('Favorite Toy: ${pet.favoriteToy}', style: const TextStyle(fontSize: 16)),
-                ] else ...[
-                  const Text('No pet added yet', style: TextStyle(fontSize: 16)),
-                ],
+                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                 const Spacer(),
                 RoundedButton(
                   text: 'Sign Out',
@@ -71,7 +112,7 @@ class ProfileSettingsScreen extends StatelessWidget {
                   },
                 ),
               ],
-            ),
+            ]),
           );
         },
       ),

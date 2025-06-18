@@ -131,9 +131,29 @@ class ApiService {
         frequency: m['frequency'],
         createdAt: DateTime.now(),
       )).toList(),
+      shoppingList: pet.shoppingList,
     );
     petsData.add(newPet.toJson());
     await prefs.setString('pets', jsonEncode(petsData));
+  }
+
+  Future<void> updatePet(Pet pet) async {
+    await Future.delayed(const Duration(seconds: 1));
+    final prefs = await SharedPreferences.getInstance();
+    final petsJson = prefs.getString('pets') ?? '[]';
+    final List<dynamic> petsData = jsonDecode(petsJson);
+    final index = petsData.indexWhere((p) => p['id'] == pet.id);
+    if (index != -1) {
+      petsData[index] = pet.toJson();
+      await prefs.setString('pets', jsonEncode(petsData));
+      if (kDebugMode) {
+        print('ApiService.updatePet: Updated pet ${pet.id}');
+      }
+    } else {
+      if (kDebugMode) {
+        print('ApiService.updatePet: Pet ${pet.id} not found');
+      }
+    }
   }
 
   Future<List<Post>> getPosts({String? petType}) async {

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/pet.dart';
 import '../services/api_service.dart';
 import '../providers/user_provider.dart';
-import '../views/main_screen.dart';
+import '../views/home_screen.dart';
 import '../widgets/rounded_button.dart';
 
 class PetProfileCreationScreen extends StatefulWidget {
@@ -48,7 +48,7 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
     super.dispose();
   }
 
-  void _submitForm() async {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       final additionalFields = <String, String>{};
       for (var field in _petFields[_selectedPetType] ?? []) {
@@ -70,11 +70,13 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
         await Provider.of<ApiService>(context, listen: false).createPet(pet);
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         await userProvider.setUser(userProvider.email!); // Refresh pets
+        if (!mounted) return; // Check if widget is still mounted
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       } catch (e) {
+        if (!mounted) return; // Check if widget is still mounted
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to create pet')),
         );

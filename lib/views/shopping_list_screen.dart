@@ -5,9 +5,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/pet.dart';
 import '../widgets/rounded_button.dart';
 
-class ShoppingListScreen extends StatelessWidget {
+class ShoppingListScreen extends StatefulWidget {
   const ShoppingListScreen({super.key});
 
+  @override
+  _ShoppingListScreenState createState() => _ShoppingListScreenState();
+}
+
+class _ShoppingListScreenState extends State<ShoppingListScreen> {
   Future<Pet> _loadPet() async {
     final prefs = await SharedPreferences.getInstance();
     final pets = prefs.getString('pets') ?? '[]';
@@ -16,7 +21,7 @@ class ShoppingListScreen extends StatelessWidget {
     return Pet.fromJson(petsList.first as Map<String, dynamic>);
   }
 
-  Future<void> _togglePurchaseStatus(BuildContext context, Pet pet, ShoppingItem item) async {
+  Future<void> _togglePurchaseStatus(Pet pet, ShoppingItem item) async {
     final index = pet.shoppingList.indexWhere((i) => i.name == item.name);
     if (index != -1) {
       pet.shoppingList[index] = ShoppingItem(
@@ -32,12 +37,13 @@ class ShoppingListScreen extends StatelessWidget {
           print('ShoppingListScreen: Toggled purchase status for ${item.name}');
         }
       }
-      // Force rebuild
-      (context as Element).markNeedsBuild();
+      if (mounted) {
+        setState(() {}); // Rebuild UI
+      }
     }
   }
 
-  Future<void> _addItem(BuildContext context, Pet pet) async {
+  Future<void> _addItem(Pet pet) async {
     String name = '';
     final result = await showDialog<String>(
       context: context,
@@ -77,8 +83,9 @@ class ShoppingListScreen extends StatelessWidget {
           print('ShoppingListScreen: Added new item $result');
         }
       }
-      // Force rebuild
-      (context as Element).markNeedsBuild();
+      if (mounted) {
+        setState(() {}); // Rebuild UI
+      }
     }
   }
 
@@ -110,7 +117,7 @@ class ShoppingListScreen extends StatelessWidget {
                       ? const Icon(Icons.check_circle, color: Colors.green)
                       : RoundedButton(
                           text: 'Purchased',
-                          onPressed: () => _togglePurchaseStatus(context, pet, item),
+                          onPressed: () => _togglePurchaseStatus(pet, item),
                         ),
                 ),
               );
@@ -124,7 +131,7 @@ class ShoppingListScreen extends StatelessWidget {
           if (!snapshot.hasData) return const SizedBox.shrink();
           final pet = snapshot.data!;
           return FloatingActionButton(
-            onPressed: () => _addItem(context, pet),
+            onPressed: () => _addItem(pet),
             backgroundColor: Colors.blue,
             child: const Icon(Icons.add, color: Colors.white),
           );
