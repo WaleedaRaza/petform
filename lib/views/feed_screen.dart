@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:petform/services/api_service.dart';
-import 'package:petform/models/pet_ai_post.dart';
+import 'package:petform/models/post.dart';
 import 'package:petform/views/post_detail_screen.dart';
 
 class FeedScreen extends StatefulWidget {
