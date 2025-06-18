@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/user_provider.dart';
+import 'services/api_service.dart';
 import 'views/welcome_screen.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => UserProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => UserProvider()),
+        Provider(create: (context) => ApiService()),
+      ],
       child: const PetformApp(),
     ),
   );
@@ -31,4 +35,4 @@ class PetformApp extends StatelessWidget {
       home: const WelcomeScreen(),
     );
   }
-} 
+}
