@@ -3,8 +3,9 @@ class TrackingMetric {
   final String? petId;
   final String? name;
   final String? frequency;
-  final DateTime? lastCompletion;
-  final List<MetricHistory> history;
+  DateTime? lastCompletion;
+  List<MetricHistory> history;
+  bool isCompleted;
 
   TrackingMetric({
     this.id,
@@ -13,6 +14,7 @@ class TrackingMetric {
     this.frequency,
     this.lastCompletion,
     this.history = const [],
+    this.isCompleted = false,
   });
 
   factory TrackingMetric.fromJson(Map<String, dynamic> json) {
@@ -21,10 +23,14 @@ class TrackingMetric {
       petId: json['petId'] as String?,
       name: json['name'] as String?,
       frequency: json['frequency'] as String?,
-      lastCompletion: json['lastCompletion'] != null ? DateTime.parse(json['lastCompletion'] as String) : null,
+      lastCompletion: json['lastCompletion'] != null
+          ? DateTime.parse(json['lastCompletion'] as String)
+          : null,
+      isCompleted: json['isCompleted'] as bool? ?? false,
       history: (json['history'] as List<dynamic>?)
-          ?.map((h) => MetricHistory.fromJson(h as Map<String, dynamic>))
-          .toList() ?? [],
+              ?.map((h) => MetricHistory.fromJson(h as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 
@@ -35,6 +41,7 @@ class TrackingMetric {
       'name': name,
       'frequency': frequency,
       'lastCompletion': lastCompletion?.toIso8601String(),
+      'isCompleted': isCompleted,
       'history': history.map((h) => h.toJson()).toList(),
     };
   }

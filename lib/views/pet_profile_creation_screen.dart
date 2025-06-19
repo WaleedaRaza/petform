@@ -38,17 +38,29 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
     switch (petType) {
       case 'Dog':
         return [
-          TrackingMetric(name: 'Weight', frequency: 'weekly'),
-          TrackingMetric(name: 'Exercise', frequency: 'daily'),
-          TrackingMetric(name: 'Feeding', frequency: 'daily'),
+          TrackingMetric(name: 'Weight', frequency: 'Monthly'),
+          TrackingMetric(name: 'Exercise', frequency: 'Daily'),
+          TrackingMetric(name: 'Feeding', frequency: 'Daily'),
         ];
       case 'Cat':
         return [
-          TrackingMetric(name: 'Weight', frequency: 'monthly'),
-          TrackingMetric(name: 'Litter Box', frequency: 'daily'),
+          TrackingMetric(name: 'Weight', frequency: 'Monthly'),
+          TrackingMetric(name: 'Litter Box', frequency: 'Daily'),
+        ];
+      case 'Turtle':
+        return [
+          TrackingMetric(name: 'Weight', frequency: 'Monthly'),
+          TrackingMetric(name: 'Water Temperature', frequency: 'Daily'),
+        ];
+      case 'Bird':
+        return [
+          TrackingMetric(name: 'Weight', frequency: 'Monthly'),
+          TrackingMetric(name: 'Flight Time', frequency: 'Daily'),
         ];
       default:
-        return [];
+        return [
+          TrackingMetric(name: 'Weight', frequency: 'Monthly'),
+        ];
     }
   }
 
@@ -97,7 +109,7 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
       }
 
       final pet = Pet(
-        id: DateTime.now().millisecondsSinceEpoch, // Generate a temporary ID
+        id: DateTime.now().millisecondsSinceEpoch,
         name: _nameController.text,
         species: _selectedPetType,
         breed: _breedController.text.isNotEmpty ? _breedController.text : null,
@@ -247,7 +259,7 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
                       labelText: entry.key,
                       border: const OutlineInputBorder(),
                     ),
-                  ),
+                  )
                 );
               }),
               TextButton(

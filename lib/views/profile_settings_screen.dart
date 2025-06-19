@@ -121,11 +121,11 @@ class ProfileSettingsScreen extends StatelessWidget {
 
     if (result != null) {
       pet.shoppingList.add(ShoppingItem(
-        name: result['name'],
-        url: result['url'],
-        category: result['category'],
-        quantity: result['quantity'],
-        notes: result['notes'],
+        name: result['name'] as String,
+        url: result['url'] as String?,
+        category: result['category'] as String?,
+        quantity: result['quantity'] as int?,
+        notes: result['notes'] as String?,
       ));
       await Provider.of<ApiService>(context, listen: false).updatePet(pet);
       if (kDebugMode) {
