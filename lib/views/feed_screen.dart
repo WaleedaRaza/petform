@@ -12,7 +12,7 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> {
   final ApiService _apiService = ApiService();
-  List<PetAIPost> _posts = [];
+  List<Post> _posts = [];
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -28,7 +28,7 @@ class _FeedScreenState extends State<FeedScreen> {
       _errorMessage = null;
     });
     try {
-      final posts = await _apiService.getPosts('all', '');
+      final posts = await _apiService.getPosts();
       setState(() {
         _posts = posts;
         _isLoading = false;

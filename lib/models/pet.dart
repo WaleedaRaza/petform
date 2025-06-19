@@ -1,8 +1,8 @@
-import 'package:petform/models/shopping_item.dart';
-import 'package:petform/models/tracking_metric.dart';
+import 'shopping_item.dart';
+import 'tracking_metric.dart';
 
 class Pet {
-  final int? id;
+  final int id;
   final String name;
   final String species;
   final String? breed;
@@ -16,12 +16,12 @@ class Pet {
   final String? tankSize;
   final String? cageSize;
   final String? favoriteToy;
-  final Map<String, String> customFields;
+  final Map<String, dynamic> customFields;
   final List<ShoppingItem> shoppingList;
   final List<TrackingMetric> trackingMetrics;
 
   Pet({
-    this.id,
+    required this.id,
     required this.name,
     required this.species,
     this.breed,
@@ -42,7 +42,7 @@ class Pet {
 
   factory Pet.fromJson(Map<String, dynamic> json) {
     return Pet(
-      id: json['id'] as int?,
+      id: json['id'] as int,
       name: json['name'] as String,
       species: json['species'] as String,
       breed: json['breed'] as String?,
@@ -56,9 +56,9 @@ class Pet {
       tankSize: json['tankSize'] as String?,
       cageSize: json['cageSize'] as String?,
       favoriteToy: json['favoriteToy'] as String?,
-      customFields: (json['customFields'] as Map<String, dynamic>?)?.cast<String, String>() ?? {},
+      customFields: json['customFields'] as Map<String, dynamic>? ?? {},
       shoppingList: (json['shoppingList'] as List<dynamic>?)
-          ?.map((i) => ShoppingItem.fromJson(i as Map<String, dynamic>))
+          ?.map((item) => ShoppingItem.fromJson(item as Map<String, dynamic>))
           .toList() ?? [],
       trackingMetrics: (json['trackingMetrics'] as List<dynamic>?)
           ?.map((m) => TrackingMetric.fromJson(m as Map<String, dynamic>))
@@ -83,7 +83,7 @@ class Pet {
       'cageSize': cageSize,
       'favoriteToy': favoriteToy,
       'customFields': customFields,
-      'shoppingList': shoppingList.map((i) => i.toJson()).toList(),
+      'shoppingList': shoppingList.map((item) => item.toJson()).toList(),
       'trackingMetrics': trackingMetrics.map((m) => m.toJson()).toList(),
     };
   }

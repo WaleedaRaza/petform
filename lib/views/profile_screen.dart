@@ -24,9 +24,9 @@ class ProfileScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Name: ${pet.name}', style: TextStyle(fontSize: 18)),
-                Text('Type: ${pet.type}', style: TextStyle(fontSize: 18)),
+                Text('Species: ${pet.species}', style: TextStyle(fontSize: 18)),
                 SizedBox(height: 10),
-                ...pet.fields.entries.map((entry) {
+                ...pet.customFields.entries.map((entry) {
                   return Text('${entry.key}: ${entry.value}', style: TextStyle(fontSize: 16));
                 }),
               ],

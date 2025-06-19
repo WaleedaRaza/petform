@@ -13,9 +13,16 @@ class UserProvider with ChangeNotifier {
 
   Future<void> setUser(String email) async {
     _email = email;
-    _pets = await _apiService.getPets();
-    if (kDebugMode) {
-      print('UserProvider: Set user $email with ${_pets.length} pets');
+    try {
+      _pets = await _apiService.getPets();
+      if (kDebugMode) {
+        print('UserProvider: Set user $email with ${_pets.length} pets');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('UserProvider: Error loading pets: $e');
+      }
+      _pets = [];
     }
     notifyListeners();
   }

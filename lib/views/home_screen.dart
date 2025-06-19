@@ -37,15 +37,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     print('HomeScreen: Building UI, selectedIndex: $_selectedIndex');
     final userProvider = Provider.of<UserProvider>(context);
+    
+    // Redirect to WelcomeScreen only if user is not logged in and not a guest
     if (!userProvider.isLoggedIn) {
       return const WelcomeScreen();
     }
 
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
+      body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.feed), label: 'Feed'),

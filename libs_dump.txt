@@ -228,9 +228,16 @@ class UserProvider with ChangeNotifier {
 
   Future<void> setUser(String email) async {
     _email = email;
-    _pets = await _apiService.getPets();
-    if (kDebugMode) {
-      print('UserProvider: Set user $email with ${_pets.length} pets');
+    try {
+      _pets = await _apiService.getPets();
+      if (kDebugMode) {
+        print('UserProvider: Set user $email with ${_pets.length} pets');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('UserProvider: Error loading pets: $e');
+      }
+      _pets = [];
     }
     notifyListeners();
   }
@@ -281,60 +288,20 @@ class ThemeProvider with ChangeNotifier {
 }
 
 --- lib/models/tracking_metric.dart ---
-class MetricHistory {
-  final DateTime timestamp;
-  final String? value;
-  final int? quantity;
-  final String? notes;
-
-  MetricHistory({
-    required this.timestamp,
-    this.value,
-    this.quantity,
-    this.notes,
-  });
-
-  factory MetricHistory.fromJson(Map<String, dynamic> json) {
-    return MetricHistory(
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      value: json['value'] as String?,
-      quantity: json['quantity'] as int?,
-      notes: json['notes'] as String?,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'timestamp': timestamp.toIso8601String(),
-      'value': value,
-      'quantity': quantity,
-      'notes': notes,
-    };
-  }
-}
-
 class TrackingMetric {
   final String? id;
   final String? petId;
   final String? name;
-  final String? value;
-  final int? quantity;
-  final String? notes;
   final String? frequency;
-  final DateTime? lastCompletion;
-  final DateTime? createdAt;
-  final List<MetricHistory> history;
+  DateTime? lastCompletion;
+  List<MetricHistory> history;
 
   TrackingMetric({
     this.id,
     this.petId,
     this.name,
-    this.value,
-    this.quantity,
-    this.notes,
     this.frequency,
     this.lastCompletion,
-    this.createdAt,
     this.history = const [],
   });
 
@@ -343,16 +310,8 @@ class TrackingMetric {
       id: json['id'] as String?,
       petId: json['petId'] as String?,
       name: json['name'] as String?,
-      value: json['value'] as String?,
-      quantity: json['quantity'] as int?,
-      notes: json['notes'] as String?,
       frequency: json['frequency'] as String?,
-      lastCompletion: json['last_completion'] != null
-          ? DateTime.parse(json['last_completion'] as String)
-          : null,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : null,
+      lastCompletion: json['lastCompletion'] != null ? DateTime.parse(json['lastCompletion'] as String) : null,
       history: (json['history'] as List<dynamic>?)
           ?.map((h) => MetricHistory.fromJson(h as Map<String, dynamic>))
           .toList() ?? [],
@@ -364,14 +323,109 @@ class TrackingMetric {
       'id': id,
       'petId': petId,
       'name': name,
-      'value': value,
-      'quantity': quantity,
-      'notes': notes,
       'frequency': frequency,
-      'last_completion': lastCompletion?.toIso8601String(),
-      'created_at': createdAt?.toIso8601String(),
+      'lastCompletion': lastCompletion?.toIso8601String(),
       'history': history.map((h) => h.toJson()).toList(),
     };
+  }
+}
+
+class MetricHistory {
+  final DateTime timestamp;
+  final String? value;
+
+  MetricHistory({required this.timestamp, this.value});
+
+  factory MetricHistory.fromJson(Map<String, dynamic> json) {
+    return MetricHistory(
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      value: json['value'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'timestamp': timestamp.toIso8601String(),
+      'value': value,
+    };
+  }
+}
+
+--- lib/models/tracking_provider.dart ---
+import 'package:flutter/foundation.dart';
+import 'package:provider/provider.dart';
+import '../models/pet.dart';
+import '../models/tracking_metric.dart';
+import '../services/api_service.dart';
+
+class TrackingProvider with ChangeNotifier {
+  List<TrackingMetric> _metrics = [];
+  bool _isLoading = false;
+
+  List<TrackingMetric> get metrics => _metrics;
+  bool get isLoading => _isLoading;
+
+  Future<void> loadMetrics(BuildContext context) async {
+    _isLoading = true;
+    notifyListeners();
+    
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      if (userProvider.pets.isNotEmpty) {
+        final pet = userProvider.pets.first;
+        _metrics = pet.trackingMetrics;
+        
+        if (kDebugMode) {
+          print('TrackingProvider: Loaded ${_metrics.length} metrics');
+        }
+      }
+    } catch (e) {
+      _metrics = [];
+      if (kDebugMode) {
+        print('TrackingProvider: Error loading metrics: $e');
+      }
+    }
+    
+    _isLoading = false;
+    notifyListeners();
+  }
+  
+  Future<void> addMetric(BuildContext context, TrackingMetric newMetric) async {
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      
+      if (userProvider.pets.isNotEmpty) {
+        final pet = userProvider.pets.first;
+        pet.trackingMetrics.add(newMetric);
+        await apiService.updatePet(pet);
+        await loadMetrics(context);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('TrackingProvider: Error adding metric: $e');
+      }
+      rethrow;
+    }
+  }
+  
+  Future<void> deleteMetric(BuildContext context, TrackingMetric metric) async {
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      
+      if (userProvider.pets.isNotEmpty) {
+        final pet = userProvider.pets.first;
+        pet.trackingMetrics.removeWhere((m) => m.name == metric.name);
+        await apiService.updatePet(pet);
+        await loadMetrics(context);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('TrackingProvider: Error deleting metric: $e');
+      }
+      rethrow;
+    }
   }
 }
 
@@ -379,13 +433,28 @@ class TrackingMetric {
 class ShoppingItem {
   final String name;
   final bool isPurchased;
+  final String? url;
+  final String? category;
+  final int? quantity;
+  final String? notes;
 
-  ShoppingItem({required this.name, this.isPurchased = false});
+  ShoppingItem({
+    required this.name,
+    this.isPurchased = false,
+    this.url,
+    this.category,
+    this.quantity,
+    this.notes,
+  });
 
   factory ShoppingItem.fromJson(Map<String, dynamic> json) {
     return ShoppingItem(
       name: json['name'] as String,
-      isPurchased: json['isPurchased'] as bool,
+      isPurchased: json['isPurchased'] as bool? ?? false,
+      url: json['url'] as String?,
+      category: json['category'] as String?,
+      quantity: json['quantity'] as int?,
+      notes: json['notes'] as String?,
     );
   }
 
@@ -393,6 +462,10 @@ class ShoppingItem {
     return {
       'name': name,
       'isPurchased': isPurchased,
+      'url': url,
+      'category': category,
+      'quantity': quantity,
+      'notes': notes,
     };
   }
 }
@@ -521,48 +594,11 @@ class User {
 
 
 --- lib/models/pet.dart ---
-class ShoppingItem {
-  final String name;
-  final bool isPurchased;
-  final String? url;
-  final String? category;
-  final int? quantity;
-  final String? notes;
-
-  ShoppingItem({
-    required this.name,
-    this.isPurchased = false,
-    this.url,
-    this.category,
-    this.quantity,
-    this.notes,
-  });
-
-  factory ShoppingItem.fromJson(Map<String, dynamic> json) {
-    return ShoppingItem(
-      name: json['name'] as String,
-      isPurchased: json['isPurchased'] as bool,
-      url: json['url'] as String?,
-      category: json['category'] as String?,
-      quantity: json['quantity'] as int?,
-      notes: json['notes'] as String?,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'isPurchased': isPurchased,
-      'url': url,
-      'category': category,
-      'quantity': quantity,
-      'notes': notes,
-    };
-  }
-}
+import 'shopping_item.dart';
+import 'tracking_metric.dart';
 
 class Pet {
-  final int? id;
+  final int id;
   final String name;
   final String species;
   final String? breed;
@@ -576,11 +612,12 @@ class Pet {
   final String? tankSize;
   final String? cageSize;
   final String? favoriteToy;
-  final Map<String, String> customFields;
+  final Map<String, dynamic> customFields;
   final List<ShoppingItem> shoppingList;
+  final List<TrackingMetric> trackingMetrics;
 
   Pet({
-    this.id,
+    required this.id,
     required this.name,
     required this.species,
     this.breed,
@@ -596,11 +633,12 @@ class Pet {
     this.favoriteToy,
     this.customFields = const {},
     this.shoppingList = const [],
+    this.trackingMetrics = const [],
   });
 
   factory Pet.fromJson(Map<String, dynamic> json) {
     return Pet(
-      id: json['id'] as int?,
+      id: json['id'] as int,
       name: json['name'] as String,
       species: json['species'] as String,
       breed: json['breed'] as String?,
@@ -614,9 +652,12 @@ class Pet {
       tankSize: json['tankSize'] as String?,
       cageSize: json['cageSize'] as String?,
       favoriteToy: json['favoriteToy'] as String?,
-      customFields: (json['customFields'] as Map<String, dynamic>?)?.cast<String, String>() ?? {},
+      customFields: json['customFields'] as Map<String, dynamic>? ?? {},
       shoppingList: (json['shoppingList'] as List<dynamic>?)
-          ?.map((i) => ShoppingItem.fromJson(i as Map<String, dynamic>))
+          ?.map((item) => ShoppingItem.fromJson(item as Map<String, dynamic>))
+          .toList() ?? [],
+      trackingMetrics: (json['trackingMetrics'] as List<dynamic>?)
+          ?.map((m) => TrackingMetric.fromJson(m as Map<String, dynamic>))
           .toList() ?? [],
     );
   }
@@ -638,7 +679,8 @@ class Pet {
       'cageSize': cageSize,
       'favoriteToy': favoriteToy,
       'customFields': customFields,
-      'shoppingList': shoppingList.map((i) => i.toJson()).toList(),
+      'shoppingList': shoppingList.map((item) => item.toJson()).toList(),
+      'trackingMetrics': trackingMetrics.map((m) => m.toJson()).toList(),
     };
   }
 }
@@ -767,13 +809,28 @@ class _CommentScreenState extends State<CommentScreen> {
 class ShoppingItem {
   final String name;
   final bool isPurchased;
+  final String? url;
+  final String? category;
+  final int? quantity;
+  final String? notes;
 
-  ShoppingItem({required this.name, this.isPurchased = false});
+  ShoppingItem({
+    required this.name,
+    this.isPurchased = false,
+    this.url,
+    this.category,
+    this.quantity,
+    this.notes,
+  });
 
   factory ShoppingItem.fromJson(Map<String, dynamic> json) {
     return ShoppingItem(
       name: json['name'] as String,
       isPurchased: json['isPurchased'] as bool,
+      url: json['url'] as String?,
+      category: json['category'] as String?,
+      quantity: json['quantity'] as int?,
+      notes: json['notes'] as String?,
     );
   }
 
@@ -781,7 +838,139 @@ class ShoppingItem {
     return {
       'name': name,
       'isPurchased': isPurchased,
+      'url': url,
+      'category': category,
+      'quantity': quantity,
+      'notes': notes,
     };
+  }
+}
+
+--- lib/views/metric_detail_screen.dart ---
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/tracking_metric.dart';
+import '../providers/user_provider.dart';
+import '../services/api_service.dart';
+
+class MetricDetailScreen extends StatefulWidget {
+  final TrackingMetric metric;
+
+  const MetricDetailScreen({super.key, required this.metric});
+
+  @override
+  _MetricDetailScreenState createState() => _MetricDetailScreenState();
+}
+
+class _MetricDetailScreenState extends State<MetricDetailScreen> {
+  final _valueController = TextEditingController();
+  bool _isSaving = false;
+
+  Future<void> _addEntry() async {
+    if (_valueController.text.isEmpty) return;
+    
+    setState(() {
+      widget.metric.history.add(
+        MetricHistory(
+          timestamp: DateTime.now(),
+          value: _valueController.text,
+        ),
+      );
+      widget.metric.lastCompletion = DateTime.now();
+    });
+    
+    _valueController.clear();
+
+    try {
+      setState(() => _isSaving = true);
+      
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      
+      if (userProvider.pets.isNotEmpty) {
+        final pet = userProvider.pets.first;
+        await apiService.updatePet(pet);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.metric.name ?? 'Metric Detail')),
+      body: Column(
+        children: [
+          Expanded(
+            child: widget.metric.history.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No entries yet\nAdd your first entry below',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.only(top: 16),
+                    itemCount: widget.metric.history.length,
+                    itemBuilder: (context, index) {
+                      final entry = widget.metric.history[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: ListTile(
+                          title: Text(entry.value ?? 'No value'),
+                          subtitle: Text(
+                            '${entry.timestamp.day}/${entry.timestamp.month}/${entry.timestamp.year} '
+                            '${entry.timestamp.hour}:${entry.timestamp.minute.toString().padLeft(2, '0')}',
+                            style: TextStyle(color: Colors.grey[500]),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _valueController,
+                    decoration: InputDecoration(
+                      labelText: 'Enter ${widget.metric.name} value',
+                      border: const OutlineInputBorder(),
+                      filled: true,
+                    ),
+                    onSubmitted: (_) => _addEntry(),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                _isSaving
+                    ? const CircularProgressIndicator()
+                    : IconButton(
+                        onPressed: _addEntry,
+                        icon: const Icon(Icons.add),
+                        iconSize: 32,
+                        style: IconButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.secondary,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -892,6 +1081,98 @@ class PostDetailScreen extends StatelessWidget {
   }
 }
 
+--- lib/views/add_metric_screen.dart ---
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/tracking_provider.dart';
+import '../models/tracking_metric.dart';
+
+class AddMetricScreen extends StatefulWidget {
+  const AddMetricScreen({super.key});
+
+  @override
+  _AddMetricScreenState createState() => _AddMetricScreenState();
+}
+
+class _AddMetricScreenState extends State<AddMetricScreen> {
+  final _nameController = TextEditingController();
+  String _selectedFrequency = 'Daily';
+  final List<String> _frequencies = ['Daily', 'Weekly', 'Monthly', 'As Needed'];
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final trackingProvider = Provider.of<TrackingProvider>(context, listen: false);
+    
+    return Scaffold(
+      appBar: AppBar(title: const Text('Add Tracking Metric')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Metric Name',
+                border: OutlineInputBorder(),
+                filled: true,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text('Frequency:', style: TextStyle(fontSize: 16)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _frequencies.map((frequency) {
+                return ChoiceChip(
+                  label: Text(frequency),
+                  selected: _selectedFrequency == frequency,
+                  onSelected: (selected) {
+                    setState(() {
+                      _selectedFrequency = frequency;
+                    });
+                  },
+                );
+              }).toList(),
+            ),
+            const Spacer(),
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  if (_nameController.text.isNotEmpty) {
+                    final newMetric = TrackingMetric(
+                      name: _nameController.text,
+                      frequency: _selectedFrequency,
+                      history: [],
+                    );
+                    trackingProvider.addMetric(context, newMetric);
+                    Navigator.pop(context);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Add Metric', style: TextStyle(fontSize: 18)),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 --- lib/views/profile_settings_screen.dart ---
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -900,6 +1181,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/pet.dart';
 import '../models/post.dart';
+import '../models/shopping_item.dart';
 import '../providers/user_provider.dart';
 import '../providers/theme_provider.dart';
 import '../services/api_service.dart';
@@ -1015,11 +1297,11 @@ class ProfileSettingsScreen extends StatelessWidget {
 
     if (result != null) {
       pet.shoppingList.add(ShoppingItem(
-        name: result['name'],
-        url: result['url'],
-        category: result['category'],
-        quantity: result['quantity'],
-        notes: result['notes'],
+        name: result['name'] as String,
+        url: result['url'] as String?,
+        category: result['category'] as String?,
+        quantity: result['quantity'] as int?,
+        notes: result['notes'] as String?,
       ));
       await Provider.of<ApiService>(context, listen: false).updatePet(pet);
       if (kDebugMode) {
@@ -1493,9 +1775,9 @@ class ProfileScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Name: ${pet.name}', style: TextStyle(fontSize: 18)),
-                Text('Type: ${pet.type}', style: TextStyle(fontSize: 18)),
+                Text('Species: ${pet.species}', style: TextStyle(fontSize: 18)),
                 SizedBox(height: 10),
-                ...pet.fields.entries.map((entry) {
+                ...pet.customFields.entries.map((entry) {
                   return Text('${entry.key}: ${entry.value}', style: TextStyle(fontSize: 16));
                 }),
               ],
@@ -1514,7 +1796,6 @@ class ProfileScreen extends StatelessWidget {
     return Pet.fromJson(petsList.first as Map<String, dynamic>);
   }
 }
-
 
 --- lib/views/community_feed_screen.dart ---
 import 'package:flutter/foundation.dart';
@@ -2022,7 +2303,7 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> {
   final ApiService _apiService = ApiService();
-  List<PetAIPost> _posts = [];
+  List<Post> _posts = [];
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -2038,7 +2319,7 @@ class _FeedScreenState extends State<FeedScreen> {
       _errorMessage = null;
     });
     try {
-      final posts = await _apiService.getPosts('all', '');
+      final posts = await _apiService.getPosts();
       setState(() {
         _posts = posts;
         _isLoading = false;
@@ -2095,7 +2376,6 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 }
 
-
 --- lib/views/shopping_list_screen.dart ---
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -2103,6 +2383,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/pet.dart';
+import '../models/shopping_item.dart';
 import '../widgets/rounded_button.dart';
 
 class ShoppingListScreen extends StatefulWidget {
@@ -2279,7 +2560,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     if (confirmed == true) {
       pet.shoppingList.removeWhere((i) => i.name == item.name);
       final prefs = await SharedPreferences.getInstance();
-      final pets = jsonDecode(prefs.getString('pets') ?? '[]') as List;
+      final pets = jsonDecode(prefs.getString('posts') ?? '[]') as List;
       if (pets.isNotEmpty) {
         pets[0] = pet.toJson();
         await prefs.setString('pets', jsonEncode(pets));
@@ -2430,9 +2711,10 @@ class WelcomeScreen extends StatelessWidget {
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/pet.dart';
+import '../models/tracking_metric.dart';
 import '../services/api_service.dart';
 import '../providers/user_provider.dart';
-import '../views/home_screen.dart';
+import 'home_screen.dart';
 import '../widgets/rounded_button.dart';
 
 class PetProfileCreationScreen extends StatefulWidget {
@@ -2461,6 +2743,36 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
   };
 
   final List<String> _petTypes = ['Dog', 'Cat', 'Turtle', 'Bird'];
+
+  List<TrackingMetric> getDefaultMetrics(String petType) {
+    switch (petType) {
+      case 'Dog':
+        return [
+          TrackingMetric(name: 'Weight', frequency: 'Monthly'),
+          TrackingMetric(name: 'Exercise', frequency: 'Daily'),
+          TrackingMetric(name: 'Feeding', frequency: 'Daily'),
+        ];
+      case 'Cat':
+        return [
+          TrackingMetric(name: 'Weight', frequency: 'Monthly'),
+          TrackingMetric(name: 'Litter Box', frequency: 'Daily'),
+        ];
+      case 'Turtle':
+        return [
+          TrackingMetric(name: 'Weight', frequency: 'Monthly'),
+          TrackingMetric(name: 'Water Temperature', frequency: 'Daily'),
+        ];
+      case 'Bird':
+        return [
+          TrackingMetric(name: 'Weight', frequency: 'Monthly'),
+          TrackingMetric(name: 'Flight Time', frequency: 'Daily'),
+        ];
+      default:
+        return [
+          TrackingMetric(name: 'Weight', frequency: 'Monthly'),
+        ];
+    }
+  }
 
   @override
   void initState() {
@@ -2507,6 +2819,7 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
       }
 
       final pet = Pet(
+        id: DateTime.now().millisecondsSinceEpoch,
         name: _nameController.text,
         species: _selectedPetType,
         breed: _breedController.text.isNotEmpty ? _breedController.text : null,
@@ -2521,6 +2834,8 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
         cageSize: additionalFields['Cage Size'],
         favoriteToy: additionalFields['Favorite Toy'],
         customFields: customFields,
+        shoppingList: [],
+        trackingMetrics: getDefaultMetrics(_selectedPetType),
       );
 
       try {
@@ -2654,7 +2969,7 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
                       labelText: entry.key,
                       border: const OutlineInputBorder(),
                     ),
-                  ),
+                  )
                 );
               }),
               TextButton(
@@ -2742,6 +3057,7 @@ import '../providers/user_provider.dart';
 import 'community_feed_screen.dart';
 import 'ask_ai_screen.dart';
 import 'shopping_list_screen.dart';
+import 'tracking_screen.dart';
 import 'profile_settings_screen.dart';
 import 'welcome_screen.dart';
 
@@ -2759,6 +3075,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const CommunityFeedScreen(),
     const AskAiScreen(),
     const ShoppingListScreen(),
+    const TrackingScreen(),
     const ProfileSettingsScreen(),
   ];
 
@@ -2772,19 +3089,26 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     print('HomeScreen: Building UI, selectedIndex: $_selectedIndex');
+    final userProvider = Provider.of<UserProvider>(context);
+    
+    // Redirect to WelcomeScreen only if user is not logged in and not a guest
+    if (!userProvider.isLoggedIn) {
+      return const WelcomeScreen();
+    }
+
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
+      body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.feed), label: 'Feed'),
           BottomNavigationBarItem(icon: Icon(Icons.question_answer), label: 'Ask AI'),
           BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Shopping'),
+          BottomNavigationBarItem(icon: Icon(Icons.track_changes), label: 'Tracking'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
         currentIndex: _selectedIndex,
+        selectedItemColor: Theme.of(context).colorScheme.secondary,
+        unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
       ),
@@ -2798,6 +3122,8 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/pet.dart';
 import '../models/post.dart';
+import '../models/tracking_metric.dart';
+import '../models/shopping_item.dart';
 
 class ApiService {
   static final List<Map<String, dynamic>> _mockPosts = [
@@ -2926,7 +3252,7 @@ class ApiService {
     final petsJson = prefs.getString('pets') ?? '[]';
     final List<dynamic> petsData = jsonDecode(petsJson);
     final newPet = Pet(
-      id: petsData.length + 1,
+      id: pet.id ?? (petsData.length + 1),
       name: pet.name,
       species: pet.species,
       breed: pet.breed,
@@ -2942,6 +3268,7 @@ class ApiService {
       favoriteToy: pet.favoriteToy,
       customFields: pet.customFields,
       shoppingList: pet.shoppingList,
+      trackingMetrics: pet.trackingMetrics,
     );
     petsData.add(newPet.toJson());
     await prefs.setString('pets', jsonEncode(petsData));
