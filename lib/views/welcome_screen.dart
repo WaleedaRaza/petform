@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'signup_screen.dart';
 import 'login_screen.dart';
+import 'home_screen.dart';
 import '../widgets/rounded_button.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -21,6 +22,11 @@ class WelcomeScreen extends StatelessWidget {
             RoundedButton(
               text: 'Log In',
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen())),
+            ),
+            const SizedBox(height: 10),
+            RoundedButton(
+              text: 'Continue as Guest',
+              onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomeScreen())),
             ),
           ],
         ),

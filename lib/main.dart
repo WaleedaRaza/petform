@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'providers/user_provider.dart';
+import 'providers/theme_provider.dart';
 import 'services/api_service.dart';
 import 'views/welcome_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  print('Main: Initializing app, SharedPreferences ready');
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => UserProvider()),
         Provider(create: (context) => ApiService()),
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
       ],
       child: const PetformApp(),
     ),
@@ -21,40 +27,41 @@ class PetformApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return MaterialApp(
       title: 'Petform',
       theme: ThemeData(
-        brightness: Brightness.dark, // Enable dark mode
+        brightness: Brightness.dark,
         colorScheme: ColorScheme.dark(
-          primary: Colors.blue[800]!, // Darker blue for primary color
-          secondary: Colors.orange, // Orange as accent color
-          surface: Colors.grey[900]!, // Unified dark grey for surfaces
+          primary: Colors.blue[800]!,
+          secondary: Colors.orange,
+          surface: Colors.grey[900]!,
         ),
-        scaffoldBackgroundColor: Colors.grey[900], // Unified dark grey background
+        scaffoldBackgroundColor: Colors.grey[900],
         appBarTheme: AppBarTheme(
-          backgroundColor: Colors.grey[900], // Match headers to scaffold
+          backgroundColor: Colors.grey[900],
           titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
           iconTheme: const IconThemeData(color: Colors.white),
         ),
         bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          backgroundColor: Colors.grey[850], // Consistent dark grey for dock
-          selectedItemColor: Colors.orange, // Orange for selected items
-          unselectedItemColor: Colors.grey[400], // Light grey for unselected
+          backgroundColor: Colors.grey[850],
+          selectedItemColor: Colors.orange,
+          unselectedItemColor: Colors.grey[400],
           selectedLabelStyle: const TextStyle(color: Colors.orange),
           unselectedLabelStyle: TextStyle(color: Colors.grey[400]),
         ),
         dropdownMenuTheme: DropdownMenuThemeData(
           menuStyle: MenuStyle(
-            backgroundColor: WidgetStateProperty.all(Colors.grey[800]), // Dark grey for dropdowns
+            backgroundColor: WidgetStateProperty.all(Colors.grey[800]),
             surfaceTintColor: WidgetStateProperty.all(Colors.grey[800]),
           ),
-          textStyle: const TextStyle(color: Colors.white), // White text in dropdowns
+          textStyle: const TextStyle(color: Colors.white),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Colors.grey[800], // Dark grey for text boxes
-          hintStyle: TextStyle(color: Colors.grey[400]), // Light grey hints
-          labelStyle: const TextStyle(color: Colors.white), // White labels
+          fillColor: Colors.grey[800],
+          hintStyle: TextStyle(color: Colors.grey[400]),
+          labelStyle: const TextStyle(color: Colors.white),
           border: OutlineInputBorder(
             borderSide: BorderSide(color: Colors.grey[700]!),
           ),
@@ -62,28 +69,90 @@ class PetformApp extends StatelessWidget {
             borderSide: BorderSide(color: Colors.grey[700]!),
           ),
           focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.orange), // Orange focus border
+            borderSide: BorderSide(color: Colors.orange),
           ),
         ),
         cardTheme: CardThemeData(
-          color: Colors.grey[850], // Slightly lighter grey for cards
+          color: Colors.grey[850],
           surfaceTintColor: Colors.grey[850],
         ),
         popupMenuTheme: PopupMenuThemeData(
-          color: Colors.grey[800], // Dark grey for popup menus
+          color: Colors.grey[800],
           textStyle: const TextStyle(color: Colors.white),
           surfaceTintColor: Colors.grey[800],
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          backgroundColor: Colors.orange, // Orange FAB
-          foregroundColor: Colors.white, // White icon on FAB
+          backgroundColor: Colors.orange,
+          foregroundColor: Colors.white,
         ),
         textTheme: ThemeData.dark().textTheme.copyWith(
-          bodyLarge: TextStyle(color: Colors.white),
-          bodyMedium: TextStyle(color: Colors.white70),
-          headlineLarge: TextStyle(color: Colors.white),
-        ),
+              bodyLarge: TextStyle(color: Colors.white),
+              bodyMedium: TextStyle(color: Colors.white70),
+              headlineLarge: TextStyle(color: Colors.white),
+            ),
       ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.dark(
+          primary: Colors.blue[800]!,
+          secondary: Colors.orange,
+          surface: Colors.grey[900]!,
+        ),
+        scaffoldBackgroundColor: Colors.grey[900],
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.grey[900],
+          titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: Colors.grey[850],
+          selectedItemColor: Colors.orange,
+          unselectedItemColor: Colors.grey[400],
+          selectedLabelStyle: const TextStyle(color: Colors.orange),
+          unselectedLabelStyle: TextStyle(color: Colors.grey[400]),
+        ),
+        dropdownMenuTheme: DropdownMenuThemeData(
+          menuStyle: MenuStyle(
+            backgroundColor: WidgetStateProperty.all(Colors.grey[800]),
+            surfaceTintColor: WidgetStateProperty.all(Colors.grey[800]),
+          ),
+          textStyle: const TextStyle(color: Colors.white),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.grey[800],
+          hintStyle: TextStyle(color: Colors.grey[400]),
+          labelStyle: const TextStyle(color: Colors.white),
+          border: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey[700]!),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey[700]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.orange),
+          ),
+        ),
+        cardTheme: CardThemeData(
+          color: Colors.grey[850],
+          surfaceTintColor: Colors.grey[850],
+        ),
+        popupMenuTheme: PopupMenuThemeData(
+          color: Colors.grey[800],
+          textStyle: const TextStyle(color: Colors.white),
+          surfaceTintColor: Colors.grey[800],
+        ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: Colors.orange,
+          foregroundColor: Colors.white,
+        ),
+        textTheme: ThemeData.dark().textTheme.copyWith(
+              bodyLarge: TextStyle(color: Colors.white),
+              bodyMedium: TextStyle(color: Colors.white70),
+              headlineLarge: TextStyle(color: Colors.white),
+            ),
+      ),
+      themeMode: themeProvider.themeMode,
       home: const WelcomeScreen(),
     );
   }

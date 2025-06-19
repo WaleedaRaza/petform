@@ -4,11 +4,13 @@ import '../models/post.dart';
 import '../services/api_service.dart';
 
 class FeedProvider with ChangeNotifier {
-  String _selectedPetType = 'All'; // Default filter
+  String _selectedPetType = 'All';
+  String _selectedPostType = 'All';
   List<Post> _posts = [];
   bool _isLoading = false;
 
   String get selectedPetType => _selectedPetType;
+  String get selectedPostType => _selectedPostType;
   List<Post> get posts => _posts;
   bool get isLoading => _isLoading;
 
@@ -17,12 +19,30 @@ class FeedProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void setPostType(String postType) {
+    _selectedPostType = postType;
+    notifyListeners();
+  }
+
   Future<void> fetchPosts(BuildContext context) async {
     _isLoading = true;
     notifyListeners();
 
-    final apiService = Provider.of<ApiService>(context, listen: false);
-    _posts = await apiService.getPosts(petType: _selectedPetType);
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      _posts = await apiService.getPosts(
+        petType: _selectedPetType == 'All' ? null : _selectedPetType,
+        postType: _selectedPostType == 'All' ? null : _selectedPostType,
+      );
+      if (kDebugMode) {
+        print('FeedProvider: Fetched ${_posts.length} posts');
+      }
+    } catch (e) {
+      _posts = [];
+      if (kDebugMode) {
+        print('FeedProvider: Error fetching posts: $e');
+      }
+    }
 
     _isLoading = false;
     notifyListeners();

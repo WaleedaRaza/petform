@@ -15,23 +15,25 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final ApiService _apiService = ApiService();
   bool _isLoading = false;
 
   void _signup() async {
     setState(() => _isLoading = true);
     try {
-      await _apiService.signup(_emailController.text, _passwordController.text);
-      await _apiService.login(_emailController.text, _passwordController.text);
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      await apiService.signup(_emailController.text, _passwordController.text);
+      await apiService.login(_emailController.text, _passwordController.text);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       await userProvider.setUser(_emailController.text);
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const PetProfileCreationScreen()),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Signup failed')),
+        SnackBar(content: Text('Signup failed: $e')),
       );
     } finally {
       setState(() => _isLoading = false);

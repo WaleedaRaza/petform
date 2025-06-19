@@ -3,9 +3,10 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import 'community_feed_screen.dart';
 import 'ask_ai_screen.dart';
-import 'tracking_screen.dart';
 import 'shopping_list_screen.dart';
+import 'tracking_screen.dart';
 import 'profile_settings_screen.dart';
+import 'welcome_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,22 +21,24 @@ class _HomeScreenState extends State<HomeScreen> {
   static final List<Widget> _pages = <Widget>[
     const CommunityFeedScreen(),
     const AskAiScreen(),
-    const TrackingScreen(),
     const ShoppingListScreen(),
+    const TrackingScreen(),
     const ProfileSettingsScreen(),
   ];
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+      print('HomeScreen: Navigated to index $index');
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    print('HomeScreen: Building UI, selectedIndex: $_selectedIndex');
     final userProvider = Provider.of<UserProvider>(context);
     if (!userProvider.isLoggedIn) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const WelcomeScreen();
     }
 
     return Scaffold(
@@ -47,11 +50,13 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.feed), label: 'Feed'),
           BottomNavigationBarItem(icon: Icon(Icons.question_answer), label: 'Ask AI'),
-          BottomNavigationBarItem(icon: Icon(Icons.track_changes), label: 'Tracking'),
           BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Shopping'),
+          BottomNavigationBarItem(icon: Icon(Icons.track_changes), label: 'Tracking'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
         currentIndex: _selectedIndex,
+        selectedItemColor: Theme.of(context).colorScheme.secondary,
+        unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
       ),

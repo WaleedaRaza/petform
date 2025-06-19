@@ -2,16 +2,22 @@
 --- lib/main.dart ---
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'providers/user_provider.dart';
+import 'providers/theme_provider.dart';
 import 'services/api_service.dart';
 import 'views/welcome_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  print('Main: Initializing app, SharedPreferences ready');
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => UserProvider()),
         Provider(create: (context) => ApiService()),
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
       ],
       child: const PetformApp(),
     ),
@@ -23,17 +29,132 @@ class PetformApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return MaterialApp(
       title: 'Petform',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Colors.white,
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Colors.white,
-          selectedItemColor: Colors.blue,
-          unselectedItemColor: Colors.grey,
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.dark(
+          primary: Colors.blue[800]!,
+          secondary: Colors.orange,
+          surface: Colors.grey[900]!,
         ),
+        scaffoldBackgroundColor: Colors.grey[900],
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.grey[900],
+          titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: Colors.grey[850],
+          selectedItemColor: Colors.orange,
+          unselectedItemColor: Colors.grey[400],
+          selectedLabelStyle: const TextStyle(color: Colors.orange),
+          unselectedLabelStyle: TextStyle(color: Colors.grey[400]),
+        ),
+        dropdownMenuTheme: DropdownMenuThemeData(
+          menuStyle: MenuStyle(
+            backgroundColor: WidgetStateProperty.all(Colors.grey[800]),
+            surfaceTintColor: WidgetStateProperty.all(Colors.grey[800]),
+          ),
+          textStyle: const TextStyle(color: Colors.white),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.grey[800],
+          hintStyle: TextStyle(color: Colors.grey[400]),
+          labelStyle: const TextStyle(color: Colors.white),
+          border: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey[700]!),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey[700]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.orange),
+          ),
+        ),
+        cardTheme: CardThemeData(
+          color: Colors.grey[850],
+          surfaceTintColor: Colors.grey[850],
+        ),
+        popupMenuTheme: PopupMenuThemeData(
+          color: Colors.grey[800],
+          textStyle: const TextStyle(color: Colors.white),
+          surfaceTintColor: Colors.grey[800],
+        ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: Colors.orange,
+          foregroundColor: Colors.white,
+        ),
+        textTheme: ThemeData.dark().textTheme.copyWith(
+              bodyLarge: TextStyle(color: Colors.white),
+              bodyMedium: TextStyle(color: Colors.white70),
+              headlineLarge: TextStyle(color: Colors.white),
+            ),
       ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.dark(
+          primary: Colors.blue[800]!,
+          secondary: Colors.orange,
+          surface: Colors.grey[900]!,
+        ),
+        scaffoldBackgroundColor: Colors.grey[900],
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.grey[900],
+          titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: Colors.grey[850],
+          selectedItemColor: Colors.orange,
+          unselectedItemColor: Colors.grey[400],
+          selectedLabelStyle: const TextStyle(color: Colors.orange),
+          unselectedLabelStyle: TextStyle(color: Colors.grey[400]),
+        ),
+        dropdownMenuTheme: DropdownMenuThemeData(
+          menuStyle: MenuStyle(
+            backgroundColor: WidgetStateProperty.all(Colors.grey[800]),
+            surfaceTintColor: WidgetStateProperty.all(Colors.grey[800]),
+          ),
+          textStyle: const TextStyle(color: Colors.white),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.grey[800],
+          hintStyle: TextStyle(color: Colors.grey[400]),
+          labelStyle: const TextStyle(color: Colors.white),
+          border: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey[700]!),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey[700]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.orange),
+          ),
+        ),
+        cardTheme: CardThemeData(
+          color: Colors.grey[850],
+          surfaceTintColor: Colors.grey[850],
+        ),
+        popupMenuTheme: PopupMenuThemeData(
+          color: Colors.grey[800],
+          textStyle: const TextStyle(color: Colors.white),
+          surfaceTintColor: Colors.grey[800],
+        ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: Colors.orange,
+          foregroundColor: Colors.white,
+        ),
+        textTheme: ThemeData.dark().textTheme.copyWith(
+              bodyLarge: TextStyle(color: Colors.white),
+              bodyMedium: TextStyle(color: Colors.white70),
+              headlineLarge: TextStyle(color: Colors.white),
+            ),
+      ),
+      themeMode: themeProvider.themeMode,
       home: const WelcomeScreen(),
     );
   }
@@ -46,11 +167,13 @@ import '../models/post.dart';
 import '../services/api_service.dart';
 
 class FeedProvider with ChangeNotifier {
-  String _selectedPetType = 'All'; // Default filter
+  String _selectedPetType = 'All';
+  String _selectedPostType = 'All';
   List<Post> _posts = [];
   bool _isLoading = false;
 
   String get selectedPetType => _selectedPetType;
+  String get selectedPostType => _selectedPostType;
   List<Post> get posts => _posts;
   bool get isLoading => _isLoading;
 
@@ -59,12 +182,30 @@ class FeedProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void setPostType(String postType) {
+    _selectedPostType = postType;
+    notifyListeners();
+  }
+
   Future<void> fetchPosts(BuildContext context) async {
     _isLoading = true;
     notifyListeners();
 
-    final apiService = Provider.of<ApiService>(context, listen: false);
-    _posts = await apiService.getPosts(petType: _selectedPetType);
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      _posts = await apiService.getPosts(
+        petType: _selectedPetType == 'All' ? null : _selectedPetType,
+        postType: _selectedPostType == 'All' ? null : _selectedPostType,
+      );
+      if (kDebugMode) {
+        print('FeedProvider: Fetched ${_posts.length} posts');
+      }
+    } catch (e) {
+      _posts = [];
+      if (kDebugMode) {
+        print('FeedProvider: Error fetching posts: $e');
+      }
+    }
 
     _isLoading = false;
     notifyListeners();
@@ -88,34 +229,113 @@ class UserProvider with ChangeNotifier {
   Future<void> setUser(String email) async {
     _email = email;
     _pets = await _apiService.getPets();
+    if (kDebugMode) {
+      print('UserProvider: Set user $email with ${_pets.length} pets');
+    }
     notifyListeners();
   }
 
   void clearUser() {
     _email = null;
     _pets = [];
+    if (kDebugMode) {
+      print('UserProvider: Cleared user');
+    }
+    notifyListeners();
+  }
+}
+
+--- lib/providers/theme_provider.dart ---
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class ThemeProvider with ChangeNotifier {
+  ThemeMode _themeMode = ThemeMode.dark;
+
+  ThemeMode get themeMode => _themeMode;
+
+  ThemeProvider() {
+    _loadTheme();
+  }
+
+  Future<void> _loadTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isDarkMode = prefs.getBool('isDarkMode') ?? true;
+    _themeMode = isDarkMode ? ThemeMode.dark : ThemeMode.light;
+    if (kDebugMode) {
+      print('ThemeProvider: Loaded theme: $_themeMode');
+    }
+    notifyListeners();
+  }
+
+  Future<void> toggleTheme() async {
+    _themeMode = _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkMode', _themeMode == ThemeMode.dark);
+    if (kDebugMode) {
+      print('ThemeProvider: Toggled theme to $_themeMode');
+    }
     notifyListeners();
   }
 }
 
 --- lib/models/tracking_metric.dart ---
+class MetricHistory {
+  final DateTime timestamp;
+  final String? value;
+  final int? quantity;
+  final String? notes;
+
+  MetricHistory({
+    required this.timestamp,
+    this.value,
+    this.quantity,
+    this.notes,
+  });
+
+  factory MetricHistory.fromJson(Map<String, dynamic> json) {
+    return MetricHistory(
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      value: json['value'] as String?,
+      quantity: json['quantity'] as int?,
+      notes: json['notes'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'timestamp': timestamp.toIso8601String(),
+      'value': value,
+      'quantity': quantity,
+      'notes': notes,
+    };
+  }
+}
+
 class TrackingMetric {
   final String? id;
   final String? petId;
   final String? name;
   final String? value;
-  final String? frequency; // daily, weekly, monthly
+  final int? quantity;
+  final String? notes;
+  final String? frequency;
   final DateTime? lastCompletion;
   final DateTime? createdAt;
+  final List<MetricHistory> history;
 
   TrackingMetric({
     this.id,
     this.petId,
     this.name,
     this.value,
+    this.quantity,
+    this.notes,
     this.frequency,
     this.lastCompletion,
     this.createdAt,
+    this.history = const [],
   });
 
   factory TrackingMetric.fromJson(Map<String, dynamic> json) {
@@ -124,6 +344,8 @@ class TrackingMetric {
       petId: json['petId'] as String?,
       name: json['name'] as String?,
       value: json['value'] as String?,
+      quantity: json['quantity'] as int?,
+      notes: json['notes'] as String?,
       frequency: json['frequency'] as String?,
       lastCompletion: json['last_completion'] != null
           ? DateTime.parse(json['last_completion'] as String)
@@ -131,6 +353,9 @@ class TrackingMetric {
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,
+      history: (json['history'] as List<dynamic>?)
+          ?.map((h) => MetricHistory.fromJson(h as Map<String, dynamic>))
+          .toList() ?? [],
     );
   }
 
@@ -140,23 +365,83 @@ class TrackingMetric {
       'petId': petId,
       'name': name,
       'value': value,
+      'quantity': quantity,
+      'notes': notes,
       'frequency': frequency,
       'last_completion': lastCompletion?.toIso8601String(),
       'created_at': createdAt?.toIso8601String(),
+      'history': history.map((h) => h.toJson()).toList(),
+    };
+  }
+}
+
+--- lib/models/shopping_item.dart ---
+class ShoppingItem {
+  final String name;
+  final bool isPurchased;
+
+  ShoppingItem({required this.name, this.isPurchased = false});
+
+  factory ShoppingItem.fromJson(Map<String, dynamic> json) {
+    return ShoppingItem(
+      name: json['name'] as String,
+      isPurchased: json['isPurchased'] as bool,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'isPurchased': isPurchased,
     };
   }
 }
 
 --- lib/models/post.dart ---
+class Comment {
+  final int? id;
+  final String content;
+  final String author;
+  final DateTime createdAt;
+
+  Comment({
+    this.id,
+    required this.content,
+    required this.author,
+    required this.createdAt,
+  });
+
+  factory Comment.fromJson(Map<String, dynamic> json) {
+    return Comment(
+      id: json['id'] as int?,
+      content: json['content'] as String,
+      author: json['author'] as String,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'content': content,
+      'author': author,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+}
+
 class Post {
   final int? id;
   final String title;
   final String content;
   final String author;
-  final String petType; // e.g., Dog, Cat, Turtle
-  final String? imageUrl; // For Reddit/community images
-  final int? upvotes; // For Reddit-style interactions
+  final String petType;
+  final String? imageUrl;
+  final int? upvotes;
   final DateTime createdAt;
+  final String postType;
+  final String? redditUrl;
+  final List<Comment> comments;
 
   Post({
     this.id,
@@ -167,6 +452,9 @@ class Post {
     this.imageUrl,
     this.upvotes,
     required this.createdAt,
+    required this.postType,
+    this.redditUrl,
+    this.comments = const [],
   });
 
   factory Post.fromJson(Map<String, dynamic> json) {
@@ -179,6 +467,11 @@ class Post {
       imageUrl: json['imageUrl'] as String?,
       upvotes: json['upvotes'] as int?,
       createdAt: DateTime.parse(json['createdAt'] as String),
+      postType: json['postType'] as String,
+      redditUrl: json['redditUrl'] as String?,
+      comments: (json['comments'] as List<dynamic>?)
+          ?.map((c) => Comment.fromJson(c as Map<String, dynamic>))
+          .toList() ?? [],
     );
   }
 
@@ -192,6 +485,9 @@ class Post {
       'imageUrl': imageUrl,
       'upvotes': upvotes,
       'createdAt': createdAt.toIso8601String(),
+      'postType': postType,
+      'redditUrl': redditUrl,
+      'comments': comments.map((c) => c.toJson()).toList(),
     };
   }
 }
@@ -223,20 +519,65 @@ class User {
   }
 }
 
+
 --- lib/models/pet.dart ---
-import 'tracking_metric.dart';
+class ShoppingItem {
+  final String name;
+  final bool isPurchased;
+  final String? url;
+  final String? category;
+  final int? quantity;
+  final String? notes;
+
+  ShoppingItem({
+    required this.name,
+    this.isPurchased = false,
+    this.url,
+    this.category,
+    this.quantity,
+    this.notes,
+  });
+
+  factory ShoppingItem.fromJson(Map<String, dynamic> json) {
+    return ShoppingItem(
+      name: json['name'] as String,
+      isPurchased: json['isPurchased'] as bool,
+      url: json['url'] as String?,
+      category: json['category'] as String?,
+      quantity: json['quantity'] as int?,
+      notes: json['notes'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'isPurchased': isPurchased,
+      'url': url,
+      'category': category,
+      'quantity': quantity,
+      'notes': notes,
+    };
+  }
+}
 
 class Pet {
   final int? id;
   final String name;
-  final String species; // e.g., Dog, Cat, Turtle
+  final String species;
   final String? breed;
   final int? age;
-  final String? litterType; // Cat-specific
-  final String? tankSize; // Turtle-specific
-  final String? cageSize; // Bird-specific
-  final String? favoriteToy; // Dog-specific
-  final List<TrackingMetric> metrics;
+  final String? personality;
+  final String? foodSource;
+  final String? favoritePark;
+  final String? leashSource;
+  final String? litterType;
+  final String? waterProducts;
+  final String? tankSize;
+  final String? cageSize;
+  final String? favoriteToy;
+  final Map<String, String> customFields;
+  final List<ShoppingItem> shoppingList;
 
   Pet({
     this.id,
@@ -244,11 +585,17 @@ class Pet {
     required this.species,
     this.breed,
     this.age,
+    this.personality,
+    this.foodSource,
+    this.favoritePark,
+    this.leashSource,
     this.litterType,
+    this.waterProducts,
     this.tankSize,
     this.cageSize,
     this.favoriteToy,
-    this.metrics = const [],
+    this.customFields = const {},
+    this.shoppingList = const [],
   });
 
   factory Pet.fromJson(Map<String, dynamic> json) {
@@ -258,12 +605,18 @@ class Pet {
       species: json['species'] as String,
       breed: json['breed'] as String?,
       age: json['age'] as int?,
+      personality: json['personality'] as String?,
+      foodSource: json['foodSource'] as String?,
+      favoritePark: json['favoritePark'] as String?,
+      leashSource: json['leashSource'] as String?,
       litterType: json['litterType'] as String?,
+      waterProducts: json['waterProducts'] as String?,
       tankSize: json['tankSize'] as String?,
       cageSize: json['cageSize'] as String?,
       favoriteToy: json['favoriteToy'] as String?,
-      metrics: (json['metrics'] as List<dynamic>?)
-          ?.map((m) => TrackingMetric.fromJson(m as Map<String, dynamic>))
+      customFields: (json['customFields'] as Map<String, dynamic>?)?.cast<String, String>() ?? {},
+      shoppingList: (json['shoppingList'] as List<dynamic>?)
+          ?.map((i) => ShoppingItem.fromJson(i as Map<String, dynamic>))
           .toList() ?? [],
     );
   }
@@ -275,11 +628,159 @@ class Pet {
       'species': species,
       'breed': breed,
       'age': age,
+      'personality': personality,
+      'foodSource': foodSource,
+      'favoritePark': favoritePark,
+      'leashSource': leashSource,
       'litterType': litterType,
+      'waterProducts': waterProducts,
       'tankSize': tankSize,
       'cageSize': cageSize,
       'favoriteToy': favoriteToy,
-      'metrics': metrics.map((m) => m.toJson()).toList(),
+      'customFields': customFields,
+      'shoppingList': shoppingList.map((i) => i.toJson()).toList(),
+    };
+  }
+}
+
+--- lib/views/comment_screen.dart ---
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/post.dart';
+import '../services/api_service.dart';
+import '../providers/user_provider.dart';
+import '../widgets/rounded_button.dart';
+
+class CommentScreen extends StatefulWidget {
+  final Post post;
+
+  const CommentScreen({super.key, required this.post});
+
+  @override
+  _CommentScreenState createState() => _CommentScreenState();
+}
+
+class _CommentScreenState extends State<CommentScreen> {
+  final _commentController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _addComment() async {
+    if (_commentController.text.trim().isEmpty) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await Provider.of<ApiService>(context, listen: false).addComment(
+        postId: widget.post.id!,
+        content: _commentController.text,
+        author: userProvider.email ?? 'Anonymous',
+      );
+      if (!mounted) return;
+      _commentController.clear();
+      setState(() {});
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add comment: $e')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Comments')),
+      body: FutureBuilder<Post>(
+        future: Provider.of<ApiService>(context, listen: false).getPost(widget.post.id!),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return const Center(child: Text('Failed to load comments'));
+          }
+          final post = snapshot.data!;
+          return Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  itemCount: post.comments.length,
+                  itemBuilder: (context, index) {
+                    final comment = post.comments[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      child: ListTile(
+                        title: Text(comment.author, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text(comment.content),
+                        trailing: Text(
+                          '${comment.createdAt.day}/${comment.createdAt.month}/${comment.createdAt.year}',
+                          style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _commentController,
+                        decoration: const InputDecoration(
+                          hintText: 'Add a comment...',
+                          border: OutlineInputBorder(),
+                          filled: true,
+                        ),
+                        onSubmitted: (_) => _addComment(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _isLoading
+                        ? const CircularProgressIndicator()
+                        : IconButton(
+                            icon: const Icon(Icons.send),
+                            onPressed: _addComment,
+                          ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+--- lib/views/shopping_item.dart ---
+class ShoppingItem {
+  final String name;
+  final bool isPurchased;
+
+  ShoppingItem({required this.name, this.isPurchased = false});
+
+  factory ShoppingItem.fromJson(Map<String, dynamic> json) {
+    return ShoppingItem(
+      name: json['name'] as String,
+      isPurchased: json['isPurchased'] as bool,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'isPurchased': isPurchased,
     };
   }
 }
@@ -287,19 +788,29 @@ class Pet {
 --- lib/views/post_detail_screen.dart ---
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/post.dart';
+import 'comment_screen.dart';
+import '../widgets/rounded_button.dart';
 
 class PostDetailScreen extends StatelessWidget {
   final Post post;
 
   const PostDetailScreen({super.key, required this.post});
 
+  Future<void> _launchRedditUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(post.title),
-      ),
+      appBar: AppBar(title: Text(post.title)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -307,9 +818,7 @@ class PostDetailScreen extends StatelessWidget {
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  child: Text(post.author[0]),
-                ),
+                CircleAvatar(child: Text(post.author[0])),
                 const SizedBox(width: 8),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -319,8 +828,8 @@ class PostDetailScreen extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      post.petType,
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      '${post.petType} • ${post.postType[0].toUpperCase()}${post.postType.substring(1)}',
+                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
                     ),
                   ],
                 ),
@@ -329,10 +838,7 @@ class PostDetailScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               post.title,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             if (post.imageUrl != null)
@@ -344,37 +850,59 @@ class PostDetailScreen extends StatelessWidget {
                 fit: BoxFit.cover,
               ),
             const SizedBox(height: 8),
-            Text(
-              post.content,
-              style: const TextStyle(fontSize: 16),
-            ),
+            Text(post.content, style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 16),
             Row(
               children: [
-                Icon(Icons.thumb_up, size: 16, color: Colors.grey[600]),
+                Icon(Icons.thumb_up, size: 16, color: Colors.grey[400]),
                 const SizedBox(width: 4),
                 Text('${post.upvotes ?? 0}'),
+                if (post.postType == 'community') ...[
+                  const SizedBox(width: 16),
+                  Icon(Icons.comment, size: 16, color: Colors.grey[400]),
+                  const SizedBox(width: 4),
+                  Text('${post.comments.length}'),
+                ],
                 const Spacer(),
                 Text(
                   '${post.createdAt.day}/${post.createdAt.month}/${post.createdAt.year}',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
                 ),
               ],
             ),
-          ],
+            const SizedBox(height: 16),
+            if (post.postType == 'reddit' && post.redditUrl != null)
+              RoundedButton(
+                text: 'Open in Reddit',
+                onPressed: () => _launchRedditUrl(post.redditUrl!),
+              ),
+            if (post.postType == 'community')
+              RoundedButton(
+                text: 'View Comments',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => CommentScreen(post: post)),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+      
     );
   }
 }
 
 --- lib/views/profile_settings_screen.dart ---
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/pet.dart';
+import '../models/post.dart';
 import '../providers/user_provider.dart';
+import '../providers/theme_provider.dart';
+import '../services/api_service.dart';
 import 'welcome_screen.dart';
 import '../widgets/rounded_button.dart';
 
@@ -389,62 +917,279 @@ class ProfileSettingsScreen extends StatelessWidget {
     return Pet.fromJson(petsList.first as Map<String, dynamic>);
   }
 
+  Future<List<Post>> _loadUserPosts(String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    final posts = jsonDecode(prefs.getString('posts') ?? '[]') as List;
+    return posts
+        .map((p) => Post.fromJson(p as Map<String, dynamic>))
+        .where((post) => post.author == email)
+        .toList();
+  }
+
+  Future<List<Comment>> _loadUserComments(String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    final posts = jsonDecode(prefs.getString('posts') ?? '[]') as List;
+    final comments = <Comment>[];
+    for (var post in posts) {
+      final postComments = (post['comments'] as List<dynamic>?)
+          ?.map((c) => Comment.fromJson(c as Map<String, dynamic>))
+          .where((comment) => comment.author == email)
+          .toList() ?? [];
+      comments.addAll(postComments);
+    }
+    return comments;
+  }
+
+  Future<void> _addShoppingItem(BuildContext context, Pet pet) async {
+    String name = '';
+    String url = '';
+    String category = '';
+    int? quantity;
+    String notes = '';
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Add Shopping Item'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      decoration: const InputDecoration(labelText: 'Item Name'),
+                      onChanged: (value) => name = value,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      decoration: const InputDecoration(labelText: 'URL (Optional)'),
+                      onChanged: (value) => url = value,
+                      keyboardType: TextInputType.url,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      decoration: const InputDecoration(labelText: 'Category (Optional)'),
+                      onChanged: (value) => category = value,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      decoration: const InputDecoration(labelText: 'Quantity (Optional)'),
+                      onChanged: (value) => quantity = int.tryParse(value),
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      decoration: const InputDecoration(labelText: 'Notes (Optional)'),
+                      onChanged: (value) => notes = value,
+                      maxLines: 3,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    if (name.trim().isNotEmpty) {
+                      Navigator.pop(context, {
+                        'name': name,
+                        'url': url.isNotEmpty ? url : null,
+                        'category': category.isNotEmpty ? category : null,
+                        'quantity': quantity,
+                        'notes': notes.isNotEmpty ? notes : null,
+                      });
+                    }
+                  },
+                  child: const Text('Add'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null) {
+      pet.shoppingList.add(ShoppingItem(
+        name: result['name'],
+        url: result['url'],
+        category: result['category'],
+        quantity: result['quantity'],
+        notes: result['notes'],
+      ));
+      await Provider.of<ApiService>(context, listen: false).updatePet(pet);
+      if (kDebugMode) {
+        print('ProfileSettingsScreen: Added shopping item ${result['name']}');
+      }
+      (context as Element).markNeedsBuild();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
-      body: FutureBuilder<Pet?>(
-        future: _loadPet(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final pet = snapshot.data;
-
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'User: ${userProvider.email ?? 'N/A'}',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                if (pet != null) ...[
-                  Text(
-                    'Pet Profile',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text('Name: ${pet.name}', style: const TextStyle(fontSize: 16)),
-                  Text('Species: ${pet.species}', style: const TextStyle(fontSize: 16)),
-                  if (pet.breed != null) Text('Breed: ${pet.breed}', style: const TextStyle(fontSize: 16)),
-                  if (pet.age != null) Text('Age: ${pet.age}', style: const TextStyle(fontSize: 16)),
-                  if (pet.litterType != null) Text('Litter Type: ${pet.litterType}', style: const TextStyle(fontSize: 16)),
-                  if (pet.tankSize != null) Text('Tank Size: ${pet.tankSize}', style: const TextStyle(fontSize: 16)),
-                  if (pet.cageSize != null) Text('Cage Size: ${pet.cageSize}', style: const TextStyle(fontSize: 16)),
-                  if (pet.favoriteToy != null) Text('Favorite Toy: ${pet.favoriteToy}', style: const TextStyle(fontSize: 16)),
-                ] else ...[
-                  const Text('No pet added yet', style: TextStyle(fontSize: 16)),
-                ],
-                const Spacer(),
-                RoundedButton(
-                  text: 'Sign Out',
-                  onPressed: () {
-                    userProvider.clearUser();
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-                    );
-                  },
-                ),
-              ],
-            ),
-          );
-        },
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'User: ${userProvider.email ?? 'N/A'}',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                title: const Text('Dark Mode'),
+                value: themeProvider.themeMode == ThemeMode.dark,
+                onChanged: (value) => themeProvider.toggleTheme(),
+                activeColor: Theme.of(context).colorScheme.secondary,
+              ),
+              const SizedBox(height: 16),
+              FutureBuilder<Pet?>(
+                future: _loadPet(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError || !snapshot.hasData) {
+                    return const Text('No pet added yet', style: TextStyle(fontSize: 16));
+                  }
+                  final pet = snapshot.data!;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Pet Profile',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Text('Name: ${pet.name}', style: const TextStyle(fontSize: 16)),
+                      Text('Species: ${pet.species}', style: const TextStyle(fontSize: 16)),
+                      if (pet.breed != null) Text('Breed: ${pet.breed}', style: const TextStyle(fontSize: 16)),
+                      if (pet.age != null) Text('Age: ${pet.age}', style: const TextStyle(fontSize: 16)),
+                      if (pet.personality != null) Text('Personality: ${pet.personality}', style: const TextStyle(fontSize: 16)),
+                      if (pet.foodSource != null) Text('Food Source: ${pet.foodSource}', style: const TextStyle(fontSize: 16)),
+                      if (pet.favoritePark != null) Text('Favorite Park: ${pet.favoritePark}', style: const TextStyle(fontSize: 16)),
+                      if (pet.leashSource != null) Text('Leash Source: ${pet.leashSource}', style: const TextStyle(fontSize: 16)),
+                      if (pet.litterType != null) Text('Litter Type: ${pet.litterType}', style: const TextStyle(fontSize: 16)),
+                      if (pet.waterProducts != null) Text('Water Products: ${pet.waterProducts}', style: const TextStyle(fontSize: 16)),
+                      if (pet.tankSize != null) Text('Tank Size: ${pet.tankSize}', style: const TextStyle(fontSize: 16)),
+                      if (pet.cageSize != null) Text('Cage Size: ${pet.cageSize}', style: const TextStyle(fontSize: 16)),
+                      if (pet.favoriteToy != null) Text('Favorite Toy: ${pet.favoriteToy}', style: const TextStyle(fontSize: 16)),
+                      if (pet.customFields.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        const Text('Custom Fields', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ...pet.customFields.entries.map((e) => Text('${e.key}: ${e.value}', style: const TextStyle(fontSize: 16))),
+                      ],
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Shopping List Items', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          RoundedButton(
+                            text: 'Add Item',
+                            onPressed: () => _addShoppingItem(context, pet),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (pet.shoppingList.isEmpty)
+                        const Text('No items added yet', style: TextStyle(fontSize: 16))
+                      else
+                        ...pet.shoppingList.map((item) => Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(item.name, style: const TextStyle(fontSize: 16)),
+                                if (item.isPurchased) const Text('(Purchased)', style: TextStyle(fontSize: 14, color: Colors.green)),
+                                if (item.category != null) Text('Category: ${item.category}', style: const TextStyle(fontSize: 14)),
+                                if (item.quantity != null) Text('Quantity: ${item.quantity}', style: const TextStyle(fontSize: 14)),
+                                if (item.notes != null) Text('Notes: ${item.notes}', style: const TextStyle(fontSize: 14)),
+                                if (item.url != null) Text('URL: ${item.url}', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.secondary)),
+                                const SizedBox(height: 8),
+                              ],
+                            )),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              FutureBuilder<List<Post>>(
+                future: _loadUserPosts(userProvider.email ?? ''),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final posts = snapshot.data ?? [];
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Your Posts', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      if (posts.isEmpty)
+                        const Text('No posts yet', style: TextStyle(fontSize: 16))
+                      else
+                        ...posts.map((post) => Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(post.title, style: const TextStyle(fontSize: 16)),
+                                Text('Type: ${post.postType[0].toUpperCase()}${post.postType.substring(1)}', style: const TextStyle(fontSize: 14)),
+                                const SizedBox(height: 8),
+                              ],
+                            )),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              FutureBuilder<List<Comment>>(
+                future: _loadUserComments(userProvider.email ?? ''),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final comments = snapshot.data ?? [];
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Your Comments', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      if (comments.isEmpty)
+                        const Text('No comments yet', style: TextStyle(fontSize: 16))
+                      else
+                        ...comments.map((comment) => Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(comment.content, style: const TextStyle(fontSize: 16)),
+                                Text('Posted: ${comment.createdAt.day}/${comment.createdAt.month}/${comment.createdAt.year}',
+                                    style: const TextStyle(fontSize: 14)),
+                                const SizedBox(height: 8),
+                              ],
+                            )),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              RoundedButton(
+                text: 'Sign Out',
+                onPressed: () {
+                  userProvider.clearUser();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -529,8 +1274,7 @@ class PromptDropdown extends StatelessWidget {
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          filled: true,
-          fillColor: Colors.white,
+          filled: true, // Rely on inputDecorationTheme.fillColor
         ),
         items: prompts.map((prompt) {
           return DropdownMenuItem(
@@ -561,12 +1305,12 @@ class MessageBubble extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
         padding: const EdgeInsets.all(12.0),
         decoration: BoxDecoration(
-          color: message.isUser ? Colors.blue[100] : Colors.grey[200],
+          color: message.isUser ? Colors.blue[800] : Colors.grey[700],
           borderRadius: BorderRadius.circular(12.0),
         ),
         child: Text(
           message.text,
-          style: const TextStyle(fontSize: 14),
+          style: const TextStyle(fontSize: 14, color: Colors.white),
         ),
       ),
     );
@@ -604,8 +1348,7 @@ class AskAiScreen extends StatelessWidget {
                     : ListView.builder(
                         itemCount: aiProvider.messages.length,
                         itemBuilder: (context, index) {
-                          return MessageBubble(
-                              message: aiProvider.messages[index]);
+                          return MessageBubble(message: aiProvider.messages[index]);
                         },
                       ),
               ),
@@ -621,8 +1364,7 @@ class AskAiScreen extends StatelessWidget {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          filled: true,
-                          fillColor: Colors.white,
+                          filled: true, // Rely on inputDecorationTheme.fillColor
                         ),
                         onSubmitted: (value) {
                           aiProvider.sendMessage(value);
@@ -651,6 +1393,7 @@ class AskAiScreen extends StatelessWidget {
   }
 }
 
+
 --- lib/views/signup_screen.dart ---
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -669,23 +1412,25 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final ApiService _apiService = ApiService();
   bool _isLoading = false;
 
   void _signup() async {
     setState(() => _isLoading = true);
     try {
-      await _apiService.signup(_emailController.text, _passwordController.text);
-      await _apiService.login(_emailController.text, _passwordController.text);
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      await apiService.signup(_emailController.text, _passwordController.text);
+      await apiService.login(_emailController.text, _passwordController.text);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       await userProvider.setUser(_emailController.text);
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const PetProfileCreationScreen()),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Signup failed')),
+        SnackBar(content: Text('Signup failed: $e')),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -770,7 +1515,9 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
+
 --- lib/views/community_feed_screen.dart ---
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
@@ -778,20 +1525,26 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../services/api_service.dart';
 import '../models/post.dart';
 import 'post_detail_screen.dart';
-
-// --- Providers ---
+import 'create_post_screen.dart';
 
 class FeedProvider with ChangeNotifier {
-  String _selectedPetType = 'All'; // Default filter
+  String _selectedPetType = 'All';
+  String _selectedPostType = 'All';
   List<Post> _posts = [];
   bool _isLoading = false;
 
   String get selectedPetType => _selectedPetType;
+  String get selectedPostType => _selectedPostType;
   List<Post> get posts => _posts;
   bool get isLoading => _isLoading;
 
   void setPetType(String petType) {
     _selectedPetType = petType;
+    notifyListeners();
+  }
+
+  void setPostType(String postType) {
+    _selectedPostType = postType;
     notifyListeners();
   }
 
@@ -801,9 +1554,18 @@ class FeedProvider with ChangeNotifier {
 
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      _posts = await apiService.getPosts(petType: _selectedPetType);
+      _posts = await apiService.getPosts(
+        petType: _selectedPetType == 'All' ? null : _selectedPetType,
+        postType: _selectedPostType == 'All' ? null : _selectedPostType,
+      );
+      if (kDebugMode) {
+        print('FeedProvider: Fetched ${_posts.length} posts');
+      }
     } catch (e) {
-      _posts = []; // Clear posts on error
+      _posts = [];
+      if (kDebugMode) {
+        print('FeedProvider: Error fetching posts: $e');
+      }
     }
 
     _isLoading = false;
@@ -811,40 +1573,59 @@ class FeedProvider with ChangeNotifier {
   }
 }
 
-// --- Widgets ---
-
-class PetFilterDropdown extends StatelessWidget {
-  const PetFilterDropdown({super.key});
+class FeedFilter extends StatelessWidget {
+  const FeedFilter({super.key});
 
   @override
   Widget build(BuildContext context) {
     final feedProvider = Provider.of<FeedProvider>(context);
     const petTypes = ['All', 'Dog', 'Cat', 'Turtle'];
+    const postTypes = ['All', 'Reddit', 'Community'];
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: DropdownButtonFormField<String>(
-        value: feedProvider.selectedPetType,
-        decoration: InputDecoration(
-          labelText: 'Filter by Pet',
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+      padding: const EdgeInsets.only(top: 48.0, left: 16.0, right: 16.0, bottom: 8.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              value: feedProvider.selectedPetType,
+              decoration: const InputDecoration(
+                labelText: 'Filter by Pet',
+                border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                filled: true,
+              ),
+              items: petTypes.map((type) {
+                return DropdownMenuItem(value: type, child: Text(type));
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  feedProvider.setPetType(value);
+                  feedProvider.fetchPosts(context);
+                }
+              },
+            ),
           ),
-          filled: true,
-          fillColor: Colors.white,
-        ),
-        items: petTypes.map((type) {
-          return DropdownMenuItem(
-            value: type,
-            child: Text(type),
-          );
-        }).toList(),
-        onChanged: (value) {
-          if (value != null) {
-            feedProvider.setPetType(value);
-            feedProvider.fetchPosts(context);
-          }
-        },
+          const SizedBox(width: 8),
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              value: feedProvider.selectedPostType,
+              decoration: const InputDecoration(
+                labelText: 'Filter by Post Type',
+                border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                filled: true,
+              ),
+              items: postTypes.map((type) {
+                return DropdownMenuItem(value: type, child: Text(type));
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  feedProvider.setPostType(value);
+                  feedProvider.fetchPosts(context);
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -861,9 +1642,7 @@ class PostCard extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => PostDetailScreen(post: post),
-          ),
+          MaterialPageRoute(builder: (context) => PostDetailScreen(post: post)),
         );
       },
       child: Card(
@@ -877,9 +1656,7 @@ class PostCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  CircleAvatar(
-                    child: Text(post.author[0]), // Mock avatar
-                  ),
+                  CircleAvatar(child: Text(post.author[0])),
                   const SizedBox(width: 8),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -889,8 +1666,8 @@ class PostCard extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        post.petType,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                        '${post.petType} • ${post.postType[0].toUpperCase()}${post.postType.substring(1)}',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 12),
                       ),
                     ],
                   ),
@@ -899,10 +1676,7 @@ class PostCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 post.title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
               if (post.imageUrl != null)
@@ -914,20 +1688,23 @@ class PostCard extends StatelessWidget {
                   fit: BoxFit.cover,
                 ),
               const SizedBox(height: 4),
-              Text(
-                post.content,
-                style: const TextStyle(fontSize: 14),
-              ),
+              Text(post.content, style: const TextStyle(fontSize: 14)),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.thumb_up, size: 16, color: Colors.grey[600]),
+                  Icon(Icons.thumb_up, size: 16, color: Colors.grey[400]),
                   const SizedBox(width: 4),
                   Text('${post.upvotes ?? 0}'),
+                  if (post.postType == 'community') ...[
+                    const SizedBox(width: 16),
+                    Icon(Icons.comment, size: 16, color: Colors.grey[400]),
+                    const SizedBox(width: 4),
+                    Text('${post.comments.length}'),
+                  ],
                   const Spacer(),
                   Text(
                     '${post.createdAt.day}/${post.createdAt.month}/${post.createdAt.year}',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
                 ],
               ),
@@ -938,8 +1715,6 @@ class PostCard extends StatelessWidget {
     );
   }
 }
-
-// --- Screen ---
 
 class CommunityFeedScreen extends StatelessWidget {
   const CommunityFeedScreen({super.key});
@@ -955,38 +1730,43 @@ class CommunityFeedScreen extends StatelessWidget {
               onRefresh: () => feedProvider.fetchPosts(context),
               child: Column(
                 children: [
-                  const PetFilterDropdown(),
+                  const FeedFilter(),
                   Expanded(
                     child: feedProvider.isLoading
                         ? ListView.builder(
                             itemCount: 5,
                             itemBuilder: (context, index) {
                               return Shimmer.fromColors(
-                                baseColor: Colors.grey[300]!,
-                                highlightColor: Colors.grey[100]!,
+                                baseColor: Colors.grey[700]!,
+                                highlightColor: Colors.grey[600]!,
                                 child: Container(
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 8),
+                                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                   height: 150,
-                                  color: Colors.white,
+                                  color: Colors.grey[850],
                                 ),
                               );
                             },
                           )
                         : feedProvider.posts.isEmpty
-                            ? const Center(
-                                child: Text('No posts found for this pet type'))
+                            ? const Center(child: Text('No posts found'))
                             : ListView.builder(
                                 itemCount: feedProvider.posts.length,
                                 itemBuilder: (context, index) {
-                                  return PostCard(
-                                      post: feedProvider.posts[index]);
+                                  return PostCard(post: feedProvider.posts[index]);
                                 },
                               ),
                   ),
                 ],
               ),
             ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CreatePostScreen()),
+              ),
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
           );
         },
       ),
@@ -994,198 +1774,131 @@ class CommunityFeedScreen extends StatelessWidget {
   }
 }
 
---- lib/views/tracking_screen.dart ---
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
+--- lib/views/create_post_screen.dart ---
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../models/pet.dart';
-import '../models/tracking_metric.dart';
+import 'package:provider/provider.dart';
+import '../services/api_service.dart';
+import '../providers/user_provider.dart';
 import '../widgets/rounded_button.dart';
 
-class TrackingScreen extends StatelessWidget {
-  const TrackingScreen({super.key});
+class CreatePostScreen extends StatefulWidget {
+  const CreatePostScreen({super.key});
 
-  Future<Pet> _loadPet() async {
-    final prefs = await SharedPreferences.getInstance();
-    final pets = prefs.getString('pets') ?? '[]';
-    final petsList = jsonDecode(pets) as List;
-    if (petsList.isEmpty) throw Exception('No pet found');
-    return Pet.fromJson(petsList.first as Map<String, dynamic>);
+  @override
+  _CreatePostScreenState createState() => _CreatePostScreenState();
+}
+
+class _CreatePostScreenState extends State<CreatePostScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _contentController = TextEditingController();
+  String _selectedPetType = 'Dog';
+  final List<String> _petTypes = ['Dog', 'Cat', 'Turtle', 'Bird'];
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+    super.dispose();
   }
 
-  bool _isCompleted(TrackingMetric metric) {
-    if (metric.lastCompletion == null) return false;
-    final now = DateTime.now();
-    switch (metric.frequency) {
-      case 'daily':
-        return metric.lastCompletion!.year == now.year &&
-            metric.lastCompletion!.month == now.month &&
-            metric.lastCompletion!.day == now.day;
-      case 'weekly':
-        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-        return metric.lastCompletion!.isAfter(startOfWeek) ||
-            metric.lastCompletion!.isAtSameMomentAs(startOfWeek);
-      case 'monthly':
-        return metric.lastCompletion!.year == now.year &&
-            metric.lastCompletion!.month == now.month;
-      default:
-        return false;
-    }
-  }
-
-  Future<void> _completeMetric(BuildContext context, Pet pet, TrackingMetric metric) async {
-    final updatedMetric = TrackingMetric(
-      id: metric.id,
-      petId: metric.petId,
-      name: metric.name,
-      value: metric.value,
-      frequency: metric.frequency,
-      lastCompletion: DateTime.now(),
-      createdAt: metric.createdAt,
-    );
-    final index = pet.metrics.indexWhere((m) => m.id == metric.id);
-    if (index != -1) {
-      pet.metrics[index] = updatedMetric;
-    }
-    final prefs = await SharedPreferences.getInstance();
-    final pets = jsonDecode(prefs.getString('pets') ?? '[]') as List;
-    if (pets.isNotEmpty) {
-      pets[0] = pet.toJson();
-      await prefs.setString('pets', jsonEncode(pets));
-      if (kDebugMode) {
-        print('TrackingScreen: Updated pet metrics');
-      }
-    }
-    // Force rebuild
-    (context as Element).markNeedsBuild();
-  }
-
-  Future<void> _addMetric(BuildContext context, Pet pet) async {
-    String name = '';
-    String frequency = 'daily';
-    final result = await showDialog<Map<String, String>>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Add New Metric'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                decoration: const InputDecoration(labelText: 'Metric Name'),
-                onChanged: (value) => name = value,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: frequency,
-                decoration: const InputDecoration(labelText: 'Frequency'),
-                items: ['daily', 'weekly', 'monthly'].map((f) {
-                  return DropdownMenuItem(value: f, child: Text(f.capitalize()));
-                }).toList(),
-                onChanged: (value) => frequency = value!,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                if (name.trim().isNotEmpty) {
-                  Navigator.pop(context, {'name': name, 'frequency': frequency});
-                }
-              },
-              child: const Text('Add'),
-            ),
-          ],
+  Future<void> _submitPost() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
+      try {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        await Provider.of<ApiService>(context, listen: false).createPost(
+          title: _titleController.text,
+          content: _contentController.text,
+          petType: _selectedPetType,
+          author: userProvider.email ?? 'Anonymous',
         );
-      },
-    );
-
-    if (result != null) {
-      final newMetric = TrackingMetric(
-        id: '${pet.id ?? 1}-${DateTime.now().millisecondsSinceEpoch}',
-        petId: '${pet.id ?? 1}',
-        name: result['name'],
-        frequency: result['frequency'],
-        createdAt: DateTime.now(),
-      );
-      pet.metrics.add(newMetric);
-      final prefs = await SharedPreferences.getInstance();
-      final pets = jsonDecode(prefs.getString('pets') ?? '[]') as List;
-      if (pets.isNotEmpty) {
-        pets[0] = pet.toJson();
-        await prefs.setString('pets', jsonEncode(pets));
-        if (kDebugMode) {
-          print('TrackingScreen: Added new metric ${result['name']}');
-        }
+        if (!mounted) return;
+        Navigator.pop(context);
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to create post: $e')),
+        );
+      } finally {
+        setState(() => _isLoading = false);
       }
-      // Force rebuild
-      (context as Element).markNeedsBuild();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Pet Tracking')),
-      body: FutureBuilder<Pet>(
-        future: _loadPet(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(child: Text('No pets added yet'));
-          }
-          final pet = snapshot.data!;
-          if (pet.metrics.isEmpty) {
-            return const Center(child: Text('No tracking metrics available'));
-          }
-          return ListView(
-            padding: const EdgeInsets.all(16.0),
-            children: pet.metrics.map((metric) {
-              final isCompleted = _isCompleted(metric);
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: ListTile(
-                  title: Text(metric.name ?? 'Unnamed Metric'),
-                  subtitle: Text('Frequency: ${metric.frequency?.capitalize() ?? 'Unknown'}'),
-                  trailing: isCompleted
-                      ? const Icon(Icons.check_circle, color: Colors.green)
-                      : RoundedButton(
-                          text: 'Complete',
-                          onPressed: () => _completeMetric(context, pet, metric),
-                        ),
+      appBar: AppBar(title: const Text('Create Post')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DropdownButtonFormField<String>(
+                value: _selectedPetType,
+                decoration: const InputDecoration(
+                  labelText: 'Pet Type',
+                  border: OutlineInputBorder(),
+                  filled: true,
                 ),
-              );
-            }).toList(),
-          );
-        },
-      ),
-      floatingActionButton: FutureBuilder<Pet>(
-        future: _loadPet(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const SizedBox.shrink();
-          final pet = snapshot.data!;
-          return FloatingActionButton(
-            onPressed: () => _addMetric(context, pet),
-            backgroundColor: Colors.blue,
-            child: const Icon(Icons.add, color: Colors.white),
-          );
-        },
+                items: _petTypes.map((type) {
+                  return DropdownMenuItem(value: type, child: Text(type));
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedPetType = value!;
+                  });
+                },
+                validator: (value) => value == null ? 'Please select a pet type' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Title',
+                  border: OutlineInputBorder(),
+                  filled: true,
+                ),
+                validator: (value) =>
+                    value == null || value.trim().isEmpty ? 'Please enter a title' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _contentController,
+                decoration: const InputDecoration(
+                  labelText: 'Content',
+                  border: OutlineInputBorder(),
+                  filled: true,
+                ),
+                maxLines: 5,
+                validator: (value) =>
+                    value == null || value.trim().isEmpty ? 'Please enter content' : null,
+              ),
+              const SizedBox(height: 16),
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : RoundedButton(text: 'Submit Post', onPressed: _submitPost),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-extension StringExtension on String {
-  String capitalize() {
-    if (isEmpty) return this;
-    return "${this[0].toUpperCase()}${substring(1)}";
+--- lib/views/tracking_screen.dart ---
+import 'package:flutter/material.dart';
+
+class TrackingScreen extends StatelessWidget {
+  const TrackingScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(body: Center(child: Text('Tracking')));
   }
 }
 
@@ -1223,12 +1936,13 @@ class PetDetailScreen extends StatelessWidget {
   }
 }
 
+
 --- lib/views/login_screen.dart ---
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../providers/user_provider.dart';
-import 'main_screen.dart';
+import 'home_screen.dart';
 import '../widgets/rounded_button.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -1241,18 +1955,25 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final ApiService _apiService = ApiService();
   bool _isLoading = false;
 
   void _login() async {
     setState(() => _isLoading = true);
     try {
-      await _apiService.login(_emailController.text, _passwordController.text);
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      await apiService.login(_emailController.text, _passwordController.text);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       await userProvider.setUser(_emailController.text);
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainScreen()));
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Login failed')));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login failed: $e')),
+      );
     } finally {
       setState(() => _isLoading = false);
     }
@@ -1266,8 +1987,15 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email')),
-            TextField(controller: _passwordController, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
+            TextField(
+              controller: _emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
+            ),
+            TextField(
+              controller: _passwordController,
+              decoration: const InputDecoration(labelText: 'Password'),
+              obscureText: true,
+            ),
             const SizedBox(height: 20),
             _isLoading
                 ? const CircularProgressIndicator()
@@ -1367,10 +2095,304 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 }
 
+
+--- lib/views/shopping_list_screen.dart ---
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../models/pet.dart';
+import '../widgets/rounded_button.dart';
+
+class ShoppingListScreen extends StatefulWidget {
+  const ShoppingListScreen({super.key});
+
+  @override
+  _ShoppingListScreenState createState() => _ShoppingListScreenState();
+}
+
+class _ShoppingListScreenState extends State<ShoppingListScreen> {
+  Future<Pet> _loadPet() async {
+    final prefs = await SharedPreferences.getInstance();
+    final pets = prefs.getString('pets') ?? '[]';
+    final petsList = jsonDecode(pets) as List;
+    if (petsList.isEmpty) throw Exception('No pet found');
+    return Pet.fromJson(petsList.first as Map<String, dynamic>);
+  }
+
+  Future<void> _togglePurchaseStatus(Pet pet, ShoppingItem item) async {
+    final index = pet.shoppingList.indexWhere((i) => i.name == item.name);
+    if (index != -1) {
+      pet.shoppingList[index] = ShoppingItem(
+        name: item.name,
+        isPurchased: !item.isPurchased,
+        url: item.url,
+        category: item.category,
+        quantity: item.quantity,
+        notes: item.notes,
+      );
+      final prefs = await SharedPreferences.getInstance();
+      final pets = jsonDecode(prefs.getString('pets') ?? '[]') as List;
+      if (pets.isNotEmpty) {
+        pets[0] = pet.toJson();
+        await prefs.setString('pets', jsonEncode(pets));
+        if (kDebugMode) {
+          print('ShoppingListScreen: Toggled purchase status for ${item.name}');
+        }
+      }
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _addOrEditItem(Pet pet, {ShoppingItem? existingItem}) async {
+    String name = existingItem?.name ?? '';
+    String url = existingItem?.url ?? '';
+    String category = existingItem?.category ?? '';
+    int? quantity = existingItem?.quantity;
+    String notes = existingItem?.notes ?? '';
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(existingItem == null ? 'Add Shopping Item' : 'Edit Shopping Item'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      decoration: const InputDecoration(labelText: 'Item Name'),
+                      onChanged: (value) => name = value,
+                      controller: TextEditingController(text: name)
+                        ..selection = TextSelection.fromPosition(TextPosition(offset: name.length)),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      decoration: const InputDecoration(labelText: 'URL (Optional)'),
+                      onChanged: (value) => url = value,
+                      controller: TextEditingController(text: url)
+                        ..selection = TextSelection.fromPosition(TextPosition(offset: url.length)),
+                      keyboardType: TextInputType.url,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      decoration: const InputDecoration(labelText: 'Category (Optional)'),
+                      onChanged: (value) => category = value,
+                      controller: TextEditingController(text: category)
+                        ..selection = TextSelection.fromPosition(TextPosition(offset: category.length)),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      decoration: const InputDecoration(labelText: 'Quantity (Optional)'),
+                      onChanged: (value) => quantity = int.tryParse(value),
+                      controller: TextEditingController(text: quantity?.toString() ?? '')
+                        ..selection = TextSelection.fromPosition(TextPosition(offset: (quantity?.toString() ?? '').length)),
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      decoration: const InputDecoration(labelText: 'Notes (Optional)'),
+                      onChanged: (value) => notes = value,
+                      controller: TextEditingController(text: notes)
+                        ..selection = TextSelection.fromPosition(TextPosition(offset: notes.length)),
+                      maxLines: 3,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    if (name.trim().isNotEmpty) {
+                      Navigator.pop(context, {
+                        'name': name,
+                        'url': url.isNotEmpty ? url : null,
+                        'category': category.isNotEmpty ? category : null,
+                        'quantity': quantity,
+                        'notes': notes.isNotEmpty ? notes : null,
+                      });
+                    }
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null) {
+      final newItem = ShoppingItem(
+        name: result['name'],
+        isPurchased: existingItem?.isPurchased ?? false,
+        url: result['url'],
+        category: result['category'],
+        quantity: result['quantity'],
+        notes: result['notes'],
+      );
+      final prefs = await SharedPreferences.getInstance();
+      final pets = jsonDecode(prefs.getString('pets') ?? '[]') as List;
+      if (pets.isNotEmpty) {
+        final petData = Pet.fromJson(pets[0]);
+        if (existingItem != null) {
+          final index = petData.shoppingList.indexWhere((i) => i.name == existingItem.name);
+          if (index != -1) petData.shoppingList[index] = newItem;
+        } else {
+          petData.shoppingList.add(newItem);
+        }
+        pets[0] = petData.toJson();
+        await prefs.setString('pets', jsonEncode(pets));
+        if (kDebugMode) {
+          print('ShoppingListScreen: ${existingItem == null ? 'Added' : 'Edited'} item ${result['name']}');
+        }
+      }
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _deleteItem(Pet pet, ShoppingItem item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Item'),
+        content: Text('Are you sure you want to delete "${item.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      pet.shoppingList.removeWhere((i) => i.name == item.name);
+      final prefs = await SharedPreferences.getInstance();
+      final pets = jsonDecode(prefs.getString('pets') ?? '[]') as List;
+      if (pets.isNotEmpty) {
+        pets[0] = pet.toJson();
+        await prefs.setString('pets', jsonEncode(pets));
+        if (kDebugMode) {
+          print('ShoppingListScreen: Deleted item ${item.name}');
+        }
+      }
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not launch $url')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Shopping List')),
+      body: FutureBuilder<Pet>(
+        future: _loadPet(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return const Center(child: Text('No pet found'));
+          }
+          final pet = snapshot.data!;
+          if (pet.shoppingList.isEmpty) {
+            return const Center(child: Text('No shopping items added yet'));
+          }
+          return ListView(
+            padding: const EdgeInsets.all(16.0),
+            children: pet.shoppingList.map((item) {
+              return Card(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                child: ListTile(
+                  title: Text(item.name),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (item.category != null) Text('Category: ${item.category}'),
+                      if (item.quantity != null) Text('Quantity: ${item.quantity}'),
+                      if (item.notes != null) Text('Notes: ${item.notes}'),
+                      if (item.url != null)
+                        GestureDetector(
+                          onTap: () => _launchUrl(item.url!),
+                          child: Text(
+                            item.url!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.secondary,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (item.isPurchased)
+                        const Icon(Icons.check_circle, color: Colors.green)
+                      else
+                        RoundedButton(
+                          text: 'Purchased',
+                          onPressed: () => _togglePurchaseStatus(pet, item),
+                        ),
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () => _addOrEditItem(pet, existingItem: item),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () => _deleteItem(pet, item),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          );
+        },
+      ),
+      floatingActionButton: FutureBuilder<Pet>(
+        future: _loadPet(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const SizedBox.shrink();
+          final pet = snapshot.data!;
+          return FloatingActionButton(
+            onPressed: () => _addOrEditItem(pet),
+            child: const Icon(Icons.add),
+          );
+        },
+      ),
+    );
+  }
+}
+
 --- lib/views/welcome_screen.dart ---
 import 'package:flutter/material.dart';
 import 'signup_screen.dart';
 import 'login_screen.dart';
+import 'home_screen.dart';
 import '../widgets/rounded_button.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -1392,6 +2414,11 @@ class WelcomeScreen extends StatelessWidget {
               text: 'Log In',
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen())),
             ),
+            const SizedBox(height: 10),
+            RoundedButton(
+              text: 'Continue as Guest',
+              onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomeScreen())),
+            ),
           ],
         ),
       ),
@@ -1405,7 +2432,7 @@ import 'package:provider/provider.dart';
 import '../models/pet.dart';
 import '../services/api_service.dart';
 import '../providers/user_provider.dart';
-import '../views/main_screen.dart';
+import '../views/home_screen.dart';
 import '../widgets/rounded_button.dart';
 
 class PetProfileCreationScreen extends StatefulWidget {
@@ -1420,13 +2447,17 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
   String _selectedPetType = 'Dog';
   final _nameController = TextEditingController();
   final _ageController = TextEditingController();
+  final _breedController = TextEditingController();
+  final _personalityController = TextEditingController();
+  final _foodSourceController = TextEditingController();
   final Map<String, TextEditingController> _additionalFieldControllers = {};
+  final List<MapEntry<String, TextEditingController>> _customFields = [];
 
   final Map<String, List<String>> _petFields = {
-    'Dog': ['Breed', 'Favorite Toy'],
-    'Cat': ['Breed', 'Litter Type'],
-    'Turtle': ['Species', 'Tank Size'],
-    'Bird': ['Species', 'Cage Size'],
+    'Dog': ['Favorite Park', 'Leash Source', 'Favorite Toy'],
+    'Cat': ['Litter Type'],
+    'Turtle': ['Tank Size', 'Water Products'],
+    'Bird': ['Cage Size'],
   };
 
   final List<String> _petTypes = ['Dog', 'Cat', 'Turtle', 'Bird'];
@@ -1434,7 +2465,6 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize controllers for additional fields
     _petFields.forEach((petType, fields) {
       for (var field in fields) {
         _additionalFieldControllers['$petType-$field'] = TextEditingController();
@@ -1446,39 +2476,66 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
   void dispose() {
     _nameController.dispose();
     _ageController.dispose();
+    _breedController.dispose();
+    _personalityController.dispose();
+    _foodSourceController.dispose();
     _additionalFieldControllers.forEach((key, controller) => controller.dispose());
+    for (var entry in _customFields) {
+      entry.value.dispose();
+    }
     super.dispose();
   }
 
-  void _submitForm() async {
+  void _addCustomField() {
+    setState(() {
+      final controller = TextEditingController();
+      _customFields.add(MapEntry('Custom Field ${_customFields.length + 1}', controller));
+    });
+  }
+
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       final additionalFields = <String, String>{};
       for (var field in _petFields[_selectedPetType] ?? []) {
         additionalFields[field] = _additionalFieldControllers['$_selectedPetType-$field']?.text ?? '';
       }
+      final customFields = <String, String>{};
+      for (var entry in _customFields) {
+        if (entry.value.text.trim().isNotEmpty) {
+          customFields[entry.key] = entry.value.text;
+        }
+      }
 
       final pet = Pet(
         name: _nameController.text,
         species: _selectedPetType,
-        breed: additionalFields['Breed'],
+        breed: _breedController.text.isNotEmpty ? _breedController.text : null,
         age: int.tryParse(_ageController.text),
+        personality: _personalityController.text.isNotEmpty ? _personalityController.text : null,
+        foodSource: _foodSourceController.text.isNotEmpty ? _foodSourceController.text : null,
+        favoritePark: additionalFields['Favorite Park'],
+        leashSource: additionalFields['Leash Source'],
         litterType: additionalFields['Litter Type'],
+        waterProducts: additionalFields['Water Products'],
         tankSize: additionalFields['Tank Size'],
         cageSize: additionalFields['Cage Size'],
         favoriteToy: additionalFields['Favorite Toy'],
+        customFields: customFields,
       );
 
       try {
         await Provider.of<ApiService>(context, listen: false).createPet(pet);
         final userProvider = Provider.of<UserProvider>(context, listen: false);
-        await userProvider.setUser(userProvider.email!); // Refresh pets
+        await userProvider.setUser(userProvider.email!);
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to create pet')),
+          SnackBar(content: Text('Failed to create pet: $e')),
         );
       }
     }
@@ -1487,9 +2544,7 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Pet Profile'),
-      ),
+      appBar: AppBar(title: const Text('Create Pet Profile')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -1515,9 +2570,7 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
                   });
                 },
                 validator: (value) {
-                  if (value == null) {
-                    return 'Please select a pet type';
-                  }
+                  if (value == null) return 'Please select a pet type';
                   return null;
                 },
               ),
@@ -1529,9 +2582,7 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a name';
-                  }
+                  if (value == null || value.trim().isEmpty) return 'Please enter a name';
                   return null;
                 },
               ),
@@ -1543,6 +2594,30 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _breedController,
+                decoration: const InputDecoration(
+                  labelText: 'Breed (Optional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _personalityController,
+                decoration: const InputDecoration(
+                  labelText: 'Personality (Optional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _foodSourceController,
+                decoration: const InputDecoration(
+                  labelText: 'Food Source (Optional)',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 16),
               if (_petFields[_selectedPetType] != null) ...[
@@ -1564,6 +2639,28 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
                   );
                 }),
               ],
+              const SizedBox(height: 16),
+              const Text(
+                'Custom Fields (Optional)',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              ..._customFields.map((entry) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: TextFormField(
+                    controller: entry.value,
+                    decoration: InputDecoration(
+                      labelText: entry.key,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                );
+              }),
+              TextButton(
+                onPressed: _addCustomField,
+                child: const Text('Add Custom Field'),
+              ),
               const SizedBox(height: 16),
               RoundedButton(
                 text: 'Create Pet Profile',
@@ -1641,77 +2738,55 @@ class _MainScreenState extends State<MainScreen> {
 --- lib/views/home_screen.dart ---
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:petform/providers/user_provider.dart';
-import 'package:petform/views/feed_screen.dart';
-import 'package:petform/views/tracking_screen.dart';
-import 'package:petform/views/pet_detail_screen.dart';
-import 'package:petform/widgets/rounded_button.dart';
+import '../providers/user_provider.dart';
+import 'community_feed_screen.dart';
+import 'ask_ai_screen.dart';
+import 'shopping_list_screen.dart';
+import 'profile_settings_screen.dart';
+import 'welcome_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedIndex = 0;
+
+  static final List<Widget> _pages = <Widget>[
+    const CommunityFeedScreen(),
+    const AskAiScreen(),
+    const ShoppingListScreen(),
+    const ProfileSettingsScreen(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+      print('HomeScreen: Navigated to index $index');
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    final user = userProvider.user;
-
-    if (user == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Home')),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
-
+    print('HomeScreen: Building UI, selectedIndex: $_selectedIndex');
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Welcome, ${user.email}'),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: user.pets.length,
-              itemBuilder: (context, index) {
-                final pet = user.pets[index];
-                return ListTile(
-                  title: Text(pet.name),
-                  subtitle: Text('${pet.species} - Age: ${pet.age ?? 'Unknown'}'),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PetDetailScreen(pet: pet),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-          RoundedButton(
-            text: 'View Feed',
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const FeedScreen()));
-            },
-          ),
-          RoundedButton(
-            text: 'Track Metrics',
-            onPressed: () {
-              if (user.pets.isNotEmpty) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TrackingScreen(petId: user.pets.first.id.toString()),
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please add a pet first')),
-                );
-              }
-            },
-          ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.feed), label: 'Feed'),
+          BottomNavigationBarItem(icon: Icon(Icons.question_answer), label: 'Ask AI'),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Shopping'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        type: BottomNavigationBarType.fixed,
       ),
     );
   }
@@ -1723,10 +2798,8 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/pet.dart';
 import '../models/post.dart';
-import '../models/tracking_metric.dart';
 
 class ApiService {
-  // Five mock posts for the UI foundation
   static final List<Map<String, dynamic>> _mockPosts = [
     {
       'id': 1,
@@ -1737,6 +2810,9 @@ class ApiService {
       'imageUrl': null,
       'upvotes': 50,
       'createdAt': DateTime.now().subtract(const Duration(days: 2)).toIso8601String(),
+      'postType': 'reddit',
+      'redditUrl': 'https://www.reddit.com/r/pets/comments/123456/puppy_training_101/',
+      'comments': [],
     },
     {
       'id': 2,
@@ -1746,6 +2822,11 @@ class ApiService {
       'petType': 'Cat',
       'upvotes': 30,
       'createdAt': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
+      'postType': 'community',
+      'redditUrl': null,
+      'comments': [
+        {'id': 1, 'content': 'Great tip!', 'author': 'User1', 'createdAt': DateTime.now().toIso8601String()},
+      ],
     },
     {
       'id': 3,
@@ -1755,6 +2836,9 @@ class ApiService {
       'petType': 'Turtle',
       'upvotes': 20,
       'createdAt': DateTime.now().subtract(const Duration(hours: 12)).toIso8601String(),
+      'postType': 'reddit',
+      'redditUrl': 'https://www.reddit.com/r/pets/comments/789012/turtle_tank_setup/',
+      'comments': [],
     },
     {
       'id': 4,
@@ -1764,6 +2848,9 @@ class ApiService {
       'petType': 'Dog',
       'upvotes': 45,
       'createdAt': DateTime.now().subtract(const Duration(hours: 6)).toIso8601String(),
+      'postType': 'community',
+      'redditUrl': null,
+      'comments': [],
     },
     {
       'id': 5,
@@ -1773,32 +2860,11 @@ class ApiService {
       'petType': 'Cat',
       'upvotes': 25,
       'createdAt': DateTime.now().subtract(const Duration(hours: 3)).toIso8601String(),
+      'postType': 'community',
+      'redditUrl': null,
+      'comments': [],
     },
   ];
-
-  // Default metrics for each pet species
-  static final Map<String, List<Map<String, String>>> _defaultMetrics = {
-    'Dog': [
-      {'name': 'Walking', 'frequency': 'daily'},
-      {'name': 'Feeding', 'frequency': 'daily'},
-      {'name': 'Grooming', 'frequency': 'weekly'},
-    ],
-    'Cat': [
-      {'name': 'Litter Replacement', 'frequency': 'daily'},
-      {'name': 'Feeding', 'frequency': 'daily'},
-      {'name': 'Playtime', 'frequency': 'daily'},
-    ],
-    'Turtle': [
-      {'name': 'Water Changes', 'frequency': 'weekly'},
-      {'name': 'Feeding', 'frequency': 'daily'},
-      {'name': 'UVB Light Check', 'frequency': 'monthly'},
-    ],
-    'Bird': [
-      {'name': 'Cage Cleaning', 'frequency': 'weekly'},
-      {'name': 'Feeding', 'frequency': 'daily'},
-      {'name': 'Social Interaction', 'frequency': 'daily'},
-    ],
-  };
 
   Future<void> signup(String email, String password) async {
     await Future.delayed(const Duration(seconds: 1));
@@ -1807,7 +2873,10 @@ class ApiService {
     await prefs.setString('user_password', password);
     await prefs.setInt('user_id', DateTime.now().millisecondsSinceEpoch);
     await prefs.setString('pets', '[]');
-    await prefs.setString('posts', '[]');
+    await prefs.setString('posts', jsonEncode(_mockPosts));
+    if (kDebugMode) {
+      print('ApiService.signup: User $email signed up, initialized pets and posts');
+    }
   }
 
   Future<void> login(String email, String password) async {
@@ -1816,7 +2885,13 @@ class ApiService {
     final storedEmail = prefs.getString('user_email');
     final storedPassword = prefs.getString('user_password');
     if (storedEmail != email || storedPassword != password) {
+      if (kDebugMode) {
+        print('ApiService.login: Invalid credentials for $email');
+      }
       throw Exception('Invalid credentials');
+    }
+    if (kDebugMode) {
+      print('ApiService.login: User $email logged in');
     }
   }
 
@@ -1824,8 +2899,25 @@ class ApiService {
     await Future.delayed(const Duration(seconds: 1));
     final prefs = await SharedPreferences.getInstance();
     final petsJson = prefs.getString('pets') ?? '[]';
-    final List<dynamic> petsData = jsonDecode(petsJson);
-    return petsData.map((p) => Pet.fromJson(p)).toList();
+    if (kDebugMode) {
+      print('ApiService.getPets: Retrieved pets JSON: $petsJson');
+    }
+    try {
+      final List<dynamic> petsData = jsonDecode(petsJson);
+      final pets = petsData.map((p) => Pet.fromJson(p)).toList();
+      if (kDebugMode) {
+        print('ApiService.getPets: Loaded ${pets.length} pets');
+        for (var pet in pets) {
+          print('ApiService.getPets: Pet ${pet.name}');
+        }
+      }
+      return pets;
+    } catch (e) {
+      if (kDebugMode) {
+        print('ApiService.getPets: Error decoding pets: $e');
+      }
+      return [];
+    }
   }
 
   Future<void> createPet(Pet pet) async {
@@ -1833,40 +2925,133 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     final petsJson = prefs.getString('pets') ?? '[]';
     final List<dynamic> petsData = jsonDecode(petsJson);
-    final defaultMetrics = _defaultMetrics[pet.species] ?? [];
     final newPet = Pet(
       id: petsData.length + 1,
       name: pet.name,
       species: pet.species,
       breed: pet.breed,
       age: pet.age,
+      personality: pet.personality,
+      foodSource: pet.foodSource,
+      favoritePark: pet.favoritePark,
+      leashSource: pet.leashSource,
       litterType: pet.litterType,
+      waterProducts: pet.waterProducts,
       tankSize: pet.tankSize,
       cageSize: pet.cageSize,
       favoriteToy: pet.favoriteToy,
-      metrics: defaultMetrics.map((m) => TrackingMetric(
-        id: '${petsData.length + 1}-${m['name']}',
-        petId: '${petsData.length + 1}',
-        name: m['name'],
-        frequency: m['frequency'],
-        createdAt: DateTime.now(),
-      )).toList(),
+      customFields: pet.customFields,
+      shoppingList: pet.shoppingList,
     );
     petsData.add(newPet.toJson());
     await prefs.setString('pets', jsonEncode(petsData));
+    if (kDebugMode) {
+      print('ApiService.createPet: Created pet ${newPet.name}');
+    }
   }
 
-  Future<List<Post>> getPosts({String? petType}) async {
-    final posts = _mockPosts.map((p) => Post.fromJson(p)).toList();
-    if (kDebugMode) {
-      print('ApiService.getPosts: Returning ${posts.length} posts for petType: $petType');
+  Future<void> updatePet(Pet pet) async {
+    await Future.delayed(const Duration(seconds: 1));
+    final prefs = await SharedPreferences.getInstance();
+    final petsJson = prefs.getString('pets') ?? '[]';
+    final List<dynamic> petsData = jsonDecode(petsJson);
+    final index = petsData.indexWhere((p) => p['id'] == pet.id);
+    if (index != -1) {
+      petsData[index] = pet.toJson();
+      await prefs.setString('pets', jsonEncode(petsData));
+      if (kDebugMode) {
+        print('ApiService.updatePet: Updated pet ${pet.id}');
+      }
+    } else {
+      if (kDebugMode) {
+        print('ApiService.updatePet: Pet ${pet.id} not found');
+      }
     }
-    if (petType == null || petType == 'All') return posts;
-    final filteredPosts = posts.where((p) => p.petType == petType).toList();
-    if (kDebugMode) {
-      print('ApiService.getPosts: Filtered to ${filteredPosts.length} posts for $petType');
+  }
+
+  Future<List<Post>> getPosts({String? petType, String? postType}) async {
+    await Future.delayed(const Duration(seconds: 1));
+    final prefs = await SharedPreferences.getInstance();
+    final postsJson = prefs.getString('posts') ?? jsonEncode(_mockPosts);
+    final List<dynamic> postsData = jsonDecode(postsJson);
+    var posts = postsData.map((p) => Post.fromJson(p)).toList();
+    if (petType != null) {
+      posts = posts.where((p) => p.petType == petType).toList();
     }
-    return filteredPosts;
+    if (postType != null) {
+      posts = posts.where((p) => p.postType == postType.toLowerCase()).toList();
+    }
+    if (kDebugMode) {
+      print('ApiService.getPosts: Returning ${posts.length} posts for petType: $petType, postType: $postType');
+    }
+    return posts;
+  }
+
+  Future<void> createPost({
+    required String title,
+    required String content,
+    required String petType,
+    required String author,
+    String? imageUrl,
+  }) async {
+    await Future.delayed(const Duration(seconds: 1));
+    final prefs = await SharedPreferences.getInstance();
+    final postsJson = prefs.getString('posts') ?? jsonEncode(_mockPosts);
+    final List<dynamic> postsData = jsonDecode(postsJson);
+    final newPost = Post(
+      id: postsData.length + 1,
+      title: title,
+      content: content,
+      author: author,
+      petType: petType,
+      imageUrl: imageUrl,
+      upvotes: 0,
+      createdAt: DateTime.now(),
+      postType: 'community',
+      redditUrl: null,
+    );
+    postsData.add(newPost.toJson());
+    await prefs.setString('posts', jsonEncode(postsData));
+    if (kDebugMode) {
+      print('ApiService.createPost: Created post ${newPost.id}');
+    }
+  }
+
+  Future<void> addComment({
+    required int postId,
+    required String content,
+    required String author,
+  }) async {
+    await Future.delayed(const Duration(seconds: 1));
+    final prefs = await SharedPreferences.getInstance();
+    final postsJson = prefs.getString('posts') ?? jsonEncode(_mockPosts);
+    final List<dynamic> postsData = jsonDecode(postsJson);
+    final index = postsData.indexWhere((p) => p['id'] == postId);
+    if (index != -1) {
+      final post = Post.fromJson(postsData[index]);
+      final newComment = Comment(
+        id: post.comments.length + 1,
+        content: content,
+        author: author,
+        createdAt: DateTime.now(),
+      );
+      post.comments.add(newComment);
+      postsData[index] = post.toJson();
+      await prefs.setString('posts', jsonEncode(postsData));
+      if (kDebugMode) {
+        print('ApiService.addComment: Added comment to post $postId');
+      }
+    }
+  }
+
+  Future<Post> getPost(int postId) async {
+    await Future.delayed(const Duration(seconds: 1));
+    final prefs = await SharedPreferences.getInstance();
+    final postsJson = prefs.getString('posts') ?? jsonEncode(_mockPosts);
+    final List<dynamic> postsData = jsonDecode(postsJson);
+    final postData = postsData.firstWhere((p) => p['id'] == postId, orElse: () => null);
+    if (postData == null) throw Exception('Post not found');
+    return Post.fromJson(postData);
   }
 }
 
