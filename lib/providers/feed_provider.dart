@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../models/post.dart';
 import '../services/api_service.dart';
+import '../models/post.dart';
 
 class FeedProvider with ChangeNotifier {
   String _selectedPetType = 'All';
@@ -29,18 +29,18 @@ class FeedProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final apiService = Provider.of<ApiService>(context, listen: false);
+      final apiService = ApiService();
       _posts = await apiService.getPosts(
         petType: _selectedPetType == 'All' ? null : _selectedPetType,
         postType: _selectedPostType == 'All' ? null : _selectedPostType,
       );
       if (kDebugMode) {
-        print('FeedProvider: Fetched ${_posts.length} posts');
+        print('FeedProvider: fetched ${_posts.length} posts');
       }
     } catch (e) {
       _posts = [];
       if (kDebugMode) {
-        print('FeedProvider: Error fetching posts: $e');
+        print('FeedProvider: error fetching posts: $e');
       }
     }
 

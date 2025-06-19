@@ -16,7 +16,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   String _selectedPetType = 'Dog';
-  final List<String> _petTypes = ['Dog', 'Cat', 'Turtle', 'Bird'];
+  final List<String> _petTypes = ['Dog', 'Cat', 'Turtle', 'Bird', 'Hamster', 'Ferret', 'Parrot', 'Rabbit', 'Snake', 'Lizard', 'Fish','Hedgehog', 'Guinea Pig', 'Chinchilla', 'Frog', 'Tarantula', 'Axolotl', 'Mouse', 'Chicken', 'Goat'];
   bool _isLoading = false;
 
   @override
