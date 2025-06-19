@@ -1,38 +1,24 @@
-import 'tracking_metric.dart';
-
-class ShoppingItem {
-  final String name;
-  final bool isPurchased;
-
-  ShoppingItem({required this.name, this.isPurchased = false});
-
-  factory ShoppingItem.fromJson(Map<String, dynamic> json) {
-    return ShoppingItem(
-      name: json['name'] as String,
-      isPurchased: json['isPurchased'] as bool,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'isPurchased': isPurchased,
-    };
-  }
-}
+import 'package:petform/models/shopping_item.dart';
+import 'package:petform/models/tracking_metric.dart';
 
 class Pet {
   final int? id;
   final String name;
-  final String species; // e.g., Dog, Cat, Turtle
+  final String species;
   final String? breed;
   final int? age;
-  final String? litterType; // Cat-specific
-  final String? tankSize; // Turtle-specific
-  final String? cageSize; // Bird-specific
-  final String? favoriteToy; // Dog-specific
-  final List<TrackingMetric> metrics;
+  final String? personality;
+  final String? foodSource;
+  final String? favoritePark;
+  final String? leashSource;
+  final String? litterType;
+  final String? waterProducts;
+  final String? tankSize;
+  final String? cageSize;
+  final String? favoriteToy;
+  final Map<String, String> customFields;
   final List<ShoppingItem> shoppingList;
+  final List<TrackingMetric> trackingMetrics;
 
   Pet({
     this.id,
@@ -40,12 +26,18 @@ class Pet {
     required this.species,
     this.breed,
     this.age,
+    this.personality,
+    this.foodSource,
+    this.favoritePark,
+    this.leashSource,
     this.litterType,
+    this.waterProducts,
     this.tankSize,
     this.cageSize,
     this.favoriteToy,
-    this.metrics = const [],
+    this.customFields = const {},
     this.shoppingList = const [],
+    this.trackingMetrics = const [],
   });
 
   factory Pet.fromJson(Map<String, dynamic> json) {
@@ -55,15 +47,21 @@ class Pet {
       species: json['species'] as String,
       breed: json['breed'] as String?,
       age: json['age'] as int?,
+      personality: json['personality'] as String?,
+      foodSource: json['foodSource'] as String?,
+      favoritePark: json['favoritePark'] as String?,
+      leashSource: json['leashSource'] as String?,
       litterType: json['litterType'] as String?,
+      waterProducts: json['waterProducts'] as String?,
       tankSize: json['tankSize'] as String?,
       cageSize: json['cageSize'] as String?,
       favoriteToy: json['favoriteToy'] as String?,
-      metrics: (json['metrics'] as List<dynamic>?)
-          ?.map((m) => TrackingMetric.fromJson(m as Map<String, dynamic>))
-          .toList() ?? [],
+      customFields: (json['customFields'] as Map<String, dynamic>?)?.cast<String, String>() ?? {},
       shoppingList: (json['shoppingList'] as List<dynamic>?)
           ?.map((i) => ShoppingItem.fromJson(i as Map<String, dynamic>))
+          .toList() ?? [],
+      trackingMetrics: (json['trackingMetrics'] as List<dynamic>?)
+          ?.map((m) => TrackingMetric.fromJson(m as Map<String, dynamic>))
           .toList() ?? [],
     );
   }
@@ -75,12 +73,18 @@ class Pet {
       'species': species,
       'breed': breed,
       'age': age,
+      'personality': personality,
+      'foodSource': foodSource,
+      'favoritePark': favoritePark,
+      'leashSource': leashSource,
       'litterType': litterType,
+      'waterProducts': waterProducts,
       'tankSize': tankSize,
       'cageSize': cageSize,
       'favoriteToy': favoriteToy,
-      'metrics': metrics.map((m) => m.toJson()).toList(),
+      'customFields': customFields,
       'shoppingList': shoppingList.map((i) => i.toJson()).toList(),
+      'trackingMetrics': trackingMetrics.map((m) => m.toJson()).toList(),
     };
   }
 }

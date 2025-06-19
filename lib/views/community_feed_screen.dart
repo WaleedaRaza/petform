@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
@@ -5,20 +6,26 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../services/api_service.dart';
 import '../models/post.dart';
 import 'post_detail_screen.dart';
-
-// --- Providers ---
+import 'create_post_screen.dart';
 
 class FeedProvider with ChangeNotifier {
-  String _selectedPetType = 'All'; // Default filter
+  String _selectedPetType = 'All';
+  String _selectedPostType = 'All';
   List<Post> _posts = [];
   bool _isLoading = false;
 
   String get selectedPetType => _selectedPetType;
+  String get selectedPostType => _selectedPostType;
   List<Post> get posts => _posts;
   bool get isLoading => _isLoading;
 
   void setPetType(String petType) {
     _selectedPetType = petType;
+    notifyListeners();
+  }
+
+  void setPostType(String postType) {
+    _selectedPostType = postType;
     notifyListeners();
   }
 
@@ -28,9 +35,18 @@ class FeedProvider with ChangeNotifier {
 
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      _posts = await apiService.getPosts(petType: _selectedPetType);
+      _posts = await apiService.getPosts(
+        petType: _selectedPetType == 'All' ? null : _selectedPetType,
+        postType: _selectedPostType == 'All' ? null : _selectedPostType,
+      );
+      if (kDebugMode) {
+        print('FeedProvider: Fetched ${_posts.length} posts');
+      }
     } catch (e) {
-      _posts = []; // Clear posts on error
+      _posts = [];
+      if (kDebugMode) {
+        print('FeedProvider: Error fetching posts: $e');
+      }
     }
 
     _isLoading = false;
@@ -38,39 +54,59 @@ class FeedProvider with ChangeNotifier {
   }
 }
 
-// --- Widgets ---
-
-class PetFilterDropdown extends StatelessWidget {
-  const PetFilterDropdown({super.key});
+class FeedFilter extends StatelessWidget {
+  const FeedFilter({super.key});
 
   @override
   Widget build(BuildContext context) {
     final feedProvider = Provider.of<FeedProvider>(context);
     const petTypes = ['All', 'Dog', 'Cat', 'Turtle'];
+    const postTypes = ['All', 'Reddit', 'Community'];
 
     return Container(
-      padding: const EdgeInsets.only(top: 54.0, left: 16.0, right: 16.0, bottom: 2.0), // Adjusted for notch
-      child: DropdownButtonFormField<String>(
-        value: feedProvider.selectedPetType,
-        decoration: InputDecoration(
-          labelText: 'Filter by Pet',
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+      padding: const EdgeInsets.only(top: 48.0, left: 16.0, right: 16.0, bottom: 8.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              value: feedProvider.selectedPetType,
+              decoration: const InputDecoration(
+                labelText: 'Filter by Pet',
+                border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                filled: true,
+              ),
+              items: petTypes.map((type) {
+                return DropdownMenuItem(value: type, child: Text(type));
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  feedProvider.setPetType(value);
+                  feedProvider.fetchPosts(context);
+                }
+              },
+            ),
           ),
-          filled: true, // Rely on inputDecorationTheme.fillColor
-        ),
-        items: petTypes.map((type) {
-          return DropdownMenuItem(
-            value: type,
-            child: Text(type),
-          );
-        }).toList(),
-        onChanged: (value) {
-          if (value != null) {
-            feedProvider.setPetType(value);
-            feedProvider.fetchPosts(context);
-          }
-        },
+          const SizedBox(width: 8),
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              value: feedProvider.selectedPostType,
+              decoration: const InputDecoration(
+                labelText: 'Filter by Post Type',
+                border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                filled: true,
+              ),
+              items: postTypes.map((type) {
+                return DropdownMenuItem(value: type, child: Text(type));
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  feedProvider.setPostType(value);
+                  feedProvider.fetchPosts(context);
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -87,9 +123,7 @@ class PostCard extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => PostDetailScreen(post: post),
-          ),
+          MaterialPageRoute(builder: (context) => PostDetailScreen(post: post)),
         );
       },
       child: Card(
@@ -103,9 +137,7 @@ class PostCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  CircleAvatar(
-                    child: Text(post.author[0]), // Mock avatar
-                  ),
+                  CircleAvatar(child: Text(post.author[0])),
                   const SizedBox(width: 8),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,7 +147,7 @@ class PostCard extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        post.petType,
+                        '${post.petType} • ${post.postType[0].toUpperCase()}${post.postType.substring(1)}',
                         style: TextStyle(color: Colors.grey[400], fontSize: 12),
                       ),
                     ],
@@ -125,10 +157,7 @@ class PostCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 post.title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
               if (post.imageUrl != null)
@@ -140,16 +169,19 @@ class PostCard extends StatelessWidget {
                   fit: BoxFit.cover,
                 ),
               const SizedBox(height: 4),
-              Text(
-                post.content,
-                style: const TextStyle(fontSize: 14),
-              ),
+              Text(post.content, style: const TextStyle(fontSize: 14)),
               const SizedBox(height: 8),
               Row(
                 children: [
                   Icon(Icons.thumb_up, size: 16, color: Colors.grey[400]),
                   const SizedBox(width: 4),
                   Text('${post.upvotes ?? 0}'),
+                  if (post.postType == 'community') ...[
+                    const SizedBox(width: 16),
+                    Icon(Icons.comment, size: 16, color: Colors.grey[400]),
+                    const SizedBox(width: 4),
+                    Text('${post.comments.length}'),
+                  ],
                   const Spacer(),
                   Text(
                     '${post.createdAt.day}/${post.createdAt.month}/${post.createdAt.year}',
@@ -165,8 +197,6 @@ class PostCard extends StatelessWidget {
   }
 }
 
-// --- Screen ---
-
 class CommunityFeedScreen extends StatelessWidget {
   const CommunityFeedScreen({super.key});
 
@@ -181,7 +211,7 @@ class CommunityFeedScreen extends StatelessWidget {
               onRefresh: () => feedProvider.fetchPosts(context),
               child: Column(
                 children: [
-                  const PetFilterDropdown(),
+                  const FeedFilter(),
                   Expanded(
                     child: feedProvider.isLoading
                         ? ListView.builder(
@@ -199,7 +229,7 @@ class CommunityFeedScreen extends StatelessWidget {
                             },
                           )
                         : feedProvider.posts.isEmpty
-                            ? const Center(child: Text('No posts found for this pet type'))
+                            ? const Center(child: Text('No posts found'))
                             : ListView.builder(
                                 itemCount: feedProvider.posts.length,
                                 itemBuilder: (context, index) {
@@ -209,6 +239,14 @@ class CommunityFeedScreen extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CreatePostScreen()),
+              ),
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+              child: const Icon(Icons.add, color: Colors.white),
             ),
           );
         },

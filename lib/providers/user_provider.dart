@@ -14,12 +14,18 @@ class UserProvider with ChangeNotifier {
   Future<void> setUser(String email) async {
     _email = email;
     _pets = await _apiService.getPets();
+    if (kDebugMode) {
+      print('UserProvider: Set user $email with ${_pets.length} pets');
+    }
     notifyListeners();
   }
 
   void clearUser() {
     _email = null;
     _pets = [];
+    if (kDebugMode) {
+      print('UserProvider: Cleared user');
+    }
     notifyListeners();
   }
 }

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/pet.dart';
+import '../models/tracking_metric.dart';
 import '../services/api_service.dart';
 import '../providers/user_provider.dart';
-import '../views/home_screen.dart';
+import 'home_screen.dart';
 import '../widgets/rounded_button.dart';
 
 class PetProfileCreationScreen extends StatefulWidget {
@@ -18,21 +19,42 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
   String _selectedPetType = 'Dog';
   final _nameController = TextEditingController();
   final _ageController = TextEditingController();
+  final _breedController = TextEditingController();
+  final _personalityController = TextEditingController();
+  final _foodSourceController = TextEditingController();
   final Map<String, TextEditingController> _additionalFieldControllers = {};
+  final List<MapEntry<String, TextEditingController>> _customFields = [];
 
   final Map<String, List<String>> _petFields = {
-    'Dog': ['Breed', 'Favorite Toy'],
-    'Cat': ['Breed', 'Litter Type'],
-    'Turtle': ['Species', 'Tank Size'],
-    'Bird': ['Species', 'Cage Size'],
+    'Dog': ['Favorite Park', 'Leash Source', 'Favorite Toy'],
+    'Cat': ['Litter Type'],
+    'Turtle': ['Tank Size', 'Water Products'],
+    'Bird': ['Cage Size'],
   };
 
   final List<String> _petTypes = ['Dog', 'Cat', 'Turtle', 'Bird'];
 
+  List<TrackingMetric> getDefaultMetrics(String petType) {
+    switch (petType) {
+      case 'Dog':
+        return [
+          TrackingMetric(name: 'Weight', frequency: 'weekly'),
+          TrackingMetric(name: 'Exercise', frequency: 'daily'),
+          TrackingMetric(name: 'Feeding', frequency: 'daily'),
+        ];
+      case 'Cat':
+        return [
+          TrackingMetric(name: 'Weight', frequency: 'monthly'),
+          TrackingMetric(name: 'Litter Box', frequency: 'daily'),
+        ];
+      default:
+        return [];
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    // Initialize controllers for additional fields
     _petFields.forEach((petType, fields) {
       for (var field in fields) {
         _additionalFieldControllers['$petType-$field'] = TextEditingController();
@@ -44,8 +66,21 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
   void dispose() {
     _nameController.dispose();
     _ageController.dispose();
+    _breedController.dispose();
+    _personalityController.dispose();
+    _foodSourceController.dispose();
     _additionalFieldControllers.forEach((key, controller) => controller.dispose());
+    for (var entry in _customFields) {
+      entry.value.dispose();
+    }
     super.dispose();
+  }
+
+  void _addCustomField() {
+    setState(() {
+      final controller = TextEditingController();
+      _customFields.add(MapEntry('Custom Field ${_customFields.length + 1}', controller));
+    });
   }
 
   Future<void> _submitForm() async {
@@ -54,31 +89,46 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
       for (var field in _petFields[_selectedPetType] ?? []) {
         additionalFields[field] = _additionalFieldControllers['$_selectedPetType-$field']?.text ?? '';
       }
+      final customFields = <String, String>{};
+      for (var entry in _customFields) {
+        if (entry.value.text.trim().isNotEmpty) {
+          customFields[entry.key] = entry.value.text;
+        }
+      }
 
       final pet = Pet(
+        id: DateTime.now().millisecondsSinceEpoch, // Generate a temporary ID
         name: _nameController.text,
         species: _selectedPetType,
-        breed: additionalFields['Breed'],
+        breed: _breedController.text.isNotEmpty ? _breedController.text : null,
         age: int.tryParse(_ageController.text),
+        personality: _personalityController.text.isNotEmpty ? _personalityController.text : null,
+        foodSource: _foodSourceController.text.isNotEmpty ? _foodSourceController.text : null,
+        favoritePark: additionalFields['Favorite Park'],
+        leashSource: additionalFields['Leash Source'],
         litterType: additionalFields['Litter Type'],
+        waterProducts: additionalFields['Water Products'],
         tankSize: additionalFields['Tank Size'],
         cageSize: additionalFields['Cage Size'],
         favoriteToy: additionalFields['Favorite Toy'],
+        customFields: customFields,
+        shoppingList: [],
+        trackingMetrics: getDefaultMetrics(_selectedPetType),
       );
 
       try {
         await Provider.of<ApiService>(context, listen: false).createPet(pet);
         final userProvider = Provider.of<UserProvider>(context, listen: false);
-        await userProvider.setUser(userProvider.email!); // Refresh pets
-        if (!mounted) return; // Check if widget is still mounted
+        await userProvider.setUser(userProvider.email!);
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       } catch (e) {
-        if (!mounted) return; // Check if widget is still mounted
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to create pet')),
+          SnackBar(content: Text('Failed to create pet: $e')),
         );
       }
     }
@@ -87,9 +137,7 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Pet Profile'),
-      ),
+      appBar: AppBar(title: const Text('Create Pet Profile')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -115,9 +163,7 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
                   });
                 },
                 validator: (value) {
-                  if (value == null) {
-                    return 'Please select a pet type';
-                  }
+                  if (value == null) return 'Please select a pet type';
                   return null;
                 },
               ),
@@ -129,9 +175,7 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a name';
-                  }
+                  if (value == null || value.trim().isEmpty) return 'Please enter a name';
                   return null;
                 },
               ),
@@ -143,6 +187,30 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _breedController,
+                decoration: const InputDecoration(
+                  labelText: 'Breed (Optional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _personalityController,
+                decoration: const InputDecoration(
+                  labelText: 'Personality (Optional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _foodSourceController,
+                decoration: const InputDecoration(
+                  labelText: 'Food Source (Optional)',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 16),
               if (_petFields[_selectedPetType] != null) ...[
@@ -164,6 +232,28 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
                   );
                 }),
               ],
+              const SizedBox(height: 16),
+              const Text(
+                'Custom Fields (Optional)',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              ..._customFields.map((entry) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: TextFormField(
+                    controller: entry.value,
+                    decoration: InputDecoration(
+                      labelText: entry.key,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                );
+              }),
+              TextButton(
+                onPressed: _addCustomField,
+                child: const Text('Add Custom Field'),
+              ),
               const SizedBox(height: 16),
               RoundedButton(
                 text: 'Create Pet Profile',
