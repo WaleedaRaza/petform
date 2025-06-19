@@ -3,8 +3,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/pet.dart';
 import '../models/post.dart';
+import '../models/comment.dart' as user_comment;
 import '../models/shopping_item.dart';
 import '../providers/user_provider.dart';
 import '../providers/theme_provider.dart';
@@ -32,15 +34,16 @@ class ProfileSettingsScreen extends StatelessWidget {
         .toList();
   }
 
-  Future<List<Comment>> _loadUserComments(String email) async {
+  Future<List<user_comment.Comment>> _loadUserComments(String email) async {
     final prefs = await SharedPreferences.getInstance();
     final posts = jsonDecode(prefs.getString('posts') ?? '[]') as List;
-    final comments = <Comment>[];
+    final comments = <user_comment.Comment>[];
     for (var post in posts) {
       final postComments = (post['comments'] as List<dynamic>?)
-          ?.map((c) => Comment.fromJson(c as Map<String, dynamic>))
-          .where((comment) => comment.author == email)
-          .toList() ?? [];
+              ?.map((c) => user_comment.Comment.fromJson(c as Map<String, dynamic>))
+              .where((comment) => comment.author == email)
+              .toList() ??
+          [];
       comments.addAll(postComments);
     }
     return comments;
@@ -94,10 +97,7 @@ class ProfileSettingsScreen extends StatelessWidget {
                 ),
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
                 TextButton(
                   onPressed: () {
                     if (name.trim().isNotEmpty) {
@@ -128,9 +128,6 @@ class ProfileSettingsScreen extends StatelessWidget {
         notes: result['notes'] as String?,
       ));
       await Provider.of<ApiService>(context, listen: false).updatePet(pet);
-      if (kDebugMode) {
-        print('ProfileSettingsScreen: Added shopping item ${result['name']}');
-      }
       (context as Element).markNeedsBuild();
     }
   }
@@ -143,159 +140,95 @@ class ProfileSettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'User: ${userProvider.email ?? 'N/A'}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text('Dark Mode'),
-                value: themeProvider.themeMode == ThemeMode.dark,
-                onChanged: (value) => themeProvider.toggleTheme(),
-                activeColor: Theme.of(context).colorScheme.secondary,
-              ),
-              const SizedBox(height: 16),
-              FutureBuilder<Pet?>(
-                future: _loadPet(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError || !snapshot.hasData) {
-                    return const Text('No pet added yet', style: TextStyle(fontSize: 16));
-                  }
-                  final pet = snapshot.data!;
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Pet Profile',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Text('Name: ${pet.name}', style: const TextStyle(fontSize: 16)),
-                      Text('Species: ${pet.species}', style: const TextStyle(fontSize: 16)),
-                      if (pet.breed != null) Text('Breed: ${pet.breed}', style: const TextStyle(fontSize: 16)),
-                      if (pet.age != null) Text('Age: ${pet.age}', style: const TextStyle(fontSize: 16)),
-                      if (pet.personality != null) Text('Personality: ${pet.personality}', style: const TextStyle(fontSize: 16)),
-                      if (pet.foodSource != null) Text('Food Source: ${pet.foodSource}', style: const TextStyle(fontSize: 16)),
-                      if (pet.favoritePark != null) Text('Favorite Park: ${pet.favoritePark}', style: const TextStyle(fontSize: 16)),
-                      if (pet.leashSource != null) Text('Leash Source: ${pet.leashSource}', style: const TextStyle(fontSize: 16)),
-                      if (pet.litterType != null) Text('Litter Type: ${pet.litterType}', style: const TextStyle(fontSize: 16)),
-                      if (pet.waterProducts != null) Text('Water Products: ${pet.waterProducts}', style: const TextStyle(fontSize: 16)),
-                      if (pet.tankSize != null) Text('Tank Size: ${pet.tankSize}', style: const TextStyle(fontSize: 16)),
-                      if (pet.cageSize != null) Text('Cage Size: ${pet.cageSize}', style: const TextStyle(fontSize: 16)),
-                      if (pet.favoriteToy != null) Text('Favorite Toy: ${pet.favoriteToy}', style: const TextStyle(fontSize: 16)),
-                      if (pet.customFields.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        const Text('Custom Fields', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        ...pet.customFields.entries.map((e) => Text('${e.key}: ${e.value}', style: const TextStyle(fontSize: 16))),
-                      ],
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Shopping List Items', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                          RoundedButton(
-                            text: 'Add Item',
-                            onPressed: () => _addShoppingItem(context, pet),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      if (pet.shoppingList.isEmpty)
-                        const Text('No items added yet', style: TextStyle(fontSize: 16))
-                      else
-                        ...pet.shoppingList.map((item) => Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(item.name, style: const TextStyle(fontSize: 16)),
-                                if (item.isPurchased) const Text('(Purchased)', style: TextStyle(fontSize: 14, color: Colors.green)),
-                                if (item.category != null) Text('Category: ${item.category}', style: const TextStyle(fontSize: 14)),
-                                if (item.quantity != null) Text('Quantity: ${item.quantity}', style: const TextStyle(fontSize: 14)),
-                                if (item.notes != null) Text('Notes: ${item.notes}', style: const TextStyle(fontSize: 14)),
-                                if (item.url != null) Text('URL: ${item.url}', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.secondary)),
-                                const SizedBox(height: 8),
-                              ],
-                            )),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              FutureBuilder<List<Post>>(
-                future: _loadUserPosts(userProvider.email ?? ''),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final posts = snapshot.data ?? [];
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Your Posts', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      if (posts.isEmpty)
-                        const Text('No posts yet', style: TextStyle(fontSize: 16))
-                      else
-                        ...posts.map((post) => Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(post.title, style: const TextStyle(fontSize: 16)),
-                                Text('Type: ${post.postType[0].toUpperCase()}${post.postType.substring(1)}', style: const TextStyle(fontSize: 14)),
-                                const SizedBox(height: 8),
-                              ],
-                            )),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              FutureBuilder<List<Comment>>(
-                future: _loadUserComments(userProvider.email ?? ''),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final comments = snapshot.data ?? [];
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Your Comments', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      if (comments.isEmpty)
-                        const Text('No comments yet', style: TextStyle(fontSize: 16))
-                      else
-                        ...comments.map((comment) => Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(comment.content, style: const TextStyle(fontSize: 16)),
-                                Text('Posted: ${comment.createdAt.day}/${comment.createdAt.month}/${comment.createdAt.year}',
-                                    style: const TextStyle(fontSize: 14)),
-                                const SizedBox(height: 8),
-                              ],
-                            )),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              RoundedButton(
-                text: 'Sign Out',
-                onPressed: () {
-                  userProvider.clearUser();
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-                  );
-                },
-              ),
-            ],
+        padding: const EdgeInsets.all(16.0),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('User: ${userProvider.email ?? 'N/A'}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: const Text('Dark Mode'),
+            value: themeProvider.themeMode == ThemeMode.dark,
+            onChanged: (value) => themeProvider.toggleTheme(),
+            activeColor: Theme.of(context).colorScheme.secondary,
           ),
-        ),
+          const SizedBox(height: 16),
+          FutureBuilder<Pet?>(
+            future: _loadPet(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) return const CircularProgressIndicator();
+              if (snapshot.hasError || !snapshot.hasData) return const Text('No pet added yet');
+              final pet = snapshot.data!;
+              return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Pet Profile', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text('Name: ${pet.name}', style: const TextStyle(fontSize: 16)),
+                Text('Species: ${pet.species}', style: const TextStyle(fontSize: 16)),
+                if (pet.customFields?.isNotEmpty ?? false) ...[
+                  const SizedBox(height: 8),
+                  const Text('Custom Fields', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ...?pet.customFields?.entries.map((e) => Text('${e.key}: ${e.value}', style: const TextStyle(fontSize: 16))),
+                ],
+              ]);
+            },
+          ),
+          const SizedBox(height: 16),
+          FutureBuilder<List<Post>>(
+            future: _loadUserPosts(userProvider.email ?? ''),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) return const CircularProgressIndicator();
+              final posts = snapshot.data ?? [];
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Your Posts', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  if (posts.isEmpty)
+                    const Text('No posts yet', style: TextStyle(fontSize: 16))
+                  else
+                    ...posts.map((post) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(post.title, style: const TextStyle(fontSize: 16)),
+                            const SizedBox(height: 8),
+                          ],
+                        )),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          FutureBuilder<List<user_comment.Comment>>(
+            future: _loadUserComments(userProvider.email ?? ''),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) return const CircularProgressIndicator();
+              final comments = snapshot.data ?? [];
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Your Comments', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  if (comments.isEmpty)
+                    const Text('No comments yet', style: TextStyle(fontSize: 16))
+                  else
+                    ...comments.map((comment) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(comment.content, style: const TextStyle(fontSize: 16)),
+                            Text('Posted: ${comment.createdAt.day}/${comment.createdAt.month}/${comment.createdAt.year}',
+                                style: const TextStyle(fontSize: 14)),
+                            const SizedBox(height: 8),
+                          ],
+                        )),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          RoundedButton(
+            text: 'Sign Out',
+            onPressed: () {
+              userProvider.clearUser();
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const WelcomeScreen()));
+            },
+          ),
+        ]),
       ),
     );
   }

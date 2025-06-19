@@ -163,8 +163,8 @@ class PetformApp extends StatelessWidget {
 --- lib/providers/feed_provider.dart ---
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../models/post.dart';
 import '../services/api_service.dart';
+import '../models/post.dart';
 
 class FeedProvider with ChangeNotifier {
   String _selectedPetType = 'All';
@@ -192,18 +192,18 @@ class FeedProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final apiService = Provider.of<ApiService>(context, listen: false);
+      final apiService = ApiService();
       _posts = await apiService.getPosts(
         petType: _selectedPetType == 'All' ? null : _selectedPetType,
         postType: _selectedPostType == 'All' ? null : _selectedPostType,
       );
       if (kDebugMode) {
-        print('FeedProvider: Fetched ${_posts.length} posts');
+        print('FeedProvider: fetched ${_posts.length} posts');
       }
     } catch (e) {
       _posts = [];
       if (kDebugMode) {
-        print('FeedProvider: Error fetching posts: $e');
+        print('FeedProvider: error fetching posts: $e');
       }
     }
 
@@ -211,6 +211,7 @@ class FeedProvider with ChangeNotifier {
     notifyListeners();
   }
 }
+
 
 --- lib/providers/user_provider.dart ---
 import 'package:flutter/foundation.dart';
@@ -295,6 +296,7 @@ class TrackingMetric {
   final String? frequency;
   DateTime? lastCompletion;
   List<MetricHistory> history;
+  bool isCompleted;
 
   TrackingMetric({
     this.id,
@@ -303,6 +305,7 @@ class TrackingMetric {
     this.frequency,
     this.lastCompletion,
     this.history = const [],
+    this.isCompleted = false,
   });
 
   factory TrackingMetric.fromJson(Map<String, dynamic> json) {
@@ -311,10 +314,14 @@ class TrackingMetric {
       petId: json['petId'] as String?,
       name: json['name'] as String?,
       frequency: json['frequency'] as String?,
-      lastCompletion: json['lastCompletion'] != null ? DateTime.parse(json['lastCompletion'] as String) : null,
+      lastCompletion: json['lastCompletion'] != null
+          ? DateTime.parse(json['lastCompletion'] as String)
+          : null,
+      isCompleted: json['isCompleted'] as bool? ?? false,
       history: (json['history'] as List<dynamic>?)
-          ?.map((h) => MetricHistory.fromJson(h as Map<String, dynamic>))
-          .toList() ?? [],
+              ?.map((h) => MetricHistory.fromJson(h as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 
@@ -325,6 +332,7 @@ class TrackingMetric {
       'name': name,
       'frequency': frequency,
       'lastCompletion': lastCompletion?.toIso8601String(),
+      'isCompleted': isCompleted,
       'history': history.map((h) => h.toJson()).toList(),
     };
   }
@@ -350,6 +358,7 @@ class MetricHistory {
     };
   }
 }
+
 
 --- lib/models/tracking_provider.dart ---
 import 'package:flutter/foundation.dart';
@@ -684,6 +693,35 @@ class Pet {
     };
   }
 }
+
+--- lib/models/reddit_post.dart ---
+class RedditPost {
+  final String title;
+  final String subreddit;
+  final String author;
+  final String url;
+  final String thumbnail;
+
+  RedditPost({
+    required this.title,
+    required this.subreddit,
+    required this.author,
+    required this.url,
+    required this.thumbnail,
+  });
+
+  factory RedditPost.fromJson(Map<String, dynamic> json) {
+    final data = json['data'];
+    return RedditPost(
+      title: data['title'] ?? '',
+      subreddit: data['subreddit'] ?? '',
+      author: data['author'] ?? '',
+      url: 'https://www.reddit.com${data['permalink']}',
+      thumbnail: data['thumbnail'] ?? '',
+    );
+  }
+}
+
 
 --- lib/views/comment_screen.dart ---
 import 'package:flutter/material.dart';
@@ -1798,61 +1836,14 @@ class ProfileScreen extends StatelessWidget {
 }
 
 --- lib/views/community_feed_screen.dart ---
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../services/api_service.dart';
 import '../models/post.dart';
+import '../providers/feed_provider.dart';
 import 'post_detail_screen.dart';
 import 'create_post_screen.dart';
-
-class FeedProvider with ChangeNotifier {
-  String _selectedPetType = 'All';
-  String _selectedPostType = 'All';
-  List<Post> _posts = [];
-  bool _isLoading = false;
-
-  String get selectedPetType => _selectedPetType;
-  String get selectedPostType => _selectedPostType;
-  List<Post> get posts => _posts;
-  bool get isLoading => _isLoading;
-
-  void setPetType(String petType) {
-    _selectedPetType = petType;
-    notifyListeners();
-  }
-
-  void setPostType(String postType) {
-    _selectedPostType = postType;
-    notifyListeners();
-  }
-
-  Future<void> fetchPosts(BuildContext context) async {
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      final apiService = Provider.of<ApiService>(context, listen: false);
-      _posts = await apiService.getPosts(
-        petType: _selectedPetType == 'All' ? null : _selectedPetType,
-        postType: _selectedPostType == 'All' ? null : _selectedPostType,
-      );
-      if (kDebugMode) {
-        print('FeedProvider: Fetched ${_posts.length} posts');
-      }
-    } catch (e) {
-      _posts = [];
-      if (kDebugMode) {
-        print('FeedProvider: Error fetching posts: $e');
-      }
-    }
-
-    _isLoading = false;
-    notifyListeners();
-  }
-}
 
 class FeedFilter extends StatelessWidget {
   const FeedFilter({super.key});
@@ -1864,7 +1855,7 @@ class FeedFilter extends StatelessWidget {
     const postTypes = ['All', 'Reddit', 'Community'];
 
     return Container(
-      padding: const EdgeInsets.only(top: 48.0, left: 16.0, right: 16.0, bottom: 8.0),
+      padding: const EdgeInsets.only(top: 48, left: 16, right: 16, bottom: 8),
       child: Row(
         children: [
           Expanded(
@@ -1872,7 +1863,9 @@ class FeedFilter extends StatelessWidget {
               value: feedProvider.selectedPetType,
               decoration: const InputDecoration(
                 labelText: 'Filter by Pet',
-                border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                ),
                 filled: true,
               ),
               items: petTypes.map((type) {
@@ -1892,7 +1885,9 @@ class FeedFilter extends StatelessWidget {
               value: feedProvider.selectedPostType,
               decoration: const InputDecoration(
                 labelText: 'Filter by Post Type',
-                border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                ),
                 filled: true,
               ),
               items: postTypes.map((type) {
@@ -1931,13 +1926,13 @@ class PostCard extends StatelessWidget {
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  CircleAvatar(child: Text(post.author[0])),
+                  CircleAvatar(child: Text(post.author.isNotEmpty ? post.author[0] : '?')),
                   const SizedBox(width: 8),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2054,6 +2049,7 @@ class CommunityFeedScreen extends StatelessWidget {
     );
   }
 }
+
 
 --- lib/views/create_post_screen.dart ---
 import 'package:flutter/material.dart';
@@ -2173,15 +2169,164 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
 --- lib/views/tracking_screen.dart ---
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/pet.dart';
+import '../models/tracking_metric.dart';
+import '../providers/user_provider.dart';
+import '../services/api_service.dart';
+import 'metric_detail_screen.dart';
 
 class TrackingScreen extends StatelessWidget {
   const TrackingScreen({super.key});
 
+  Future<void> _addMetric(BuildContext context, Pet pet) async {
+    final result = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (context) => _MetricDialog(),
+    );
+
+    if (result != null && result['name'] != null && result['frequency'] != null) {
+      final newMetric = TrackingMetric(
+        id: '${pet.id}-${pet.trackingMetrics.length}',
+        petId: pet.id.toString(),
+        name: result['name'],
+        frequency: result['frequency'],
+      );
+
+      pet.trackingMetrics.add(newMetric);
+      await Provider.of<ApiService>(context, listen: false).updatePet(pet);
+      (context as Element).markNeedsBuild();
+    }
+  }
+
+  Future<void> _removeMetric(BuildContext context, Pet pet, TrackingMetric metric) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Metric'),
+        content: Text('Are you sure you want to remove "${metric.name}"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Remove')),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      pet.trackingMetrics.remove(metric);
+      await Provider.of<ApiService>(context, listen: false).updatePet(pet);
+      (context as Element).markNeedsBuild();
+    }
+  }
+
+  void _toggleCompletion(BuildContext context, Pet pet, TrackingMetric metric) async {
+    metric.isCompleted = !metric.isCompleted;
+    metric.lastCompletion = metric.isCompleted ? DateTime.now() : null;
+    await Provider.of<ApiService>(context, listen: false).updatePet(pet);
+    (context as Element).markNeedsBuild();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: Text('Tracking')));
+    final userProvider = Provider.of<UserProvider>(context);
+    if (userProvider.pets.isEmpty) {
+      return const Scaffold(body: Center(child: Text('No pet added yet')));
+    }
+    final pet = userProvider.pets.first;
+    final metrics = pet.trackingMetrics;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Tracking')),
+      body: ListView.builder(
+        itemCount: metrics.length,
+        itemBuilder: (context, index) {
+          final metric = metrics[index];
+          return ListTile(
+            title: Text(metric.name ?? 'Unnamed Metric'),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Frequency: ${metric.frequency ?? 'N/A'}'),
+                Text('Last: ${metric.lastCompletion?.toString() ?? 'N/A'}'),
+              ],
+            ),
+            trailing: Wrap(
+              spacing: 8,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    metric.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                    color: metric.isCompleted ? Colors.green : Colors.grey,
+                  ),
+                  onPressed: () => _toggleCompletion(context, pet, metric),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () => _removeMetric(context, pet, metric),
+                ),
+              ],
+            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => MetricDetailScreen(metric: metric)),
+            ),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _addMetric(context, pet),
+        child: const Icon(Icons.add),
+      ),
+    );
   }
 }
+
+class _MetricDialog extends StatefulWidget {
+  @override
+  __MetricDialogState createState() => __MetricDialogState();
+}
+
+class __MetricDialogState extends State<_MetricDialog> {
+  final _nameController = TextEditingController();
+  String? _selectedFrequency;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Add Metric'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _nameController,
+            decoration: const InputDecoration(labelText: 'Metric Name'),
+          ),
+          const SizedBox(height: 10),
+          DropdownButtonFormField<String>(
+            decoration: const InputDecoration(labelText: 'Frequency'),
+            items: ['Daily', 'Weekly', 'Monthly']
+                .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+                .toList(),
+            onChanged: (value) => setState(() => _selectedFrequency = value),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context, {
+              'name': _nameController.text,
+              'frequency': _selectedFrequency ?? 'Unspecified',
+            });
+          },
+          child: const Text('Add'),
+        ),
+      ],
+    );
+  }
+}
+
 
 --- lib/views/pet_detail_screen.dart ---
 import 'package:flutter/material.dart';
