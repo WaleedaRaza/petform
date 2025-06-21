@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/api_service.dart';
 import '../providers/user_provider.dart';
 import 'home_screen.dart';
 import '../widgets/rounded_button.dart';
@@ -18,12 +17,17 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
   void _login() async {
+    if (_emailController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
-      final apiService = Provider.of<ApiService>(context, listen: false);
-      await apiService.login(_emailController.text, _passwordController.text);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      await userProvider.setUser(_emailController.text);
+      await userProvider.signIn(_emailController.text, _passwordController.text);
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -42,6 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: const Text('Log In')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -49,11 +54,19 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             TextField(
               controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.emailAddress,
             ),
+            const SizedBox(height: 16),
             TextField(
               controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                border: OutlineInputBorder(),
+              ),
               obscureText: true,
             ),
             const SizedBox(height: 20),
@@ -64,5 +77,12 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 }

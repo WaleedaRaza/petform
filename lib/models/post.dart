@@ -1,4 +1,35 @@
-import 'comment.dart'; // ✅ Use the single source of truth
+
+class Comment {
+  final int? id;
+  final String content;
+  final String author;
+  final DateTime createdAt;
+
+  Comment({
+    this.id,
+    required this.content,
+    required this.author,
+    required this.createdAt,
+  });
+
+  factory Comment.fromJson(Map<String, dynamic> json) {
+    return Comment(
+      id: json['id'] as int?,
+      content: json['content'] as String,
+      author: json['author'] as String,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'content': content,
+      'author': author,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+}
 
 class Post {
   final int? id;
@@ -6,24 +37,24 @@ class Post {
   final String content;
   final String author;
   final String petType;
-  final String postType; // 'community' or 'reddit'
-  final String? redditUrl;
   final String? imageUrl;
-  final int upvotes;
+  final int? upvotes;
   final DateTime createdAt;
-  final List<Comment> comments; // ✅ Now references shared Comment model
+  final String postType;
+  final String? redditUrl;
+  final List<Comment> comments;
 
   Post({
-    required this.id,
+    this.id,
     required this.title,
     required this.content,
     required this.author,
     required this.petType,
+    this.imageUrl,
+    this.upvotes,
+    required this.createdAt,
     required this.postType,
     this.redditUrl,
-    this.imageUrl,
-    required this.upvotes,
-    required this.createdAt,
     this.comments = const [],
   });
 
@@ -34,15 +65,14 @@ class Post {
       content: json['content'] as String,
       author: json['author'] as String,
       petType: json['petType'] as String,
+      imageUrl: json['imageUrl'] as String?,
+      upvotes: json['upvotes'] as int?,
+      createdAt: DateTime.parse(json['createdAt'] as String),
       postType: json['postType'] as String,
       redditUrl: json['redditUrl'] as String?,
-      imageUrl: json['imageUrl'] as String?,
-      upvotes: json['upvotes'] ?? 0,
-      createdAt: DateTime.parse(json['createdAt'] as String),
       comments: (json['comments'] as List<dynamic>?)
-              ?.map((c) => Comment.fromJson(c as Map<String, dynamic>))
-              .toList() ??
-          [],
+          ?.map((c) => Comment.fromJson(c as Map<String, dynamic>))
+          .toList() ?? [],
     );
   }
 
@@ -53,11 +83,11 @@ class Post {
       'content': content,
       'author': author,
       'petType': petType,
-      'postType': postType,
-      'redditUrl': redditUrl,
       'imageUrl': imageUrl,
       'upvotes': upvotes,
       'createdAt': createdAt.toIso8601String(),
+      'postType': postType,
+      'redditUrl': redditUrl,
       'comments': comments.map((c) => c.toJson()).toList(),
     };
   }

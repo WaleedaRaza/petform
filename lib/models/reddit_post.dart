@@ -1,26 +1,27 @@
-class RedditPost {
-  final String title;
+import 'post.dart';
+
+class RedditPost extends Post {
   final String subreddit;
-  final String author;
-  final String url;
   final String thumbnail;
 
   RedditPost({
-    required this.title,
-    required this.subreddit,
-    required this.author,
-    required this.url,
+    required String title,
+    required String subreddit,
+    required String author,
+    required String url,
     required this.thumbnail,
-  });
-
-  factory RedditPost.fromJson(Map<String, dynamic> json) {
-    final data = json['data'];
-    return RedditPost(
-      title: data['title'] ?? '',
-      subreddit: data['subreddit'] ?? '',
-      author: data['author'] ?? '',
-      url: 'https://www.reddit.com${data['permalink']}',
-      thumbnail: data['thumbnail'] ?? '',
-    );
-  }
+    required String content,
+  })  : subreddit = subreddit,
+        super(
+          id: 0,  // Or pass the proper ID from Reddit API
+          title: title,
+          content: content,
+          author: author,
+          petType: 'Reddit',  // Or another appropriate value
+          postType: 'reddit',
+          redditUrl: url,
+          imageUrl: null,
+          upvotes: 0,
+          createdAt: DateTime.now(),
+        );
 }

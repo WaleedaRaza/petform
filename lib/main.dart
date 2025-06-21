@@ -5,11 +5,27 @@ import 'providers/user_provider.dart';
 import 'providers/theme_provider.dart';
 import 'services/api_service.dart';
 import 'views/welcome_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:flutter/foundation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final prefs = await SharedPreferences.getInstance();
-  print('Main: Initializing app, SharedPreferences ready');
+  
+  if (kDebugMode) {
+    print('Main: Initializing Firebase...');
+  }
+  
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
+  if (kDebugMode) {
+    print('Main: Firebase initialized successfully');
+    print('Main: Firebase app name: ${Firebase.app().name}');
+    print('Main: Firebase app options: ${Firebase.app().options.projectId}');
+  }
+  
   runApp(
     MultiProvider(
       providers: [
