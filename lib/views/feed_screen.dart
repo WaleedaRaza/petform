@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:petform/services/api_service.dart';
 import 'package:petform/models/post.dart';
+import 'package:petform/models/reddit_post.dart'; 
 import 'package:petform/views/post_detail_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:petform/views/home_screen.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -41,6 +44,11 @@ class _FeedScreenState extends State<FeedScreen> {
     }
   }
 
+  // Truncate the content for the preview in the feed
+  String truncateContent(String content, {int maxLength = 50}) {
+    return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,14 +74,16 @@ class _FeedScreenState extends State<FeedScreen> {
                     itemCount: _posts.length,
                     itemBuilder: (context, index) {
                       final post = _posts[index];
+                      final previewText = truncateContent(post.content); // Truncate here
+
                       return ListTile(
-                        title: Text(post.title ?? 'No Title'),
-                        subtitle: Text(post.selftext ?? 'No Content'),
+                        title: Text(post.title),
+                        subtitle: Text(previewText), // Show truncated preview
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => PostDetailScreen(post: post),
+                              builder: (context) => PostDetailScreen(post: post), // Pass full content
                             ),
                           );
                         },

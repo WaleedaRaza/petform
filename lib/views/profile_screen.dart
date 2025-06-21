@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/pet.dart';
+import '../models/pet_types.dart';
 
 class ProfileScreen extends StatelessWidget {
   @override
@@ -26,6 +27,13 @@ class ProfileScreen extends StatelessWidget {
                 Text('Name: ${pet.name}', style: TextStyle(fontSize: 18)),
                 Text('Species: ${pet.species}', style: TextStyle(fontSize: 18)),
                 SizedBox(height: 10),
+                ...((petFields[pet.species] ?? []).map((field) {
+                  final value = pet.toJson()[_camelCase(field)];
+                  if (value != null && value.toString().isNotEmpty) {
+                    return Text('$field: $value', style: TextStyle(fontSize: 16));
+                  }
+                  return SizedBox.shrink();
+                })),
                 ...pet.customFields.entries.map((entry) {
                   return Text('${entry.key}: ${entry.value}', style: TextStyle(fontSize: 16));
                 }),
@@ -43,5 +51,10 @@ class ProfileScreen extends StatelessWidget {
     final petsList = jsonDecode(pets) as List;
     if (petsList.isEmpty) throw Exception('No pet found');
     return Pet.fromJson(petsList.first as Map<String, dynamic>);
+  }
+
+  String _camelCase(String input) {
+    final words = input.split(' ');
+    return words.first.toLowerCase() + words.skip(1).map((w) => w[0].toUpperCase() + w.substring(1)).join();
   }
 }

@@ -14,9 +14,14 @@ import '../services/api_service.dart';
 import 'welcome_screen.dart';
 import '../widgets/rounded_button.dart';
 
-class ProfileSettingsScreen extends StatelessWidget {
+class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
 
+  @override
+  State<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
+}
+
+class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   Future<Pet?> _loadPet() async {
     final prefs = await SharedPreferences.getInstance();
     final pets = prefs.getString('pets') ?? '[]';
@@ -128,7 +133,7 @@ class ProfileSettingsScreen extends StatelessWidget {
         notes: result['notes'] as String?,
       ));
       await Provider.of<ApiService>(context, listen: false).updatePet(pet);
-      (context as Element).markNeedsBuild();
+      setState(() {});
     }
   }
 
@@ -223,9 +228,53 @@ class ProfileSettingsScreen extends StatelessWidget {
           const SizedBox(height: 16),
           RoundedButton(
             text: 'Sign Out',
-            onPressed: () {
-              userProvider.clearUser();
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const WelcomeScreen()));
+            onPressed: () async {
+              try {
+                await userProvider.signOut();
+                if (!mounted) return;
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const WelcomeScreen()));
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Sign out failed: $e')),
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 16),
+          RoundedButton(
+            text: 'Delete Account',
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Delete Account'),
+                  content: const Text('Are you sure you want to delete your account? This action cannot be undone.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                ),
+              );
+              
+              if (confirm == true) {
+                try {
+                  await userProvider.deleteAccount();
+                  if (!mounted) return;
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const WelcomeScreen()));
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Delete account failed: $e')),
+                  );
+                }
+              }
             },
           ),
         ]),

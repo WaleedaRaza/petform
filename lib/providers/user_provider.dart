@@ -1,38 +1,166 @@
 import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/api_service.dart';
+import '../services/firebase_auth_service.dart';
 import '../models/pet.dart';
 
 class UserProvider with ChangeNotifier {
-  String? _email;
+  User? _firebaseUser;
   List<Pet> _pets = [];
+  final FirebaseAuthService _authService = FirebaseAuthService();
   final ApiService _apiService = ApiService();
 
-  String? get email => _email;
+  User? get firebaseUser => _firebaseUser;
+  String? get email => _firebaseUser?.email;
   List<Pet> get pets => _pets;
-  bool get isLoggedIn => _email != null;
+  bool get isLoggedIn => _firebaseUser != null;
+  bool get isAdmin => _firebaseUser != null && _authService.isAdmin(_firebaseUser!);
 
-  Future<void> setUser(String email) async {
-    _email = email;
-    try {
-      _pets = await _apiService.getPets();
-      if (kDebugMode) {
-        print('UserProvider: Set user $email with ${_pets.length} pets');
+  UserProvider() {
+    // Listen to Firebase auth state changes
+    _authService.authStateChanges.listen((User? user) {
+      _firebaseUser = user;
+      if (user != null) {
+        _loadUserData();
+      } else {
+        _clearUserData();
       }
+      notifyListeners();
+    });
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      // Load user data from API or local storage
+      // For now, we'll use mock data
+      _pets = await _apiService.getPets();
+      notifyListeners();
     } catch (e) {
       if (kDebugMode) {
-        print('UserProvider: Error loading pets: $e');
+        print('UserProvider: Error loading user data: $e');
       }
-      _pets = [];
     }
+  }
+
+  void _clearUserData() {
+    _pets = [];
     notifyListeners();
   }
 
-  void clearUser() {
-    _email = null;
-    _pets = [];
-    if (kDebugMode) {
-      print('UserProvider: Cleared user');
+  // Email/Password sign up
+  Future<void> signUp(String email, String password) async {
+    try {
+      await _authService.signUpWithEmailAndPassword(email, password);
+    } catch (e) {
+      if (kDebugMode) {
+        print('UserProvider: Sign up error: $e');
+      }
+      rethrow;
     }
+  }
+
+  // Email/Password sign in
+  Future<void> signIn(String email, String password) async {
+    try {
+      await _authService.signInWithEmailAndPassword(email, password);
+    } catch (e) {
+      if (kDebugMode) {
+        print('UserProvider: Sign in error: $e');
+      }
+      rethrow;
+    }
+  }
+
+  // Google sign in
+  Future<void> signInWithGoogle() async {
+    try {
+      await _authService.signInWithGoogle();
+    } catch (e) {
+      if (kDebugMode) {
+        print('UserProvider: Google sign in error: $e');
+      }
+      rethrow;
+    }
+  }
+
+  // Apple sign in
+  Future<void> signInWithApple() async {
+    try {
+      await _authService.signInWithApple();
+    } catch (e) {
+      if (kDebugMode) {
+        print('UserProvider: Apple sign in error: $e');
+      }
+      rethrow;
+    }
+  }
+
+  // Admin login
+  Future<void> adminLogin() async {
+    try {
+      await _authService.adminLogin();
+    } catch (e) {
+      if (kDebugMode) {
+        print('UserProvider: Admin login error: $e');
+      }
+      rethrow;
+    }
+  }
+
+  // Sign out
+  Future<void> signOut() async {
+    try {
+      await _authService.signOut();
+    } catch (e) {
+      if (kDebugMode) {
+        print('UserProvider: Sign out error: $e');
+      }
+      rethrow;
+    }
+  }
+
+  // Delete account
+  Future<void> deleteAccount() async {
+    try {
+      await _authService.deleteAccount();
+    } catch (e) {
+      if (kDebugMode) {
+        print('UserProvider: Delete account error: $e');
+      }
+      rethrow;
+    }
+  }
+
+  // Reset password
+  Future<void> resetPassword(String email) async {
+    try {
+      await _authService.resetPassword(email);
+    } catch (e) {
+      if (kDebugMode) {
+        print('UserProvider: Reset password error: $e');
+      }
+      rethrow;
+    }
+  }
+
+  // Add pet
+  void addPet(Pet pet) {
+    _pets.add(pet);
     notifyListeners();
+  }
+
+  // Remove pet
+  void removePet(String petId) {
+    _pets.removeWhere((pet) => pet.id == petId);
+    notifyListeners();
+  }
+
+  // Update pet
+  void updatePet(Pet updatedPet) {
+    final index = _pets.indexWhere((pet) => pet.id == updatedPet.id);
+    if (index != -1) {
+      _pets[index] = updatedPet;
+      notifyListeners();
+    }
   }
 }

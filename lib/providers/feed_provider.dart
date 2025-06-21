@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../models/post.dart';
+import '../models/reddit_post.dart';
+import '../models/pet_types.dart';
 
 class FeedProvider with ChangeNotifier {
   String _selectedPetType = 'All';
@@ -30,12 +32,28 @@ class FeedProvider with ChangeNotifier {
 
     try {
       final apiService = ApiService();
-      _posts = await apiService.getPosts(
+      List<Post> communityPosts = await apiService.getPosts(
         petType: _selectedPetType == 'All' ? null : _selectedPetType,
-        postType: _selectedPostType == 'All' ? null : _selectedPostType,
+        postType: _selectedPostType == 'All' ? null : (_selectedPostType.toLowerCase() == 'community' ? 'community' : null),
       );
+      List<Post> redditPosts = [];
+      if (_selectedPostType == 'All' || _selectedPostType.toLowerCase() == 'reddit') {
+        String subreddit = 'pets';
+        if (_selectedPetType != 'All' && petTypeToSubreddit.containsKey(_selectedPetType)) {
+          subreddit = petTypeToSubreddit[_selectedPetType]!;
+        }
+        var redditRaw = await apiService.fetchRedditPosts(subreddit: subreddit);
+        // Fallback to 'pets' if no posts found
+        if (redditRaw.isEmpty && subreddit != 'pets') {
+          redditRaw = await apiService.fetchRedditPosts(subreddit: 'pets');
+        }
+        redditPosts = redditRaw.map((r) => r as Post).toList();
+      }
+      // Merge and sort by date (descending)
+      _posts = [...communityPosts, ...redditPosts];
+      _posts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       if (kDebugMode) {
-        print('FeedProvider: fetched ${_posts.length} posts');
+        print('FeedProvider: fetched ${_posts.length} posts (community + reddit)');
       }
     } catch (e) {
       _posts = [];

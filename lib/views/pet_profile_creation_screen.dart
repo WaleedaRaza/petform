@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../providers/user_provider.dart';
 import 'home_screen.dart';
 import '../widgets/rounded_button.dart';
+import '../models/pet_types.dart';
 
 class PetProfileCreationScreen extends StatefulWidget {
   const PetProfileCreationScreen({super.key});
@@ -16,7 +17,7 @@ class PetProfileCreationScreen extends StatefulWidget {
 
 class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _selectedPetType = 'Dog';
+  String _selectedPetType = petTypes.first;
   final _nameController = TextEditingController();
   final _ageController = TextEditingController();
   final _breedController = TextEditingController();
@@ -24,31 +25,6 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
   final _foodSourceController = TextEditingController();
   final Map<String, TextEditingController> _additionalFieldControllers = {};
   final List<MapEntry<String, TextEditingController>> _customFields = [];
-
-final Map<String, List<String>> _petFields = {
-  'Dog': ['Favorite Park', 'Leash Source', 'Favorite Toy'],
-  'Cat': ['Litter Type'],
-  'Turtle': ['Tank Size', 'Water Products'],
-  'Bird': ['Cage Size'],
-  'Hamster': ['Cage Size', 'Wheel Type', 'Bedding Brand', 'Favorite Snack'],
-  'Ferret': ['Play Tunnel Type', 'Litter Training', 'Diet Preference', 'Favorite Toy'],
-  'Parrot': ['Cage Size', 'Favorite Word', 'Noise Level', 'Favorite Treat'],
-  'Rabbit': ['Cage Size', 'Favorite Veggie', 'Litter Trained', 'Exercise Routine'],
-  'Snake': ['Tank Size', 'Heating Source', 'Feeding Frequency', 'Handling Preference'],
-  'Lizard': ['Tank Type', 'UVB Light Brand', 'Humidity Level', 'Feeding Schedule'],
-  'Fish': ['Tank Size', 'Water Type', 'Filter Type', 'Feeding Schedule'],
-  'Hedgehog': ['Wheel Type', 'Temperature Range', 'Hide Spot Type', 'Favorite Insect'],
-  'Guinea Pig': ['Cage Liner Type', 'Pellet Brand', 'Veggie Routine', 'Social Needs'],
-  'Chinchilla': ['Dust Bath Frequency', 'Cage Level Count', 'Favorite Chew Toy'],
-  'Frog': ['Humidity Source', 'Tank Setup Type', 'Feeding Time'],
-  'Tarantula': ['Enclosure Type', 'Humidity Level', 'Feeding Insects'],
-  'Axolotl': ['Water Temp', 'Tank Decor', 'Feeding Schedule'],
-  'Mouse': ['Wheel Type', 'Nest Material', 'Feeding Schedule'],
-  'Chicken': ['Outdoor Time', 'Diet Type', 'Favorite Spot'],
-  'Goat': ['Enclosure Size', 'Grazing Area', 'Milking Schedule'],
-};
-
-  final List<String> _petTypes = ['Dog', 'Cat', 'Turtle', 'Bird', 'Hamster', 'Ferret', 'Parrot', 'Rabbit', 'Snake', 'Lizard', 'Fish','Hedgehog', 'Guinea Pig', 'Chinchilla', 'Frog', 'Tarantula', 'Axolotl', 'Mouse', 'Chicken', 'Goat'];
 
   List<TrackingMetric> getDefaultMetrics(String petType) {
     switch (petType) {
@@ -83,7 +59,7 @@ final Map<String, List<String>> _petFields = {
   @override
   void initState() {
     super.initState();
-    _petFields.forEach((petType, fields) {
+    petFields.forEach((petType, fields) {
       for (var field in fields) {
         _additionalFieldControllers['$petType-$field'] = TextEditingController();
       }
@@ -114,7 +90,7 @@ final Map<String, List<String>> _petFields = {
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       final additionalFields = <String, String>{};
-      for (var field in _petFields[_selectedPetType] ?? []) {
+      for (var field in petFields[_selectedPetType] ?? []) {
         additionalFields[field] = _additionalFieldControllers['$_selectedPetType-$field']?.text ?? '';
       }
       final customFields = <String, String>{};
@@ -146,8 +122,6 @@ final Map<String, List<String>> _petFields = {
 
       try {
         await Provider.of<ApiService>(context, listen: false).createPet(pet);
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        await userProvider.setUser(userProvider.email!);
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
@@ -179,7 +153,7 @@ final Map<String, List<String>> _petFields = {
                   labelText: 'Pet Type',
                   border: OutlineInputBorder(),
                 ),
-                items: _petTypes.map((String type) {
+                items: petTypes.map((String type) {
                   return DropdownMenuItem<String>(
                     value: type,
                     child: Text(type),
@@ -241,13 +215,13 @@ final Map<String, List<String>> _petFields = {
                 ),
               ),
               const SizedBox(height: 16),
-              if (_petFields[_selectedPetType] != null) ...[
+              if (petFields[_selectedPetType] != null) ...[
                 const Text(
                   'Additional Information (Optional)',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                ...(_petFields[_selectedPetType] ?? []).map((field) {
+                ...(petFields[_selectedPetType] ?? []).map((field) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16.0),
                     child: TextFormField(
