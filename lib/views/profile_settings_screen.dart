@@ -11,6 +11,8 @@ import '../providers/theme_provider.dart';
 import 'welcome_screen.dart';
 import 'pet_profile_creation_screen.dart';
 import '../widgets/rounded_button.dart';
+import 'post_detail_screen.dart';
+import 'saved_posts_screen.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -261,6 +263,92 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       );
                     },
                   ),
+                ],
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Saved Posts Section
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Saved Posts',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Consumer<AppStateProvider>(
+                        builder: (context, appState, child) {
+                          return Text(
+                            '${appState.savedPostsCount} saved',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey[600],
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Consumer<AppStateProvider>(
+                    builder: (context, appState, child) {
+                      final savedPosts = appState.savedPosts;
+                      
+                      if (savedPosts.isEmpty) {
+                        return Container(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.bookmark_border,
+                                size: 60,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No Saved Posts',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Save posts from the community feed to view them here later',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Colors.grey[500],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      
+                      return Column(
+                        children: savedPosts.take(5).map((post) => _buildSavedPostCard(context, post, appState)).toList(),
+                      );
+                    },
+                  ),
+                  if (Provider.of<AppStateProvider>(context, listen: false).savedPosts.length > 5)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Center(
+                        child: TextButton(
+                          onPressed: () => _showAllSavedPosts(context),
+                          child: const Text('View All Saved Posts'),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -543,5 +631,185 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       default:
         return Icons.pets;
     }
+  }
+
+  Widget _buildSavedPostCard(BuildContext context, Post post, AppStateProvider appState) {
+    final isReddit = post.postType == 'reddit';
+    
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: () => _viewPost(context, post),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  // Post type indicator
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isReddit ? Colors.orange : Theme.of(context).colorScheme.primary,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      isReddit ? Icons.reddit : Icons.forum,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          post.title,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Text(
+                              isReddit ? 'Reddit' : 'Community',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'by ${post.author}',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${post.petType} • ${_formatDate(post.createdAt)}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (value) async {
+                      switch (value) {
+                        case 'view':
+                          _viewPost(context, post);
+                          break;
+                        case 'unsave':
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Unsave Post'),
+                              content: const Text('Are you sure you want to unsave this post?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text(
+                                    'Unsave',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                          
+                          if (confirm == true) {
+                            try {
+                              await appState.unsavePost(post);
+                              setState(() {}); // Refresh the list
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Unsaved "${post.title}"')),
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Failed to unsave post: $e')),
+                              );
+                            }
+                          }
+                          break;
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'view',
+                        child: Row(
+                          children: [
+                            Icon(Icons.visibility),
+                            SizedBox(width: 8),
+                            Text('View'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'unsave',
+                        child: Row(
+                          children: [
+                            Icon(Icons.bookmark_remove, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Unsave', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _viewPost(BuildContext context, Post post) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PostDetailScreen(post: post),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    
+    if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
+  void _showAllSavedPosts(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SavedPostsScreen(),
+      ),
+    );
   }
 }
