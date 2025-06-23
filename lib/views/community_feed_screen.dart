@@ -57,7 +57,7 @@ class FeedFilter extends StatelessWidget {
                         underline: const SizedBox.shrink(),
                         dropdownColor: Colors.grey[800],
                         style: const TextStyle(color: Colors.white, fontSize: 13),
-                        menuMaxHeight: 200,
+                        menuMaxHeight: 400,
                         items: dropdownPetTypes.map((type) {
                           return DropdownMenuItem(value: type, child: Text(type));
                         }).toList(),
