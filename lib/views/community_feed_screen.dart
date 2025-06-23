@@ -210,7 +210,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                                     ),
                                     SizedBox(height: 16),
                                     Text(
-                                      'No posts found for this pet type.',
+                                      'No posts found for this filter.',
                                       style: TextStyle(
                                         fontSize: 16,
                                         color: Colors.grey,
@@ -218,7 +218,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                                     ),
                                     SizedBox(height: 8),
                                     Text(
-                                      'Try another filter or check Reddit!',
+                                      'Try adjusting your filters or check back later!',
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: Colors.grey,
