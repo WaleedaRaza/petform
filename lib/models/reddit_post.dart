@@ -5,6 +5,7 @@ class RedditPost extends Post {
   final String thumbnail;
 
   RedditPost({
+    required String id,
     required String title,
     required String subreddit,
     required String author,
@@ -13,7 +14,7 @@ class RedditPost extends Post {
     required String content,
   })  : subreddit = subreddit,
         super(
-          id: 0,  // Or pass the proper ID from Reddit API
+          id: id,
           title: title,
           content: content,
           author: author,

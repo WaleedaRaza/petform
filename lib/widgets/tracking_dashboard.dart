@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state_provider.dart';
-import '../models/tracking_metric.dart';
 
 class TrackingDashboard extends StatelessWidget {
   const TrackingDashboard({super.key});
@@ -117,7 +116,7 @@ class TrackingDashboard extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${metric.currentValue.toStringAsFixed(1)} ${metric.unit}',
+                              '${metric.currentValue.toStringAsFixed(1)}',
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                             const SizedBox(height: 4),

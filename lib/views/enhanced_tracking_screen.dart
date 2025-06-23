@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/app_state_provider.dart';
 import '../models/pet.dart';
 import '../models/tracking_metric.dart';
-import '../providers/app_state_provider.dart';
-import '../services/tracking_service.dart';
 import '../widgets/enhanced_tracking_card.dart';
 import 'metric_detail_screen.dart';
 import 'pet_profile_creation_screen.dart';
@@ -96,7 +95,7 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -341,8 +340,7 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
 
   void _addEntryToMetric(TrackingMetric metric, double value) {
     final updatedMetric = metric.addEntry(value);
-    final appState = Provider.of<AppStateProvider>(context, listen: false);
-    appState.updateTrackingMetric(updatedMetric);
+    Provider.of<AppStateProvider>(context, listen: false).updateTrackingMetric(updatedMetric);
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Added entry: $value')),
@@ -350,7 +348,6 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
   }
 
   void _deleteMetric(TrackingMetric metric) {
-    final appState = Provider.of<AppStateProvider>(context, listen: false);
     // TODO: Implement delete functionality in AppStateProvider
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Deleted ${metric.name}')),

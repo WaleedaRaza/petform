@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/pet.dart';
-import '../services/api_service.dart';
-import '../providers/user_provider.dart';
-import 'home_screen.dart';
+import '../providers/app_state_provider.dart';
 import '../widgets/rounded_button.dart';
 import '../models/pet_types.dart';
-import '../providers/app_state_provider.dart';
 
 class PetProfileCreationScreen extends StatefulWidget {
   const PetProfileCreationScreen({super.key});

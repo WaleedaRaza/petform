@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:petform/services/api_service.dart';
 import 'package:petform/models/post.dart';
-import 'package:petform/models/reddit_post.dart'; 
 import 'package:petform/views/post_detail_screen.dart';
-import 'package:provider/provider.dart';
-import 'package:petform/views/home_screen.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});

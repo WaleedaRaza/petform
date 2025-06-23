@@ -3,14 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/pet.dart';
 import '../models/post.dart';
-import '../models/tracking_metric.dart';
 import 'package:http/http.dart' as http;
 import '../models/reddit_post.dart';
 
 class ApiService {
   static final List<Map<String, dynamic>> _mockPosts = [
     {
-      'id': 2,
+      'id': '2',
       'title': 'Cat Scratching Fix',
       'content': 'A tall scratching post saved my couch! My cat loves it and no more damage to furniture.',
       'author': 'CatFan',
@@ -25,7 +24,7 @@ class ApiService {
       ],
     },
     {
-      'id': 4,
+      'id': '4',
       'title': 'Dog Park Vibes',
       'content': 'My pup had a blast chasing balls today. The new dog park in town is amazing!',
       'author': 'PetWalker',
@@ -38,7 +37,7 @@ class ApiService {
       'comments': [],
     },
     {
-      'id': 5,
+      'id': '5',
       'title': 'Cat Toy Picks',
       'content': 'My kitty loves feather wands and laser pointers. Any other toy recommendations?',
       'author': 'KittyMom',
@@ -51,7 +50,7 @@ class ApiService {
       'comments': [],
     },
     {
-      'id': 6,
+      'id': '6',
       'title': 'Turtle Tank Maintenance',
       'content': 'Just cleaned my turtle\'s tank and added new plants. The water quality is perfect now!',
       'author': 'TurtleGuru',
@@ -64,7 +63,7 @@ class ApiService {
       'comments': [],
     },
     {
-      'id': 7,
+      'id': '7',
       'title': 'Hamster Cage Setup',
       'content': 'Built a multi-level hamster cage with tunnels and hideouts. My hamster is so happy!',
       'author': 'HamsterLover',
@@ -240,7 +239,7 @@ class ApiService {
     final postsJson = prefs.getString('posts') ?? jsonEncode(_mockPosts);
     final List<dynamic> postsData = jsonDecode(postsJson);
     final newPost = Post(
-      id: postsData.length + 1,
+      id: (postsData.length + 1).toString(),
       title: title,
       content: content,
       author: author,
@@ -259,7 +258,7 @@ class ApiService {
   }
 
   Future<void> addComment({
-    required int postId,
+    required String postId,
     required String content,
     required String author,
   }) async {
@@ -267,7 +266,7 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     final postsJson = prefs.getString('posts') ?? jsonEncode(_mockPosts);
     final List<dynamic> postsData = jsonDecode(postsJson);
-    final index = postsData.indexWhere((p) => p['id'] == postId);
+    final index = postsData.indexWhere((p) => p['id'].toString() == postId);
     if (index != -1) {
       final post = Post.fromJson(postsData[index]);
       final newComment = Comment(
@@ -285,12 +284,12 @@ class ApiService {
     }
   }
 
-  Future<Post> getPost(int postId) async {
+  Future<Post> getPost(String postId) async {
     await Future.delayed(const Duration(seconds: 1));
     final prefs = await SharedPreferences.getInstance();
     final postsJson = prefs.getString('posts') ?? jsonEncode(_mockPosts);
     final List<dynamic> postsData = jsonDecode(postsJson);
-    final postData = postsData.firstWhere((p) => p['id'] == postId, orElse: () => null);
+    final postData = postsData.firstWhere((p) => p['id'].toString() == postId, orElse: () => null);
     if (postData == null) throw Exception('Post not found');
     return Post.fromJson(postData);
   }
@@ -390,6 +389,7 @@ class ApiService {
         }
         
         return RedditPost(
+          id: postData['id'] ?? '',
           title: postData['title'] ?? '',
           subreddit: postData['subreddit'] ?? subreddit,
           author: postData['author'] ?? 'Redditor',

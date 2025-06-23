@@ -19,11 +19,9 @@ class _ShoppingScreenState extends State<ShoppingScreen>
   String _searchQuery = '';
   String _selectedCategory = 'All';
   String _selectedPriority = 'All';
-  String _selectedStore = 'All';
 
   final List<String> _categories = ['All', 'Food', 'Toys', 'Beds', 'Accessories', 'Grooming', 'Treats', 'Hygiene', 'Equipment', 'Housing'];
   final List<String> _priorities = ['All', 'High', 'Medium', 'Low'];
-  final List<String> _stores = ['All', 'Chewy', 'PetSmart', 'Petco', 'Amazon'];
 
   @override
   void initState() {
@@ -284,56 +282,11 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                   padding: const EdgeInsets.all(16),
                   itemCount: chewyProducts.length,
                   itemBuilder: (context, index) {
-                    return _buildEnhancedSuggestionCard(chewyProducts[index], appState);
+                    return _buildChewyProductCard(chewyProducts[index], appState);
                   },
                 ),
         ),
       ],
-    );
-  }
-
-  Widget _buildChewyFilterChips() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            _buildFilterChip('All Products', _selectedCategory == 'All', () {
-              setState(() => _selectedCategory = 'All');
-            }),
-            _buildFilterChip('Top Rated', false, () {
-              // Show top rated products
-            }),
-            _buildFilterChip('Best Sellers', false, () {
-              // Show best sellers
-            }),
-            _buildFilterChip('Free Shipping', false, () {
-              // Show free shipping products
-            }),
-            _buildFilterChip('Auto-Ship', false, () {
-              // Show auto-ship products
-            }),
-            _buildFilterChip('Under \$20', false, () {
-              // Show budget products
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, bool isSelected, VoidCallback onTap) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label),
-        selected: isSelected,
-        onSelected: (_) => onTap(),
-        backgroundColor: Colors.grey[200],
-        selectedColor: Colors.orange.withOpacity(0.2),
-        checkmarkColor: Colors.orange,
-      ),
     );
   }
 
@@ -384,7 +337,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.1),
+                            color: Colors.orange.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -466,7 +419,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
+                            color: Colors.green.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Text(
@@ -483,7 +436,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
+                            color: Colors.blue.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Text(
@@ -659,7 +612,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.1),
+                              color: Colors.orange.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Text(
@@ -729,7 +682,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
+                                color: Colors.green.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Text(
@@ -747,7 +700,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
+                                color: Colors.blue.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Text(
@@ -1029,8 +982,8 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: item.isChewyProduct 
-                                ? Colors.orange.withOpacity(0.1)
-                                : Colors.grey.withOpacity(0.1),
+                                ? Colors.orange.withValues(alpha: 0.1)
+                                : Colors.grey.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -1112,7 +1065,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
+                            color: Colors.green.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Text(
@@ -1129,7 +1082,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
+                            color: Colors.blue.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Text(

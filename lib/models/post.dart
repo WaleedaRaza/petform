@@ -1,4 +1,3 @@
-
 class Comment {
   final int? id;
   final String content;
@@ -32,7 +31,7 @@ class Comment {
 }
 
 class Post {
-  final int? id;
+  final String? id;
   final String title;
   final String content;
   final String author;
@@ -60,7 +59,7 @@ class Post {
 
   factory Post.fromJson(Map<String, dynamic> json) {
     return Post(
-      id: json['id'] as int?,
+      id: json['id']?.toString(),
       title: json['title'] as String,
       content: json['content'] as String,
       author: json['author'] as String,

@@ -120,8 +120,8 @@ class PostDetailScreen extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: () async {
                     final url = post.redditUrl!;
-                    if (await canLaunch(url)) {
-                      await launch(url); // Open Reddit post
+                    if (await canLaunchUrl(Uri.parse(url))) {
+                      await launchUrl(Uri.parse(url)); // Open Reddit post
                     } else {
                       throw 'Could not launch $url';
                     }
