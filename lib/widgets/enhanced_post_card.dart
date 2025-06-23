@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/app_state_provider.dart';
 import '../models/post.dart';
 import '../views/post_detail_screen.dart';
+import 'package:flutter/foundation.dart';
 
 class EnhancedPostCard extends StatelessWidget {
   final Post post;
@@ -199,6 +200,11 @@ class EnhancedPostCard extends StatelessWidget {
   Widget _buildImage() {
     if (post.imageUrl == null || post.imageUrl!.isEmpty) return const SizedBox.shrink();
     
+    // Debug logging for Reddit posts
+    if (post.postType.toLowerCase() == 'reddit' && kDebugMode) {
+      print('Reddit post image URL: ${post.imageUrl}');
+    }
+    
     return Container(
       height: 200,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -235,6 +241,17 @@ class EnhancedPostCard extends StatelessWidget {
                         fontSize: 14,
                       ),
                     ),
+                    if (kDebugMode) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'URL: ${post.imageUrl}',
+                        style: TextStyle(
+                          color: Colors.grey[500],
+                          fontSize: 10,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ],
                 ),
               );

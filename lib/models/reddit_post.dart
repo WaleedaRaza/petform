@@ -20,7 +20,7 @@ class RedditPost extends Post {
           petType: 'Reddit',  // Or another appropriate value
           postType: 'reddit',
           redditUrl: url,
-          imageUrl: null,
+          imageUrl: thumbnail.isNotEmpty ? thumbnail : null,
           upvotes: 0,
           createdAt: DateTime.now(),
         );

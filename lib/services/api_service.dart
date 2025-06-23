@@ -19,6 +19,7 @@ class ApiService {
       'createdAt': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
       'postType': 'community',
       'redditUrl': null,
+      'imageUrl': 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400&h=300&fit=crop',
       'comments': [
         {'id': 1, 'content': 'Great tip! I need to try this.', 'author': 'User1', 'createdAt': DateTime.now().toIso8601String()},
       ],
@@ -33,6 +34,7 @@ class ApiService {
       'createdAt': DateTime.now().subtract(const Duration(hours: 6)).toIso8601String(),
       'postType': 'community',
       'redditUrl': null,
+      'imageUrl': 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300&fit=crop',
       'comments': [],
     },
     {
@@ -45,6 +47,7 @@ class ApiService {
       'createdAt': DateTime.now().subtract(const Duration(hours: 3)).toIso8601String(),
       'postType': 'community',
       'redditUrl': null,
+      'imageUrl': 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400&h=300&fit=crop',
       'comments': [],
     },
     {
@@ -57,6 +60,7 @@ class ApiService {
       'createdAt': DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
       'postType': 'community',
       'redditUrl': null,
+      'imageUrl': 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=300&fit=crop',
       'comments': [],
     },
     {
@@ -69,6 +73,7 @@ class ApiService {
       'createdAt': DateTime.now().subtract(const Duration(hours: 1)).toIso8601String(),
       'postType': 'community',
       'redditUrl': null,
+      'imageUrl': 'https://images.unsplash.com/photo-1576201836106-db1758fd1c97?w=400&h=300&fit=crop',
       'comments': [],
     },
   ];
@@ -354,14 +359,42 @@ class ApiService {
           return null; // Skip low-effort posts
         }
         
+        // Extract the best available image URL
+        String imageUrl = '';
+        
+        // Check for preview images (highest quality)
+        if (postData['preview'] != null && 
+            postData['preview']['images'] != null && 
+            postData['preview']['images'].isNotEmpty) {
+          final previewImage = postData['preview']['images'][0];
+          if (previewImage['source'] != null && 
+              previewImage['source']['url'] != null) {
+            imageUrl = previewImage['source']['url'].toString()
+                .replaceAll('&amp;', '&'); // Fix HTML entities
+          }
+        }
+        
+        // Fallback to thumbnail if no preview image
+        if (imageUrl.isEmpty && 
+            postData['thumbnail'] != null && 
+            postData['thumbnail'].toString().startsWith('http')) {
+          imageUrl = postData['thumbnail'].toString();
+        }
+        
+        // Fallback to external URL if it's an image
+        if (imageUrl.isEmpty && 
+            postData['url'] != null && 
+            postData['url'].toString().startsWith('http') &&
+            _isImageUrl(postData['url'].toString())) {
+          imageUrl = postData['url'].toString();
+        }
+        
         return RedditPost(
           title: postData['title'] ?? '',
           subreddit: postData['subreddit'] ?? subreddit,
           author: postData['author'] ?? 'Redditor',
           url: 'https://www.reddit.com${postData['permalink']}',
-          thumbnail: (postData['thumbnail'] != null && 
-                     postData['thumbnail'].toString().startsWith('http')) 
-                     ? postData['thumbnail'] : '',
+          thumbnail: imageUrl,
           content: postData['selftext'] ?? '',
         );
       }).where((post) => post != null).cast<RedditPost>().toList();
@@ -379,5 +412,14 @@ class ApiService {
       // Return empty list instead of throwing to prevent app crashes
       return [];
     }
+  }
+
+  bool _isImageUrl(String url) {
+    final imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+    final lowerUrl = url.toLowerCase();
+    return imageExtensions.any((ext) => lowerUrl.endsWith(ext)) ||
+           lowerUrl.contains('imgur.com') ||
+           lowerUrl.contains('i.redd.it') ||
+           lowerUrl.contains('preview.redd.it');
   }
 }
