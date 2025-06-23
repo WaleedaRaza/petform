@@ -44,24 +44,45 @@ class FeedProvider with ChangeNotifier {
         petType: _selectedPetType == 'All' ? null : _selectedPetType,
         postType: _selectedPostType == 'All' ? null : (_selectedPostType.toLowerCase() == 'community' ? 'community' : null),
       );
+      
       List<Post> redditPosts = [];
       if (_selectedPostType == 'All' || _selectedPostType.toLowerCase() == 'reddit') {
         String subreddit = 'pets';
         if (_selectedPetType != 'All' && petTypeToSubreddit.containsKey(_selectedPetType)) {
           subreddit = petTypeToSubreddit[_selectedPetType]!;
         }
-        var redditRaw = await apiService.fetchRedditPosts(subreddit: subreddit);
-        // Fallback to 'pets' if no posts found
-        if (redditRaw.isEmpty && subreddit != 'pets') {
-          redditRaw = await apiService.fetchRedditPosts(subreddit: 'pets');
+        
+        try {
+          var redditRaw = await apiService.fetchRedditPosts(subreddit: subreddit);
+          
+          // Fallback to 'pets' if no posts found and we're not already on 'pets'
+          if (redditRaw.isEmpty && subreddit != 'pets') {
+            if (kDebugMode) {
+              print('FeedProvider: No posts found in r/$subreddit, trying r/pets');
+            }
+            redditRaw = await apiService.fetchRedditPosts(subreddit: 'pets');
+          }
+          
+          redditPosts = redditRaw.map((r) => r as Post).toList();
+          
+          if (kDebugMode) {
+            print('FeedProvider: Successfully fetched ${redditPosts.length} Reddit posts');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('FeedProvider: Failed to fetch Reddit posts: $e');
+          }
+          // Continue with community posts only - don't crash the app
+          redditPosts = [];
         }
-        redditPosts = redditRaw.map((r) => r as Post).toList();
       }
+      
       // Merge and sort by date (descending)
       _posts = [...communityPosts, ...redditPosts];
       _posts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      
       if (kDebugMode) {
-        print('FeedProvider: fetched ${_posts.length} posts (community + reddit)');
+        print('FeedProvider: Total posts: ${_posts.length} (${communityPosts.length} community + ${redditPosts.length} reddit)');
       }
     } catch (e) {
       _posts = [];

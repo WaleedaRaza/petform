@@ -10,22 +10,9 @@ import '../models/reddit_post.dart';
 class ApiService {
   static final List<Map<String, dynamic>> _mockPosts = [
     {
-      'id': 1,
-      'title': 'Puppy Training 101',
-      'content': 'Start with treats and patience to teach sit and stay.',
-      'author': 'DogLover',
-      'petType': 'Dog',
-      'imageUrl': null,
-      'upvotes': 50,
-      'createdAt': DateTime.now().subtract(const Duration(days: 2)).toIso8601String(),
-      'postType': 'reddit',
-      'redditUrl': 'https://www.reddit.com/r/pets/comments/123456/puppy_training_101/',
-      'comments': [],
-    },
-    {
       'id': 2,
       'title': 'Cat Scratching Fix',
-      'content': 'A tall scratching post saved my couch!',
+      'content': 'A tall scratching post saved my couch! My cat loves it and no more damage to furniture.',
       'author': 'CatFan',
       'petType': 'Cat',
       'upvotes': 30,
@@ -33,25 +20,13 @@ class ApiService {
       'postType': 'community',
       'redditUrl': null,
       'comments': [
-        {'id': 1, 'content': 'Great tip!', 'author': 'User1', 'createdAt': DateTime.now().toIso8601String()},
+        {'id': 1, 'content': 'Great tip! I need to try this.', 'author': 'User1', 'createdAt': DateTime.now().toIso8601String()},
       ],
-    },
-    {
-      'id': 3,
-      'title': 'Turtle Tank Setup',
-      'content': 'Clean water and UVB light are must-haves.',
-      'author': 'TurtleGuru',
-      'petType': 'Turtle',
-      'upvotes': 20,
-      'createdAt': DateTime.now().subtract(const Duration(hours: 12)).toIso8601String(),
-      'postType': 'reddit',
-      'redditUrl': 'https://www.reddit.com/r/pets/comments/789012/turtle_tank_setup/',
-      'comments': [],
     },
     {
       'id': 4,
       'title': 'Dog Park Vibes',
-      'content': 'My pup had a blast chasing balls today.',
+      'content': 'My pup had a blast chasing balls today. The new dog park in town is amazing!',
       'author': 'PetWalker',
       'petType': 'Dog',
       'upvotes': 45,
@@ -63,11 +38,35 @@ class ApiService {
     {
       'id': 5,
       'title': 'Cat Toy Picks',
-      'content': 'My kitty loves feather wands and laser pointers.',
+      'content': 'My kitty loves feather wands and laser pointers. Any other toy recommendations?',
       'author': 'KittyMom',
       'petType': 'Cat',
       'upvotes': 25,
       'createdAt': DateTime.now().subtract(const Duration(hours: 3)).toIso8601String(),
+      'postType': 'community',
+      'redditUrl': null,
+      'comments': [],
+    },
+    {
+      'id': 6,
+      'title': 'Turtle Tank Maintenance',
+      'content': 'Just cleaned my turtle\'s tank and added new plants. The water quality is perfect now!',
+      'author': 'TurtleGuru',
+      'petType': 'Turtle',
+      'upvotes': 18,
+      'createdAt': DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
+      'postType': 'community',
+      'redditUrl': null,
+      'comments': [],
+    },
+    {
+      'id': 7,
+      'title': 'Hamster Cage Setup',
+      'content': 'Built a multi-level hamster cage with tunnels and hideouts. My hamster is so happy!',
+      'author': 'HamsterLover',
+      'petType': 'Hamster',
+      'upvotes': 22,
+      'createdAt': DateTime.now().subtract(const Duration(hours: 1)).toIso8601String(),
       'postType': 'community',
       'redditUrl': null,
       'comments': [],
@@ -292,23 +291,93 @@ class ApiService {
   }
 
   Future<List<RedditPost>> fetchRedditPosts({String subreddit = 'pets', int limit = 10}) async {
-    final url = Uri.https('www.reddit.com', '/r/$subreddit/hot.json', {'limit': '$limit'});
-    final response = await http.get(url, headers: {'User-Agent': 'petform-app/1.0'});
-    if (response.statusCode != 200) {
-      throw Exception('Failed to load Reddit posts');
-    }
-    final data = jsonDecode(response.body);
-    final List posts = data['data']['children'];
-    return posts.map((item) {
-      final postData = item['data'];
-      return RedditPost(
-        title: postData['title'] ?? '',
-        subreddit: postData['subreddit'] ?? subreddit,
-        author: postData['author'] ?? 'Redditor',
-        url: 'https://www.reddit.com${postData['permalink']}',
-        thumbnail: (postData['thumbnail'] != null && postData['thumbnail'].startsWith('http')) ? postData['thumbnail'] : '',
-        content: postData['selftext'] ?? '',
+    try {
+      // Use proper User-Agent and add delay to respect rate limits
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      final url = Uri.https('www.reddit.com', '/r/$subreddit/hot.json', {
+        'limit': '$limit',
+        'raw_json': '1',
+      });
+      
+      final response = await http.get(
+        url, 
+        headers: {
+          'User-Agent': 'PetformApp/1.0 (by /u/petform_dev)',
+          'Accept': 'application/json',
+        },
       );
-    }).toList();
+      
+      if (response.statusCode != 200) {
+        if (kDebugMode) {
+          print('Reddit API error: ${response.statusCode} - ${response.body}');
+        }
+        throw Exception('Reddit API returned status ${response.statusCode}');
+      }
+      
+      final data = jsonDecode(response.body);
+      
+      // Check if we got valid Reddit data
+      if (data == null || data['data'] == null || data['data']['children'] == null) {
+        throw Exception('Invalid Reddit API response format');
+      }
+      
+      final List posts = data['data']['children'];
+      
+      if (posts.isEmpty) {
+        if (kDebugMode) {
+          print('No Reddit posts found for subreddit: $subreddit');
+        }
+        return [];
+      }
+      
+      final redditPosts = posts.map((item) {
+        final postData = item['data'];
+        
+        // Validate required fields
+        if (postData['title'] == null || postData['title'].toString().isEmpty) {
+          return null; // Skip posts without titles
+        }
+        
+        // Skip stickied posts and announcements
+        if (postData['stickied'] == true || postData['distinguished'] != null) {
+          return null;
+        }
+        
+        // Skip posts with no content and no external links
+        final hasContent = postData['selftext'] != null && postData['selftext'].toString().isNotEmpty;
+        final hasExternalLink = postData['url'] != null && 
+                               postData['url'].toString().startsWith('http') &&
+                               !postData['url'].toString().contains('reddit.com');
+        
+        if (!hasContent && !hasExternalLink) {
+          return null; // Skip low-effort posts
+        }
+        
+        return RedditPost(
+          title: postData['title'] ?? '',
+          subreddit: postData['subreddit'] ?? subreddit,
+          author: postData['author'] ?? 'Redditor',
+          url: 'https://www.reddit.com${postData['permalink']}',
+          thumbnail: (postData['thumbnail'] != null && 
+                     postData['thumbnail'].toString().startsWith('http')) 
+                     ? postData['thumbnail'] : '',
+          content: postData['selftext'] ?? '',
+        );
+      }).where((post) => post != null).cast<RedditPost>().toList();
+      
+      if (kDebugMode) {
+        print('Fetched ${redditPosts.length} valid Reddit posts from r/$subreddit');
+      }
+      
+      return redditPosts;
+      
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error fetching Reddit posts from r/$subreddit: $e');
+      }
+      // Return empty list instead of throwing to prevent app crashes
+      return [];
+    }
   }
 }
