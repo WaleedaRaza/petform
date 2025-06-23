@@ -263,7 +263,6 @@ class AppStateProvider with ChangeNotifier {
         lastUpdated: existingMetric.lastUpdated,
         description: existingMetric.description,
         category: existingMetric.category,
-        unit: existingMetric.unit,
       );
       _trackingMetrics[index] = updatedMetric;
       // TODO: Update in storage
