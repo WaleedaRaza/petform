@@ -10,18 +10,17 @@ class TrackingScreen extends StatelessWidget {
   const TrackingScreen({super.key});
 
   Future<void> _addMetric(BuildContext context, Pet pet) async {
-    final result = await showDialog<Map<String, String>>(
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => _MetricDialog(),
     );
 
-    if (result != null && result['name'] != null && result['type'] != null && result['unit'] != null) {
+    if (result != null && result['name'] != null && result['frequency'] != null) {
       final newMetric = TrackingMetric(
         id: '${pet.id}-${pet.trackingMetrics.length}',
         petId: pet.id.toString(),
         name: result['name']!,
-        type: result['type']!,
-        unit: result['unit']!,
+        frequency: result['frequency']!,
         targetValue: double.tryParse(result['targetValue'] ?? '10.0') ?? 10.0,
       );
 
@@ -83,8 +82,8 @@ class TrackingScreen extends StatelessWidget {
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                  Text('Type: ${metric.type} • Unit: ${metric.unit}'),
-                  Text('Current: ${metric.currentValue} ${metric.unit} • Target: ${metric.targetValue} ${metric.unit}'),
+                  Text('Frequency: ${metric.frequency}'),
+                  Text('Current: ${metric.currentValue} • Target: ${metric.targetValue}'),
                   if (metric.lastUpdated != null)
                     Text('Last Updated: ${metric.lastUpdated!.toString().split('.')[0]}'),
               ],
@@ -127,7 +126,7 @@ class TrackingScreen extends StatelessWidget {
           controller: controller,
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
-            labelText: 'New Value (${metric.unit})',
+            labelText: 'New Value',
           ),
         ),
         actions: [
@@ -159,8 +158,7 @@ class _MetricDialog extends StatefulWidget {
 class __MetricDialogState extends State<_MetricDialog> {
   final _nameController = TextEditingController();
   final _targetValueController = TextEditingController(text: '10.0');
-  String? _selectedType;
-  String? _selectedUnit;
+  String? _selectedFrequency;
 
   @override
   Widget build(BuildContext context) {
@@ -175,19 +173,11 @@ class __MetricDialogState extends State<_MetricDialog> {
           ),
           const SizedBox(height: 10),
           DropdownButtonFormField<String>(
-            decoration: const InputDecoration(labelText: 'Type'),
-            items: ['weight', 'duration', 'count', 'temperature']
-                .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+            decoration: const InputDecoration(labelText: 'Frequency'),
+            items: ['daily', 'weekly', 'monthly']
+                .map((f) => DropdownMenuItem(value: f, child: Text(f)))
                 .toList(),
-            onChanged: (value) => setState(() => _selectedType = value),
-          ),
-          const SizedBox(height: 10),
-          DropdownButtonFormField<String>(
-            decoration: const InputDecoration(labelText: 'Unit'),
-            items: _getUnitsForType(_selectedType)
-                .map((u) => DropdownMenuItem(value: u, child: Text(u)))
-                .toList(),
-            onChanged: (value) => setState(() => _selectedUnit = value),
+            onChanged: (value) => setState(() => _selectedFrequency = value),
           ),
           const SizedBox(height: 10),
           TextField(
@@ -203,8 +193,7 @@ class __MetricDialogState extends State<_MetricDialog> {
           onPressed: () {
             Navigator.pop(context, {
               'name': _nameController.text,
-              'type': _selectedType ?? 'count',
-              'unit': _selectedUnit ?? 'times',
+              'frequency': _selectedFrequency ?? 'daily',
               'targetValue': _targetValueController.text,
             });
           },
@@ -212,20 +201,5 @@ class __MetricDialogState extends State<_MetricDialog> {
         ),
       ],
     );
-  }
-
-  List<String> _getUnitsForType(String? type) {
-    switch (type) {
-      case 'weight':
-        return ['lbs', 'kg', 'oz', 'g'];
-      case 'duration':
-        return ['minutes', 'hours', 'days'];
-      case 'count':
-        return ['times', 'times/day', 'times/week'];
-      case 'temperature':
-        return ['°F', '°C'];
-      default:
-        return ['times'];
-    }
   }
 }

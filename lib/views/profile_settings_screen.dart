@@ -1,16 +1,13 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/pet.dart';
 import '../models/post.dart';
-import '../models/shopping_item.dart';
 import '../providers/user_provider.dart';
 import '../providers/app_state_provider.dart';
 import '../providers/theme_provider.dart';
-import '../services/api_service.dart';
 import 'welcome_screen.dart';
 import 'pet_profile_creation_screen.dart';
 import '../widgets/rounded_button.dart';
@@ -30,107 +27,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         .map((p) => Post.fromJson(p as Map<String, dynamic>))
         .where((post) => post.author == email)
         .toList();
-  }
-
-  Future<List<Comment>> _loadUserComments(String email) async {
-    final prefs = await SharedPreferences.getInstance();
-    final posts = jsonDecode(prefs.getString('posts') ?? '[]') as List;
-    final comments = <Comment>[];
-    for (var post in posts) {
-      final postComments = (post['comments'] as List<dynamic>?)
-              ?.map((c) => Comment.fromJson(c as Map<String, dynamic>))
-              .where((comment) => comment.author == email)
-              .toList() ??
-          [];
-      comments.addAll(postComments);
-    }
-    return comments;
-  }
-
-  Future<void> _addShoppingItem(BuildContext context, Pet pet) async {
-    String name = '';
-    String url = '';
-    String category = '';
-    int? quantity;
-    String notes = '';
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Add Shopping Item'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      decoration: const InputDecoration(labelText: 'Item Name'),
-                      onChanged: (value) => name = value,
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      decoration: const InputDecoration(labelText: 'URL (Optional)'),
-                      onChanged: (value) => url = value,
-                      keyboardType: TextInputType.url,
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      decoration: const InputDecoration(labelText: 'Category (Optional)'),
-                      onChanged: (value) => category = value,
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      decoration: const InputDecoration(labelText: 'Quantity (Optional)'),
-                      onChanged: (value) => quantity = int.tryParse(value),
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      decoration: const InputDecoration(labelText: 'Notes (Optional)'),
-                      onChanged: (value) => notes = value,
-                      maxLines: 3,
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-                TextButton(
-                  onPressed: () {
-                    if (name.trim().isNotEmpty) {
-                      Navigator.pop(context, {
-                        'name': name,
-                        'url': url.isNotEmpty ? url : null,
-                        'category': category.isNotEmpty ? category : null,
-                        'quantity': quantity,
-                        'notes': notes.isNotEmpty ? notes : null,
-                      });
-                    }
-                  },
-                  child: const Text('Add'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    if (result != null) {
-      pet.shoppingList.add(ShoppingItem(
-        id: 'shopping_${DateTime.now().millisecondsSinceEpoch}',
-        name: result['name'] as String,
-        category: result['category'] as String? ?? 'General',
-        priority: 'Medium',
-        estimatedCost: 0.0,
-        description: result['notes'] as String?,
-        quantity: result['quantity'] as int? ?? 1,
-        notes: result['notes'] as String?,
-      ));
-      await Provider.of<ApiService>(context, listen: false).updatePet(pet);
-      setState(() {});
-    }
   }
 
   @override

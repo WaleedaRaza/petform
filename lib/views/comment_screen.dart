@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
 import '../providers/user_provider.dart';
-import '../widgets/rounded_button.dart';
 
 class CommentScreen extends StatefulWidget {
   final Post post;

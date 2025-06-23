@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../models/post.dart';
-import '../models/reddit_post.dart';
 import '../models/pet_types.dart';
 
 class FeedProvider with ChangeNotifier {

@@ -1,12 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import '../models/shopping_item.dart';
 
 class ChewyService {
-  // Simulated Chewy API base URL
-  static const String _baseUrl = 'https://api.chewy.com';
-  
   // Comprehensive product database with real Chewy-like data
   static final Map<String, List<ShoppingItem>> _chewyProducts = {
     'dog': [
@@ -623,7 +618,7 @@ class ChewyService {
     List<ShoppingItem> topRatedProducts = [];
     _chewyProducts.values.forEach((products) {
       topRatedProducts.addAll(
-        products.where((item) => item.rating >= 4.5)
+        products.where((item) => item.rating != null && item.rating! >= 4.5)
       );
     });
     return topRatedProducts;
@@ -634,7 +629,7 @@ class ChewyService {
     List<ShoppingItem> bestSellingProducts = [];
     _chewyProducts.values.forEach((products) {
       bestSellingProducts.addAll(
-        products.where((item) => item.reviewCount >= 1000)
+        products.where((item) => item.reviewCount != null && item.reviewCount! >= 1000)
       );
     });
     return bestSellingProducts;
@@ -648,8 +643,13 @@ class ChewyService {
     // Find the product
     ShoppingItem? product;
     for (final products in _chewyProducts.values) {
-      product = products.firstWhere((item) => item.id == productId);
-      if (product != null) break;
+      try {
+        product = products.firstWhere((item) => item.id == productId);
+        break;
+      } catch (e) {
+        // Product not found in this list, continue to next
+        continue;
+      }
     }
     
     if (product == null) {
