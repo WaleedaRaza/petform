@@ -34,9 +34,9 @@ class ProfileScreen extends StatelessWidget {
                   }
                   return SizedBox.shrink();
                 })),
-                ...pet.customFields.entries.map((entry) {
+                ...(pet.customFields?.entries.map((entry) {
                   return Text('${entry.key}: ${entry.value}', style: TextStyle(fontSize: 16));
-                }),
+                }) ?? []),
               ],
             ),
           );

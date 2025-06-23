@@ -10,6 +10,7 @@ class FeedProvider with ChangeNotifier {
   String _selectedPostType = 'All';
   List<Post> _posts = [];
   bool _isLoading = false;
+  bool _isFetching = false; // Prevent multiple simultaneous fetches
 
   String get selectedPetType => _selectedPetType;
   String get selectedPostType => _selectedPostType;
@@ -17,16 +18,23 @@ class FeedProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
 
   void setPetType(String petType) {
-    _selectedPetType = petType;
-    notifyListeners();
+    if (_selectedPetType != petType) {
+      _selectedPetType = petType;
+      // Don't call notifyListeners here - fetchPosts will call it
+    }
   }
 
   void setPostType(String postType) {
-    _selectedPostType = postType;
-    notifyListeners();
+    if (_selectedPostType != postType) {
+      _selectedPostType = postType;
+      // Don't call notifyListeners here - fetchPosts will call it
+    }
   }
 
   Future<void> fetchPosts(BuildContext context) async {
+    if (_isFetching) return; // Prevent multiple simultaneous fetches
+    
+    _isFetching = true;
     _isLoading = true;
     notifyListeners();
 
@@ -63,6 +71,7 @@ class FeedProvider with ChangeNotifier {
     }
 
     _isLoading = false;
+    _isFetching = false;
     notifyListeners();
   }
 }

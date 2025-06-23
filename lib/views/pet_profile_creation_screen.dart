@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/pet.dart';
-import '../models/tracking_metric.dart';
 import '../services/api_service.dart';
 import '../providers/user_provider.dart';
 import 'home_screen.dart';
 import '../widgets/rounded_button.dart';
 import '../models/pet_types.dart';
+import '../providers/app_state_provider.dart';
 
 class PetProfileCreationScreen extends StatefulWidget {
   const PetProfileCreationScreen({super.key});
@@ -25,36 +25,6 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
   final _foodSourceController = TextEditingController();
   final Map<String, TextEditingController> _additionalFieldControllers = {};
   final List<MapEntry<String, TextEditingController>> _customFields = [];
-
-  List<TrackingMetric> getDefaultMetrics(String petType) {
-    switch (petType) {
-      case 'Dog':
-        return [
-          TrackingMetric(name: 'Weight', frequency: 'Monthly'),
-          TrackingMetric(name: 'Exercise', frequency: 'Daily'),
-          TrackingMetric(name: 'Feeding', frequency: 'Daily'),
-        ];
-      case 'Cat':
-        return [
-          TrackingMetric(name: 'Weight', frequency: 'Monthly'),
-          TrackingMetric(name: 'Litter Box', frequency: 'Daily'),
-        ];
-      case 'Turtle':
-        return [
-          TrackingMetric(name: 'Weight', frequency: 'Monthly'),
-          TrackingMetric(name: 'Water Temperature', frequency: 'Daily'),
-        ];
-      case 'Bird':
-        return [
-          TrackingMetric(name: 'Weight', frequency: 'Monthly'),
-          TrackingMetric(name: 'Flight Time', frequency: 'Daily'),
-        ];
-      default:
-        return [
-          TrackingMetric(name: 'Weight', frequency: 'Monthly'),
-        ];
-    }
-  }
 
   @override
   void initState() {
@@ -117,16 +87,13 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
         favoriteToy: additionalFields['Favorite Toy'],
         customFields: customFields,
         shoppingList: [],
-        trackingMetrics: getDefaultMetrics(_selectedPetType),
       );
 
       try {
-        await Provider.of<ApiService>(context, listen: false).createPet(pet);
+        final appState = Provider.of<AppStateProvider>(context, listen: false);
+        await appState.addPet(pet);
         if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
+        Navigator.pop(context, true); // Return true to indicate success
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
