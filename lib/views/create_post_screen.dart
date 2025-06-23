@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../providers/user_provider.dart';
 import '../widgets/rounded_button.dart';
+import '../models/pet_types.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -16,7 +17,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   String _selectedPetType = 'Dog';
-  final List<String> _petTypes = ['All', 'Dog', 'Cat', 'Turtle','Hamster','Ferret','Parrot','Rabbit','Snake','Lizard','Fish','Hedgehog','Guinea Pig','Chinchilla','Frog','Tarantula','Axolotl','Mouse','Goat'];
+  final List<String> _petTypes = ['All', ...petTypes];
   bool _isLoading = false;
 
   @override
