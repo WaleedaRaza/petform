@@ -60,58 +60,71 @@ class TrackingScreen extends StatelessWidget {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    if (userProvider.pets.isEmpty) {
-      return const Scaffold(body: Center(child: Text('No pet added yet')));
-    }
-    final pet = userProvider.pets.first;
-    final metrics = pet.trackingMetrics;
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Tracking')),
-      body: ListView.builder(
-        itemCount: metrics.length,
-        itemBuilder: (context, index) {
-          final metric = metrics[index];
-          return Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: ListTile(
-              title: Text(metric.name),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                  Text('Frequency: ${metric.frequency}'),
-                  Text('Current: ${metric.currentValue} • Target: ${metric.targetValue}'),
-                  if (metric.lastUpdated != null)
-                    Text('Last Updated: ${metric.lastUpdated!.toString().split('.')[0]}'),
-              ],
-            ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () => _showUpdateDialog(context, pet, metric),
+  void _showEditDialog(BuildContext context, Pet pet, TrackingMetric metric) {
+    final nameController = TextEditingController(text: metric.name);
+    final targetValueController = TextEditingController(text: metric.targetValue.toString());
+    String selectedFrequency = metric.frequency;
+    
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Edit Metric'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Metric Name',
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => _removeMetric(context, pet, metric),
-                ),
-              ],
-            ),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => MetricDetailScreen(metric: metric)),
               ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(labelText: 'Frequency'),
+                value: selectedFrequency,
+                items: ['daily', 'weekly', 'monthly']
+                    .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+                    .toList(),
+                onChanged: (value) => setState(() => selectedFrequency = value!),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: targetValueController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Target Value',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
             ),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _addMetric(context, pet),
-        child: const Icon(Icons.add),
+            TextButton(
+              onPressed: () {
+                final targetValue = double.tryParse(targetValueController.text);
+                if (nameController.text.isNotEmpty && targetValue != null) {
+                  final updatedMetric = metric.copyWith(
+                    name: nameController.text,
+                    frequency: selectedFrequency,
+                    targetValue: targetValue,
+                  );
+                  final index = pet.trackingMetrics.indexWhere((m) => m.id == metric.id);
+                  if (index != -1) {
+                    pet.trackingMetrics[index] = updatedMetric;
+                    Provider.of<ApiService>(context, listen: false).updatePet(pet);
+                    (context as Element).markNeedsBuild();
+                  }
+                }
+                Navigator.pop(context);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -145,6 +158,69 @@ class TrackingScreen extends StatelessWidget {
             child: const Text('Update'),
           ),
         ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    if (userProvider.pets.isEmpty) {
+      return const Scaffold(body: Center(child: Text('No pet added yet')));
+    }
+    final pet = userProvider.pets.first;
+    final metrics = pet.trackingMetrics;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Tracking')),
+      body: ListView.builder(
+        itemCount: metrics.length,
+        itemBuilder: (context, index) {
+          final metric = metrics[index];
+          return Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: ListTile(
+              title: Text(metric.name),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                  Text('Frequency: ${metric.frequency}'),
+                  Text('Current: ${metric.currentValue} • Target: ${metric.targetValue}'),
+                  if (metric.lastUpdated != null)
+                    Text('Last Updated: ${metric.lastUpdated!.toString().split('.')[0]}'),
+              ],
+            ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () => _showEditDialog(context, pet, metric),
+                    tooltip: 'Edit Metric',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.update),
+                    onPressed: () => _showUpdateDialog(context, pet, metric),
+                    tooltip: 'Update Value',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () => _removeMetric(context, pet, metric),
+                    tooltip: 'Remove Metric',
+                  ),
+                ],
+              ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => MetricDetailScreen(metric: metric)),
+              ),
+            ),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _addMetric(context, pet),
+        child: const Icon(Icons.add),
       ),
     );
   }

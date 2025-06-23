@@ -256,7 +256,16 @@ class AppStateProvider with ChangeNotifier {
   Future<void> updateTrackingMetric(TrackingMetric metric) async {
     final index = _trackingMetrics.indexWhere((m) => m.id == metric.id);
     if (index != -1) {
-      _trackingMetrics[index] = metric;
+      // Preserve the history and other properties from the existing metric
+      final existingMetric = _trackingMetrics[index];
+      final updatedMetric = metric.copyWith(
+        history: existingMetric.history,
+        lastUpdated: existingMetric.lastUpdated,
+        description: existingMetric.description,
+        category: existingMetric.category,
+        unit: existingMetric.unit,
+      );
+      _trackingMetrics[index] = updatedMetric;
       // TODO: Update in storage
       notifyListeners();
     }

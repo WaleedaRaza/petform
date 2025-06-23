@@ -308,9 +308,9 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
   }
 
   void _showEditMetricDialog(BuildContext context, TrackingMetric metric) {
-    // Implementation for editing metric
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit functionality coming soon!')),
+    showDialog(
+      context: context,
+      builder: (context) => _EditMetricDialog(metric: metric),
     );
   }
 
@@ -348,7 +348,9 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
   }
 
   void _deleteMetric(TrackingMetric metric) {
-    // TODO: Implement delete functionality in AppStateProvider
+    final appState = Provider.of<AppStateProvider>(context, listen: false);
+    appState.removeTrackingMetric(metric);
+    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Deleted ${metric.name}')),
     );
@@ -462,6 +464,114 @@ class _AddMetricDialogState extends State<_AddMetricDialog> {
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Added ${_nameController.text}')),
+    );
+  }
+}
+
+class _EditMetricDialog extends StatefulWidget {
+  final TrackingMetric metric;
+
+  const _EditMetricDialog({required this.metric});
+
+  @override
+  _EditMetricDialogState createState() => _EditMetricDialogState();
+}
+
+class _EditMetricDialogState extends State<_EditMetricDialog> {
+  final _nameController = TextEditingController();
+  final _targetValueController = TextEditingController();
+  String _selectedFrequency = 'daily';
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.text = widget.metric.name;
+    _targetValueController.text = widget.metric.targetValue.toString();
+    _selectedFrequency = widget.metric.frequency;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit Metric'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Metric Name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              decoration: const InputDecoration(
+                labelText: 'Frequency',
+                border: OutlineInputBorder(),
+              ),
+              value: _selectedFrequency,
+              items: [
+                DropdownMenuItem(value: 'daily', child: Text('Daily')),
+                DropdownMenuItem(value: 'weekly', child: Text('Weekly')),
+                DropdownMenuItem(value: 'monthly', child: Text('Monthly')),
+              ],
+              onChanged: (value) => setState(() => _selectedFrequency = value!),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _targetValueController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Target Value',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _updateMetric,
+          child: const Text('Update'),
+        ),
+      ],
+    );
+  }
+
+  void _updateMetric() {
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a metric name')),
+      );
+      return;
+    }
+
+    final targetValue = double.tryParse(_targetValueController.text);
+    if (targetValue == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid target value')),
+      );
+      return;
+    }
+
+    final updatedMetric = widget.metric.copyWith(
+      name: _nameController.text,
+      frequency: _selectedFrequency,
+      targetValue: targetValue,
+    );
+
+    final appState = Provider.of<AppStateProvider>(context, listen: false);
+    appState.updateTrackingMetric(updatedMetric);
+    
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Updated ${_nameController.text}')),
     );
   }
 } 
