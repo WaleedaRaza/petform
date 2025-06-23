@@ -15,6 +15,14 @@ class ShoppingItem {
   final String? imageUrl;
   final int quantity;
   final String? notes;
+  
+  // Chewy-specific fields
+  final String? chewyUrl;
+  final double? rating;
+  final int? reviewCount;
+  final bool? inStock;
+  final bool? autoShip;
+  final bool? freeShipping;
 
   ShoppingItem({
     required this.id,
@@ -33,6 +41,12 @@ class ShoppingItem {
     this.imageUrl,
     this.quantity = 1,
     this.notes,
+    this.chewyUrl,
+    this.rating,
+    this.reviewCount,
+    this.inStock,
+    this.autoShip,
+    this.freeShipping,
   }) : createdAt = createdAt ?? DateTime.now(),
        tags = tags ?? [];
 
@@ -56,6 +70,12 @@ class ShoppingItem {
       imageUrl: json['imageUrl'] as String?,
       quantity: json['quantity'] as int? ?? 1,
       notes: json['notes'] as String?,
+      chewyUrl: json['chewyUrl'] as String?,
+      rating: json['rating'] as double?,
+      reviewCount: json['reviewCount'] as int?,
+      inStock: json['inStock'] as bool?,
+      autoShip: json['autoShip'] as bool?,
+      freeShipping: json['freeShipping'] as bool?,
     );
   }
 
@@ -77,6 +97,12 @@ class ShoppingItem {
       'imageUrl': imageUrl,
       'quantity': quantity,
       'notes': notes,
+      'chewyUrl': chewyUrl,
+      'rating': rating,
+      'reviewCount': reviewCount,
+      'inStock': inStock,
+      'autoShip': autoShip,
+      'freeShipping': freeShipping,
     };
   }
 
@@ -97,6 +123,12 @@ class ShoppingItem {
     String? imageUrl,
     int? quantity,
     String? notes,
+    String? chewyUrl,
+    double? rating,
+    int? reviewCount,
+    bool? inStock,
+    bool? autoShip,
+    bool? freeShipping,
   }) {
     return ShoppingItem(
       id: id ?? this.id,
@@ -115,6 +147,12 @@ class ShoppingItem {
       imageUrl: imageUrl ?? this.imageUrl,
       quantity: quantity ?? this.quantity,
       notes: notes ?? this.notes,
+      chewyUrl: chewyUrl ?? this.chewyUrl,
+      rating: rating ?? this.rating,
+      reviewCount: reviewCount ?? this.reviewCount,
+      inStock: inStock ?? this.inStock,
+      autoShip: autoShip ?? this.autoShip,
+      freeShipping: freeShipping ?? this.freeShipping,
     );
   }
 
@@ -125,16 +163,12 @@ class ShoppingItem {
   
   double get totalCost => estimatedCost * quantity;
   
-  String get priorityColor {
-    switch (priority.toLowerCase()) {
-      case 'high':
-        return '#FF4444';
-      case 'medium':
-        return '#FF8800';
-      case 'low':
-        return '#44FF44';
-      default:
-        return '#888888';
-    }
-  }
+  // Chewy-specific helper methods
+  bool get isChewyProduct => store?.toLowerCase() == 'chewy';
+  bool get hasRating => rating != null && rating! > 0;
+  bool get hasReviews => reviewCount != null && reviewCount! > 0;
+  bool get isTopRated => rating != null && rating! >= 4.5;
+  bool get isBestSeller => reviewCount != null && reviewCount! >= 1000;
+  bool get isAutoShipEligible => autoShip == true;
+  bool get hasFreeShipping => freeShipping == true;
 }

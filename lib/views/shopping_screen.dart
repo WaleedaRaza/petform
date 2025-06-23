@@ -19,14 +19,16 @@ class _ShoppingScreenState extends State<ShoppingScreen>
   String _searchQuery = '';
   String _selectedCategory = 'All';
   String _selectedPriority = 'All';
+  String _selectedStore = 'All';
 
   final List<String> _categories = ['All', 'Food', 'Toys', 'Beds', 'Accessories', 'Grooming', 'Treats', 'Hygiene', 'Equipment', 'Housing'];
   final List<String> _priorities = ['All', 'High', 'Medium', 'Low'];
+  final List<String> _stores = ['All', 'Chewy', 'PetSmart', 'Petco', 'Amazon'];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -58,9 +60,11 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                 color: Theme.of(context).colorScheme.surface,
                 child: TabBar(
                   controller: _tabController,
+                  isScrollable: true,
                   tabs: const [
                     Tab(text: 'Suggestions'),
                     Tab(text: 'My List'),
+                    Tab(text: 'Chewy'),
                     Tab(text: 'Search'),
                     Tab(text: 'Categories'),
                   ],
@@ -73,6 +77,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                   children: [
                     _buildSuggestionsTab(appState),
                     _buildMyListTab(appState),
+                    _buildChewyTab(appState),
                     _buildSearchTab(appState),
                     _buildCategoriesTab(appState),
                   ],
@@ -208,6 +213,700 @@ class _ShoppingScreenState extends State<ShoppingScreen>
     );
   }
 
+  Widget _buildChewyTab(AppStateProvider appState) {
+    final chewyProducts = ShoppingService.getChewySuggestions();
+    
+    return Column(
+      children: [
+        // Chewy header with shipping info
+        Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'CHEWY',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Chewy Products',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Free shipping on orders over \$49 • Auto-ship & save 5%',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        
+        // Chewy products list
+        Expanded(
+          child: chewyProducts.isEmpty
+              ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey),
+                      SizedBox(height: 16),
+                      Text('No Chewy products found'),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: chewyProducts.length,
+                  itemBuilder: (context, index) {
+                    return _buildEnhancedSuggestionCard(chewyProducts[index], appState);
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChewyFilterChips() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildFilterChip('All Products', _selectedCategory == 'All', () {
+              setState(() => _selectedCategory = 'All');
+            }),
+            _buildFilterChip('Top Rated', false, () {
+              // Show top rated products
+            }),
+            _buildFilterChip('Best Sellers', false, () {
+              // Show best sellers
+            }),
+            _buildFilterChip('Free Shipping', false, () {
+              // Show free shipping products
+            }),
+            _buildFilterChip('Auto-Ship', false, () {
+              // Show auto-ship products
+            }),
+            _buildFilterChip('Under \$20', false, () {
+              // Show budget products
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, bool isSelected, VoidCallback onTap) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: FilterChip(
+        label: Text(label),
+        selected: isSelected,
+        onSelected: (_) => onTap(),
+        backgroundColor: Colors.grey[200],
+        selectedColor: Colors.orange.withOpacity(0.2),
+        checkmarkColor: Colors.orange,
+      ),
+    );
+  }
+
+  Widget _buildChewyProductCard(ShoppingItem item, AppStateProvider appState) {
+    final isInList = appState.shoppingItems.any((i) => i.id == item.id);
+    
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () => _showChewyProductDetails(item, appState),
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product image
+            if (item.imageUrl != null)
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                child: SizedBox(
+                  height: 200,
+                  width: double.infinity,
+                  child: CachedNetworkImage(
+                    imageUrl: item.imageUrl!,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      color: Colors.grey[300],
+                      child: const Center(child: CircularProgressIndicator()),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.image, size: 64),
+                    ),
+                  ),
+                ),
+              ),
+            
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Brand and rating
+                  Row(
+                    children: [
+                      if (item.brand != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            item.brand!,
+                            style: const TextStyle(
+                              color: Colors.orange,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      const Spacer(),
+                      if (item.hasRating) ...[
+                        Icon(Icons.star, size: 16, color: Colors.amber),
+                        const SizedBox(width: 4),
+                        Text(
+                          item.rating!.toStringAsFixed(1),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        if (item.hasReviews) ...[
+                          const SizedBox(width: 4),
+                          Text(
+                            '(${item.reviewCount})',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 8),
+                  
+                  // Product name
+                  Text(
+                    item.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  
+                  const SizedBox(height: 4),
+                  
+                  // Description
+                  if (item.description != null)
+                    Text(
+                      item.description!,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Price and badges
+                  Row(
+                    children: [
+                      Text(
+                        '\$${item.estimatedCost.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Colors.orange,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (item.hasFreeShipping)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'FREE SHIPPING',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      if (item.isAutoShipEligible) ...[
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'AUTO-SHIP',
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Action buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _addToChewyCart(item),
+                          icon: const Icon(Icons.shopping_cart_outlined),
+                          label: const Text('Add to Cart'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.orange,
+                            side: const BorderSide(color: Colors.orange),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            if (isInList) {
+                              appState.removeShoppingItem(item);
+                            } else {
+                              appState.addShoppingItem(item);
+                            }
+                          },
+                          icon: Icon(
+                            isInList ? Icons.remove_shopping_cart : Icons.add_shopping_cart,
+                          ),
+                          label: Text(isInList ? 'Remove' : 'Add to List'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isInList ? Colors.red : Colors.orange,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addToChewyCart(ShoppingItem item) async {
+    try {
+      final success = await ShoppingService.addToChewyCart(item.id, item.quantity);
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Added ${item.name} to Chewy cart'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to add to cart: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showChewyProductDetails(ShoppingItem item, AppStateProvider appState) async {
+    try {
+      final details = await ShoppingService.getProductDetails(item.id);
+      if (mounted) {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (context) => _buildChewyProductDetailsSheet(item, details, appState),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load product details: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildChewyProductDetailsSheet(ShoppingItem item, Map<String, dynamic> details, AppStateProvider appState) {
+    final isInList = appState.shoppingItems.any((i) => i.id == item.id);
+    
+    return DraggableScrollableSheet(
+      initialChildSize: 0.8,
+      minChildSize: 0.6,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            
+            // Product image
+            if (item.imageUrl != null)
+              Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 250,
+                    child: CachedNetworkImage(
+                      imageUrl: item.imageUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: Colors.grey[300],
+                        child: const Center(child: CircularProgressIndicator()),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.image, size: 64),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            
+            const SizedBox(height: 20),
+            
+            // Product info
+            Expanded(
+              child: SingleChildScrollView(
+                controller: scrollController,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Brand and rating
+                    Row(
+                      children: [
+                        if (item.brand != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              item.brand!,
+                              style: const TextStyle(
+                                color: Colors.orange,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        const Spacer(),
+                        if (item.hasRating) ...[
+                          Icon(Icons.star, size: 20, color: Colors.amber),
+                          const SizedBox(width: 4),
+                          Text(
+                            item.rating!.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          if (item.hasReviews) ...[
+                            const SizedBox(width: 4),
+                            Text(
+                              '(${item.reviewCount} reviews)',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 12),
+                    
+                    // Product name
+                    Text(
+                      item.name,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 8),
+                    
+                    // Price
+                    Text(
+                      '\$${item.estimatedCost.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Chewy badges
+                    if (item.hasFreeShipping || item.isAutoShipEligible) ...[
+                      Row(
+                        children: [
+                          if (item.hasFreeShipping)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'FREE SHIPPING',
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          if (item.hasFreeShipping && item.isAutoShipEligible)
+                            const SizedBox(width: 8),
+                          if (item.isAutoShipEligible)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'AUTO-SHIP & SAVE 5%',
+                                style: TextStyle(
+                                  color: Colors.blue,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    
+                    // Description
+                    if (item.description != null) ...[
+                      const Text(
+                        'Description',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        item.description!,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                    
+                    // Action buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _addToChewyCart(item),
+                            icon: const Icon(Icons.shopping_cart_outlined),
+                            label: const Text('Add to Cart'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.orange,
+                              side: const BorderSide(color: Colors.orange),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              if (isInList) {
+                                appState.removeShoppingItem(item);
+                              } else {
+                                appState.addShoppingItem(item);
+                              }
+                              Navigator.pop(context);
+                            },
+                            icon: Icon(
+                              isInList ? Icons.remove_shopping_cart : Icons.add_shopping_cart,
+                            ),
+                            label: Text(isInList ? 'Remove from List' : 'Add to List'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isInList ? Colors.red : Colors.orange,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    if (item.isAutoShipEligible) ...[
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _setupAutoShip(item),
+                          icon: const Icon(Icons.repeat),
+                          label: const Text('Setup Auto-Ship'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _setupAutoShip(ShoppingItem item) async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Setup Auto-Ship'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('How often would you like this item delivered?'),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: 'Monthly',
+              decoration: const InputDecoration(
+                labelText: 'Frequency',
+                border: OutlineInputBorder(),
+              ),
+              items: ['Weekly', 'Bi-weekly', 'Monthly', 'Every 6 weeks', 'Every 2 months']
+                  .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+                  .toList(),
+              onChanged: (value) {},
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                final success = await ShoppingService.setupChewyAutoShip(item.id, item.quantity, 'Monthly');
+                Navigator.pop(context);
+                if (success && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Auto-ship setup successfully!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                Navigator.pop(context);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to setup auto-ship: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Setup'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSearchTab(AppStateProvider appState) {
     return Column(
       children: [
@@ -292,95 +991,181 @@ class _ShoppingScreenState extends State<ShoppingScreen>
       child: InkWell(
         onTap: () => _showItemDetails(item, appState),
         borderRadius: BorderRadius.circular(12),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                bottomLeft: Radius.circular(12),
+            // Product image
+            if (item.imageUrl != null)
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                child: SizedBox(
+                  height: 200,
+                  width: double.infinity,
+                  child: CachedNetworkImage(
+                    imageUrl: item.imageUrl!,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      color: Colors.grey[300],
+                      child: const Center(child: CircularProgressIndicator()),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.image, size: 64),
+                    ),
+                  ),
+                ),
               ),
-              child: SizedBox(
-                width: 100,
-                height: 100,
-                child: item.imageUrl != null
-                    ? CachedNetworkImage(
-                        imageUrl: item.imageUrl!,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey[300],
-                          child: const Center(child: CircularProgressIndicator()),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.image),
-                        ),
-                      )
-                    : Container(
-                        color: Colors.grey[300],
-                        child: const Icon(Icons.image, size: 40),
-                      ),
-              ),
-            ),
             
-            // Content
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Store badge and rating
+                  Row(
+                    children: [
+                      if (item.store != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: item.isChewyProduct 
+                                ? Colors.orange.withOpacity(0.1)
+                                : Colors.grey.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           child: Text(
-                            item.name,
-                            style: const TextStyle(
+                            item.store!,
+                            style: TextStyle(
+                              color: item.isChewyProduct ? Colors.orange : Colors.grey[700],
+                              fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              fontSize: 16,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        _buildPriorityChip(item.priority),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    if (item.brand != null) ...[
-                      Text(
-                        item.brand!,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                    ],
-                    if (item.description != null) ...[
-                      Text(
-                        item.description!,
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          fontSize: 12,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    Row(
-                      children: [
+                      const Spacer(),
+                      if (item.hasRating) ...[
+                        Icon(Icons.star, size: 16, color: Colors.amber),
+                        const SizedBox(width: 4),
                         Text(
-                          '\$${item.estimatedCost.toStringAsFixed(2)}',
+                          item.rating!.toStringAsFixed(1),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.orange,
+                            fontSize: 14,
                           ),
                         ),
-                        const Spacer(),
-                        IconButton(
+                        if (item.hasReviews) ...[
+                          const SizedBox(width: 4),
+                          Text(
+                            '(${item.reviewCount})',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 8),
+                  
+                  // Product name
+                  Text(
+                    item.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  
+                  const SizedBox(height: 4),
+                  
+                  // Description
+                  if (item.description != null)
+                    Text(
+                      item.description!,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Price and Chewy badges
+                  Row(
+                    children: [
+                      Text(
+                        '\$${item.estimatedCost.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Colors.orange,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (item.hasFreeShipping)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'FREE SHIPPING',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      if (item.isAutoShipEligible) ...[
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'AUTO-SHIP',
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Action buttons
+                  Row(
+                    children: [
+                      if (item.isChewyProduct) ...[
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _addToChewyCart(item),
+                            icon: const Icon(Icons.shopping_cart_outlined),
+                            label: const Text('Add to Cart'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.orange,
+                              side: const BorderSide(color: Colors.orange),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Expanded(
+                        child: ElevatedButton.icon(
                           onPressed: () {
                             if (isInList) {
                               appState.removeShoppingItem(item);
@@ -390,13 +1175,17 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                           },
                           icon: Icon(
                             isInList ? Icons.remove_shopping_cart : Icons.add_shopping_cart,
-                            color: isInList ? Colors.red : Colors.green,
+                          ),
+                          label: Text(isInList ? 'Remove' : 'Add to List'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isInList ? Colors.red : Colors.orange,
+                            foregroundColor: Colors.white,
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
@@ -804,7 +1593,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                 item.description!,
                 style: const TextStyle(fontSize: 16),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
             ],
             
             // Store
