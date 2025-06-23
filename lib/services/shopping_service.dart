@@ -1,4 +1,5 @@
 import '../models/shopping_item.dart';
+import 'chewy_service.dart';
 
 class ShoppingService {
   // Real shopping suggestions with images and data
@@ -193,47 +194,78 @@ class ShoppingService {
     ],
   };
 
-  // Get shopping suggestions for a specific pet type
+  // Get shopping suggestions for a specific pet type (now includes Chewy products)
   static List<ShoppingItem> getSuggestionsForPet(String petType) {
-    return _petShoppingSuggestions[petType.toLowerCase()] ?? [];
+    List<ShoppingItem> suggestions = [];
+    
+    // Add regular suggestions
+    suggestions.addAll(_petShoppingSuggestions[petType.toLowerCase()] ?? []);
+    
+    // Add Chewy products
+    suggestions.addAll(ChewyService.getProductsForPet(petType));
+    
+    return suggestions;
   }
 
-  // Get all suggestions
+  // Get all suggestions (now includes Chewy products)
   static List<ShoppingItem> getAllSuggestions() {
     List<ShoppingItem> allSuggestions = [];
+    
+    // Add regular suggestions
     _petShoppingSuggestions.values.forEach((suggestions) {
       allSuggestions.addAll(suggestions);
     });
+    
+    // Add Chewy products
+    allSuggestions.addAll(ChewyService.getAllProducts());
+    
     return allSuggestions;
   }
 
-  // Get suggestions by category
+  // Get suggestions by category (now includes Chewy products)
   static List<ShoppingItem> getSuggestionsByCategory(String category) {
     List<ShoppingItem> categorySuggestions = [];
+    
+    // Add regular suggestions
     _petShoppingSuggestions.values.forEach((suggestions) {
       categorySuggestions.addAll(
         suggestions.where((item) => item.category.toLowerCase() == category.toLowerCase())
       );
     });
+    
+    // Add Chewy products
+    categorySuggestions.addAll(ChewyService.getProductsByCategory(category));
+    
     return categorySuggestions;
   }
 
-  // Get suggestions by priority
+  // Get suggestions by priority (now includes Chewy products)
   static List<ShoppingItem> getSuggestionsByPriority(String priority) {
     List<ShoppingItem> prioritySuggestions = [];
+    
+    // Add regular suggestions
     _petShoppingSuggestions.values.forEach((suggestions) {
       prioritySuggestions.addAll(
         suggestions.where((item) => item.priority.toLowerCase() == priority.toLowerCase())
       );
     });
+    
+    // Add Chewy products
+    ChewyService.getAllProducts().forEach((item) {
+      if (item.priority.toLowerCase() == priority.toLowerCase()) {
+        prioritySuggestions.add(item);
+      }
+    });
+    
     return prioritySuggestions;
   }
 
-  // Search suggestions
+  // Search suggestions (now includes Chewy products)
   static List<ShoppingItem> searchSuggestions(String query) {
     List<ShoppingItem> searchResults = [];
     final lowercaseQuery = query.toLowerCase();
     
+    // Search regular suggestions
     _petShoppingSuggestions.values.forEach((suggestions) {
       searchResults.addAll(
         suggestions.where((item) =>
@@ -244,6 +276,9 @@ class ShoppingService {
         )
       );
     });
+    
+    // Search Chewy products
+    searchResults.addAll(ChewyService.searchProducts(query));
     
     return searchResults;
   }
@@ -276,22 +311,89 @@ class ShoppingService {
   // Get budget-friendly suggestions (under $20)
   static List<ShoppingItem> getBudgetSuggestions() {
     List<ShoppingItem> budgetItems = [];
+    
+    // Add regular suggestions
     _petShoppingSuggestions.values.forEach((suggestions) {
       budgetItems.addAll(
         suggestions.where((item) => item.estimatedCost <= 20.0)
       );
     });
+    
+    // Add Chewy products
+    budgetItems.addAll(ChewyService.getProductsByPriceRange(0.0, 20.0));
+    
     return budgetItems;
   }
 
   // Get premium suggestions (over $40)
   static List<ShoppingItem> getPremiumSuggestions() {
     List<ShoppingItem> premiumItems = [];
+    
+    // Add regular suggestions
     _petShoppingSuggestions.values.forEach((suggestions) {
       premiumItems.addAll(
         suggestions.where((item) => item.estimatedCost >= 40.0)
       );
     });
+    
+    // Add Chewy products
+    premiumItems.addAll(ChewyService.getProductsByPriceRange(40.0, double.infinity));
+    
     return premiumItems;
+  }
+
+  // NEW: Get Chewy-specific suggestions
+  static List<ShoppingItem> getChewySuggestions() {
+    return ChewyService.getAllProducts();
+  }
+
+  // NEW: Get top-rated products from Chewy
+  static List<ShoppingItem> getTopRatedSuggestions() {
+    return ChewyService.getTopRatedProducts();
+  }
+
+  // NEW: Get best-selling products from Chewy
+  static List<ShoppingItem> getBestSellingSuggestions() {
+    return ChewyService.getBestSellingProducts();
+  }
+
+  // NEW: Get products with free shipping
+  static List<ShoppingItem> getFreeShippingSuggestions() {
+    return ChewyService.getFreeShippingProducts();
+  }
+
+  // NEW: Get auto-ship eligible products
+  static List<ShoppingItem> getAutoShipSuggestions() {
+    return ChewyService.getAutoShipProducts();
+  }
+
+  // NEW: Get products by brand
+  static List<ShoppingItem> getSuggestionsByBrand(String brand) {
+    return ChewyService.getProductsByBrand(brand);
+  }
+
+  // NEW: Get products by price range
+  static List<ShoppingItem> getSuggestionsByPriceRange(double minPrice, double maxPrice) {
+    return ChewyService.getProductsByPriceRange(minPrice, maxPrice);
+  }
+
+  // NEW: Get product details from Chewy
+  static Future<Map<String, dynamic>> getProductDetails(String productId) async {
+    return await ChewyService.getProductDetails(productId);
+  }
+
+  // NEW: Add item to Chewy cart
+  static Future<bool> addToChewyCart(String productId, int quantity) async {
+    return await ChewyService.addToCart(productId, quantity);
+  }
+
+  // NEW: Setup auto-ship with Chewy
+  static Future<bool> setupChewyAutoShip(String productId, int quantity, String frequency) async {
+    return await ChewyService.setupAutoShip(productId, quantity, frequency);
+  }
+
+  // NEW: Get Chewy shipping information
+  static Map<String, dynamic> getChewyShippingInfo() {
+    return ChewyService.getShippingInfo();
   }
 } 
