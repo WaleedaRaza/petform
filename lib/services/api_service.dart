@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/pet.dart';
 import '../models/post.dart';
 import '../models/tracking_metric.dart';
-import '../models/shopping_item.dart';
 import 'package:http/http.dart' as http;
 import '../models/reddit_post.dart';
 
@@ -176,6 +175,34 @@ class ApiService {
       if (kDebugMode) {
         print('ApiService.updatePet: Pet ${pet.id} not found');
       }
+    }
+  }
+
+  Future<void> deletePet(int petId) async {
+    await Future.delayed(const Duration(seconds: 1));
+    final prefs = await SharedPreferences.getInstance();
+    final petsJson = prefs.getString('pets') ?? '[]';
+    final List<dynamic> petsData = jsonDecode(petsJson);
+    final index = petsData.indexWhere((p) => p['id'] == petId);
+    if (index != -1) {
+      petsData.removeAt(index);
+      await prefs.setString('pets', jsonEncode(petsData));
+      if (kDebugMode) {
+        print('ApiService.deletePet: Deleted pet $petId');
+      }
+    } else {
+      if (kDebugMode) {
+        print('ApiService.deletePet: Pet $petId not found');
+      }
+    }
+  }
+
+  Future<void> clearAllPets() async {
+    await Future.delayed(const Duration(seconds: 1));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('pets', '[]');
+    if (kDebugMode) {
+      print('ApiService.clearAllPets: Cleared all pets');
     }
   }
 

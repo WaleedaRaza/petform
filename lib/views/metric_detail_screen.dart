@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/tracking_metric.dart';
-import '../providers/user_provider.dart';
-import '../services/api_service.dart';
+import '../providers/app_state_provider.dart';
 
 class MetricDetailScreen extends StatefulWidget {
   final TrackingMetric metric;
@@ -20,27 +19,27 @@ class _MetricDetailScreenState extends State<MetricDetailScreen> {
   Future<void> _addEntry() async {
     if (_valueController.text.isEmpty) return;
     
-    setState(() {
-      widget.metric.history.add(
-        MetricHistory(
-          timestamp: DateTime.now(),
-          value: _valueController.text,
-        ),
+    final value = double.tryParse(_valueController.text);
+    if (value == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid number')),
       );
-      widget.metric.lastCompletion = DateTime.now();
-    });
+      return;
+    }
     
-    _valueController.clear();
-
     try {
       setState(() => _isSaving = true);
       
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final apiService = Provider.of<ApiService>(context, listen: false);
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
+      final updatedMetric = widget.metric.addEntry(value);
+      await appState.updateTrackingMetric(updatedMetric);
       
-      if (userProvider.pets.isNotEmpty) {
-        final pet = userProvider.pets.first;
-        await apiService.updatePet(pet);
+      _valueController.clear();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Added entry: $value')),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -58,9 +57,72 @@ class _MetricDetailScreenState extends State<MetricDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.metric.name ?? 'Metric Detail')),
+      appBar: AppBar(title: Text(widget.metric.name)),
       body: Column(
         children: [
+          // Metric info card
+          Card(
+            margin: const EdgeInsets.all(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.metric.name,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _formatFrequency(widget.metric.frequency),
+                          style: const TextStyle(
+                            color: Colors.blue,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Target: ${widget.metric.targetValue.toStringAsFixed(1)}',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  LinearProgressIndicator(
+                    value: widget.metric.progressPercentage / 100,
+                    backgroundColor: Colors.grey[300],
+                    minHeight: 8,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${widget.metric.currentValue.toStringAsFixed(1)} / ${widget.metric.targetValue.toStringAsFixed(1)} (${widget.metric.progressPercentage.toStringAsFixed(0)}%)',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // History section
           Expanded(
             child: widget.metric.history.isEmpty
                 ? const Center(
@@ -78,17 +140,22 @@ class _MetricDetailScreenState extends State<MetricDetailScreen> {
                       return Card(
                         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         child: ListTile(
-                          title: Text(entry.value ?? 'No value'),
+                          title: Text(entry.value.toStringAsFixed(1)),
                           subtitle: Text(
                             '${entry.timestamp.day}/${entry.timestamp.month}/${entry.timestamp.year} '
                             '${entry.timestamp.hour}:${entry.timestamp.minute.toString().padLeft(2, '0')}',
                             style: TextStyle(color: Colors.grey[500]),
                           ),
+                          trailing: entry.notes != null
+                              ? Icon(Icons.note, color: Colors.grey[400])
+                              : null,
                         ),
                       );
                     },
                   ),
           ),
+          
+          // Add entry section
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -101,6 +168,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen> {
                       border: const OutlineInputBorder(),
                       filled: true,
                     ),
+                    keyboardType: TextInputType.number,
                     onSubmitted: (_) => _addEntry(),
                   ),
                 ),
@@ -122,5 +190,18 @@ class _MetricDetailScreenState extends State<MetricDetailScreen> {
         ],
       ),
     );
+  }
+
+  String _formatFrequency(String frequency) {
+    switch (frequency.toLowerCase()) {
+      case 'daily':
+        return 'Daily';
+      case 'weekly':
+        return 'Weekly';
+      case 'monthly':
+        return 'Monthly';
+      default:
+        return frequency;
+    }
   }
 }

@@ -15,12 +15,14 @@ class TrackingScreen extends StatelessWidget {
       builder: (context) => _MetricDialog(),
     );
 
-    if (result != null && result['name'] != null && result['frequency'] != null) {
+    if (result != null && result['name'] != null && result['type'] != null && result['unit'] != null) {
       final newMetric = TrackingMetric(
         id: '${pet.id}-${pet.trackingMetrics.length}',
         petId: pet.id.toString(),
-        name: result['name'],
-        frequency: result['frequency'],
+        name: result['name']!,
+        type: result['type']!,
+        unit: result['unit']!,
+        targetValue: double.tryParse(result['targetValue'] ?? '10.0') ?? 10.0,
       );
 
       pet.trackingMetrics.add(newMetric);
@@ -49,11 +51,14 @@ class TrackingScreen extends StatelessWidget {
     }
   }
 
-  void _toggleCompletion(BuildContext context, Pet pet, TrackingMetric metric) async {
-    metric.isCompleted = !metric.isCompleted;
-    metric.lastCompletion = metric.isCompleted ? DateTime.now() : null;
+  void _updateMetricValue(BuildContext context, Pet pet, TrackingMetric metric, double newValue) async {
+    final updatedMetric = metric.addEntry(newValue);
+    final index = pet.trackingMetrics.indexWhere((m) => m.id == metric.id);
+    if (index != -1) {
+      pet.trackingMetrics[index] = updatedMetric;
     await Provider.of<ApiService>(context, listen: false).updatePet(pet);
     (context as Element).markNeedsBuild();
+    }
   }
 
   @override
@@ -71,24 +76,25 @@ class TrackingScreen extends StatelessWidget {
         itemCount: metrics.length,
         itemBuilder: (context, index) {
           final metric = metrics[index];
-          return ListTile(
-            title: Text(metric.name ?? 'Unnamed Metric'),
+          return Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: ListTile(
+              title: Text(metric.name),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Frequency: ${metric.frequency ?? 'N/A'}'),
-                Text('Last: ${metric.lastCompletion?.toString() ?? 'N/A'}'),
+                  Text('Type: ${metric.type} • Unit: ${metric.unit}'),
+                  Text('Current: ${metric.currentValue} ${metric.unit} • Target: ${metric.targetValue} ${metric.unit}'),
+                  if (metric.lastUpdated != null)
+                    Text('Last Updated: ${metric.lastUpdated!.toString().split('.')[0]}'),
               ],
             ),
-            trailing: Wrap(
-              spacing: 8,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: Icon(
-                    metric.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-                    color: metric.isCompleted ? Colors.green : Colors.grey,
-                  ),
-                  onPressed: () => _toggleCompletion(context, pet, metric),
+                    icon: const Icon(Icons.edit),
+                    onPressed: () => _showUpdateDialog(context, pet, metric),
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete),
@@ -99,6 +105,7 @@ class TrackingScreen extends StatelessWidget {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => MetricDetailScreen(metric: metric)),
+              ),
             ),
           );
         },
@@ -106,6 +113,39 @@ class TrackingScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _addMetric(context, pet),
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  void _showUpdateDialog(BuildContext context, Pet pet, TrackingMetric metric) {
+    final controller = TextEditingController(text: metric.currentValue.toString());
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Update ${metric.name}'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: 'New Value (${metric.unit})',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final newValue = double.tryParse(controller.text);
+              if (newValue != null) {
+                _updateMetricValue(context, pet, metric, newValue);
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Update'),
+          ),
+        ],
       ),
     );
   }
@@ -118,7 +158,9 @@ class _MetricDialog extends StatefulWidget {
 
 class __MetricDialogState extends State<_MetricDialog> {
   final _nameController = TextEditingController();
-  String? _selectedFrequency;
+  final _targetValueController = TextEditingController(text: '10.0');
+  String? _selectedType;
+  String? _selectedUnit;
 
   @override
   Widget build(BuildContext context) {
@@ -133,11 +175,25 @@ class __MetricDialogState extends State<_MetricDialog> {
           ),
           const SizedBox(height: 10),
           DropdownButtonFormField<String>(
-            decoration: const InputDecoration(labelText: 'Frequency'),
-            items: ['Daily', 'Weekly', 'Monthly']
-                .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+            decoration: const InputDecoration(labelText: 'Type'),
+            items: ['weight', 'duration', 'count', 'temperature']
+                .map((t) => DropdownMenuItem(value: t, child: Text(t)))
                 .toList(),
-            onChanged: (value) => setState(() => _selectedFrequency = value),
+            onChanged: (value) => setState(() => _selectedType = value),
+          ),
+          const SizedBox(height: 10),
+          DropdownButtonFormField<String>(
+            decoration: const InputDecoration(labelText: 'Unit'),
+            items: _getUnitsForType(_selectedType)
+                .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+                .toList(),
+            onChanged: (value) => setState(() => _selectedUnit = value),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _targetValueController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Target Value'),
           ),
         ],
       ),
@@ -147,12 +203,29 @@ class __MetricDialogState extends State<_MetricDialog> {
           onPressed: () {
             Navigator.pop(context, {
               'name': _nameController.text,
-              'frequency': _selectedFrequency ?? 'Unspecified',
+              'type': _selectedType ?? 'count',
+              'unit': _selectedUnit ?? 'times',
+              'targetValue': _targetValueController.text,
             });
           },
           child: const Text('Add'),
         ),
       ],
     );
+  }
+
+  List<String> _getUnitsForType(String? type) {
+    switch (type) {
+      case 'weight':
+        return ['lbs', 'kg', 'oz', 'g'];
+      case 'duration':
+        return ['minutes', 'hours', 'days'];
+      case 'count':
+        return ['times', 'times/day', 'times/week'];
+      case 'temperature':
+        return ['°F', '°C'];
+      default:
+        return ['times'];
+    }
   }
 }

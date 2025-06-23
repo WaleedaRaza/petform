@@ -68,7 +68,7 @@ class PromptDropdown extends StatelessWidget {
     ];
 
     return Padding(
-      padding: const EdgeInsets.only(top: 48.0, left: 16.0, right: 16.0, bottom: 8.0), // Notch padding
+      padding: const EdgeInsets.only(top: 16.0, left: 16.0, right: 16.0, bottom: 8.0),
       child: DropdownButtonFormField<String>(
         value: aiProvider.selectedPrompt,
         decoration: InputDecoration(
@@ -131,18 +131,28 @@ class AskAiScreen extends StatelessWidget {
         final textController = TextEditingController();
 
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Ask AI'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => aiProvider.clearChat(),
-                tooltip: 'Clear Chat',
-              ),
-            ],
-          ),
           body: Column(
             children: [
+              // Header with title and clear button
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    Text(
+                      'Ask AI',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () => aiProvider.clearChat(),
+                      tooltip: 'Clear Chat',
+                    ),
+                  ],
+                ),
+              ),
               const PromptDropdown(),
               Expanded(
                 child: aiProvider.messages.isEmpty

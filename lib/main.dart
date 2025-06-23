@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'providers/user_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/app_state_provider.dart';
 import 'services/api_service.dart';
 import 'views/welcome_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -32,6 +32,7 @@ void main() async {
         ChangeNotifierProvider(create: (context) => UserProvider()),
         Provider(create: (context) => ApiService()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => AppStateProvider()),
       ],
       child: const PetformApp(),
     ),

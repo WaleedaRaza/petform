@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import '../providers/app_state_provider.dart';
+import '../widgets/status_bar.dart';
 import 'community_feed_screen.dart';
 import 'ask_ai_screen.dart';
-import 'shopping_list_screen.dart';
-import 'tracking_screen.dart';
+import 'shopping_screen.dart';
+import 'enhanced_tracking_screen.dart';
 import 'profile_settings_screen.dart';
 import 'welcome_screen.dart';
 
@@ -17,14 +19,36 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  bool _isInitialized = false;
 
   static final List<Widget> _pages = <Widget>[
     const CommunityFeedScreen(),
     const AskAiScreen(),
-    const ShoppingListScreen(),
-    const TrackingScreen(),
+    const ShoppingScreen(),
+    const EnhancedTrackingScreen(),
     const ProfileSettingsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Defer initialization to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeAppState();
+    });
+  }
+
+  Future<void> _initializeAppState() async {
+    if (_isInitialized) return; // Prevent multiple initializations
+    
+    final appState = Provider.of<AppStateProvider>(context, listen: false);
+    await appState.initialize();
+    if (mounted) {
+      setState(() {
+        _isInitialized = true;
+      });
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -43,8 +67,23 @@ class _HomeScreenState extends State<HomeScreen> {
       return const WelcomeScreen();
     }
 
+    if (!_isInitialized) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
-      body: _pages[_selectedIndex],
+      body: Column(
+        children: [
+          const StatusBar(),
+          Expanded(
+            child: _pages[_selectedIndex],
+          ),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.feed), label: 'Feed'),
