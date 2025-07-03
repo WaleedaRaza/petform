@@ -75,28 +75,37 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    return Scaffold(
-      body: Column(
-        children: [
-          const StatusBar(),
-          Expanded(
-            child: _pages[_selectedIndex],
-          ),
-        ],
+    return Container(
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('lib/assets/petform_backdrop.png'),
+          fit: BoxFit.cover,
+        ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.feed), label: 'Feed'),
-          BottomNavigationBarItem(icon: Icon(Icons.question_answer), label: 'Ask AI'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Shopping'),
-          BottomNavigationBarItem(icon: Icon(Icons.track_changes), label: 'Tracking'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Theme.of(context).colorScheme.secondary,
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Column(
+          children: [
+            const StatusBar(),
+            Expanded(
+              child: _pages[_selectedIndex],
+            ),
+          ],
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(icon: Icon(Icons.feed), label: 'Feed'),
+            BottomNavigationBarItem(icon: Icon(Icons.question_answer), label: 'Ask AI'),
+            BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Shopping'),
+            BottomNavigationBarItem(icon: Icon(Icons.track_changes), label: 'Tracking'),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          ],
+          currentIndex: _selectedIndex,
+          selectedItemColor: Theme.of(context).colorScheme.secondary,
+          unselectedItemColor: Colors.grey,
+          onTap: _onItemTapped,
+          type: BottomNavigationBarType.fixed,
+        ),
       ),
     );
   }

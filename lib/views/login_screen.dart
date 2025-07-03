@@ -45,9 +45,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Log In')),
-      body: Padding(
+    return Container(
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('lib/assets/petform_backdrop.png'),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Log In'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -75,6 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 : RoundedButton(text: 'Log In', onPressed: _login),
           ],
         ),
+      ),
       ),
     );
   }

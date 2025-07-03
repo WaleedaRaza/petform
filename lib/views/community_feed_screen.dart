@@ -169,6 +169,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
       child: Consumer2<FeedProvider, AppStateProvider>(
         builder: (context, feedProvider, appState, child) {
           return Scaffold(
+            backgroundColor: Colors.transparent,
             body: RefreshIndicator(
               onRefresh: () async {
                 await Future.wait([

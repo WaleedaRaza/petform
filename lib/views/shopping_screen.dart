@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/app_state_provider.dart';
 import '../services/shopping_service.dart';
 import '../models/shopping_item.dart';
+
 
 class ShoppingScreen extends StatefulWidget {
   const ShoppingScreen({super.key});
@@ -17,16 +19,18 @@ class _ShoppingScreenState extends State<ShoppingScreen>
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String _selectedCategory = 'All';
-  String _selectedPriority = 'All';
+  String _selectedPetType = 'All';
+  final List<String> _petTypes = [
+    'All',
+    ...ShoppingService.getAvailablePetTypes(),
+  ];
 
-  final List<String> _categories = ['All', 'Food', 'Toys', 'Beds', 'Accessories', 'Grooming', 'Treats', 'Hygiene', 'Equipment', 'Housing'];
-  final List<String> _priorities = ['All', 'High', 'Medium', 'Low'];
+
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -40,17 +44,51 @@ class _ShoppingScreenState extends State<ShoppingScreen>
   Widget build(BuildContext context) {
     return Consumer<AppStateProvider>(
       builder: (context, appState, child) {
-        return Scaffold(
-          body: Column(
+            return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Column(
             children: [
               // Header with title
               Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'Shopping',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Shopping',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Pet type filter dropdown
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedPetType,
+                        decoration: InputDecoration(
+                          labelText: 'Pet Type',
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                        dropdownColor: Theme.of(context).colorScheme.surface,
+                        items: _petTypes.map((String type) {
+                          return DropdownMenuItem<String>(
+                            value: type,
+                            child: Text(type),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedPetType = newValue!;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
               // Tab bar
@@ -60,9 +98,8 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                   controller: _tabController,
                   isScrollable: true,
                   tabs: const [
-                    Tab(text: 'Suggestions'),
+                    Tab(text: 'Browse All'),
                     Tab(text: 'My List'),
-                    Tab(text: 'Chewy'),
                     Tab(text: 'Search'),
                     Tab(text: 'Categories'),
                   ],
@@ -73,9 +110,8 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    _buildSuggestionsTab(appState),
+                    _buildBrowseAllTab(appState),
                     _buildMyListTab(appState),
-                    _buildChewyTab(appState),
                     _buildSearchTab(appState),
                     _buildCategoriesTab(appState),
                   ],
@@ -88,61 +124,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
     );
   }
 
-  Widget _buildSuggestionsTab(AppStateProvider appState) {
-    final suggestions = _getFilteredSuggestions(appState);
-    
-    return Column(
-      children: [
-        // Smart recommendations header
-        Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Smart Recommendations',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Based on your ${appState.pets.length} pet${appState.pets.length != 1 ? 's' : ''}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-        ),
-        
-        // Filter chips
-        _buildFilterChips(),
-        
-        // Suggestions list
-        Expanded(
-          child: suggestions.isEmpty
-              ? const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text('No suggestions found'),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: suggestions.length,
-                  itemBuilder: (context, index) {
-                    return _buildSuggestionCard(suggestions[index], appState);
-                  },
-                ),
-        ),
-      ],
-    );
-  }
+
 
   Widget _buildMyListTab(AppStateProvider appState) {
     final myList = appState.shoppingItems;
@@ -211,106 +193,32 @@ class _ShoppingScreenState extends State<ShoppingScreen>
     );
   }
 
-  Widget _buildChewyTab(AppStateProvider appState) {
-    final chewyProducts = ShoppingService.getChewySuggestions();
-    
-    return Column(
-      children: [
-        // Chewy header with shipping info
-        Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'CHEWY',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Chewy Products',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          'Free shipping on orders over \$49 • Auto-ship & save 5%',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        
-        // Chewy products list
-        Expanded(
-          child: chewyProducts.isEmpty
-              ? const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text('No Chewy products found'),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: chewyProducts.length,
-                  itemBuilder: (context, index) {
-                    return _buildChewyProductCard(chewyProducts[index], appState);
-                  },
-                ),
-        ),
-      ],
+  Widget _buildBrowseAllTab(AppStateProvider appState) {
+    final allProducts = _selectedPetType == 'All'
+        ? ShoppingService.getAllProducts()
+        : ShoppingService.getProductsForPet(_selectedPetType);
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: allProducts.length,
+      itemBuilder: (context, index) {
+        return _buildSuggestionCard(allProducts[index], appState);
+      },
     );
   }
 
-  Widget _buildChewyProductCard(ShoppingItem item, AppStateProvider appState) {
-    final isInList = appState.shoppingItems.any((i) => i.id == item.id);
-    
+  Widget _buildShoppingListItem(ShoppingItem item, AppStateProvider appState) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () => _showChewyProductDetails(item, appState),
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Product image
-            if (item.imageUrl != null)
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: SizedBox(
-                  height: 200,
-                  width: double.infinity,
-                  child: CachedNetworkImage(
+      margin: const EdgeInsets.only(bottom: 8),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: ListTile(
+        leading: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(
+            width: 50,
+            height: 50,
+            child: item.imageUrl != null
+                ? CachedNetworkImage(
                     imageUrl: item.imageUrl!,
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
@@ -319,543 +227,41 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                     ),
                     errorWidget: (context, url, error) => Container(
                       color: Colors.grey[300],
-                      child: const Icon(Icons.image, size: 64),
+                      child: const Icon(Icons.image),
                     ),
+                  )
+                : Container(
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.image),
                   ),
-                ),
-              ),
-            
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Brand and rating
-                  Row(
-                    children: [
-                      if (item.brand != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            item.brand!,
-                            style: const TextStyle(
-                              color: Colors.orange,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      const Spacer(),
-                      if (item.hasRating) ...[
-                        Icon(Icons.star, size: 16, color: Colors.amber),
-                        const SizedBox(width: 4),
-                        Text(
-                          item.rating!.toStringAsFixed(1),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        if (item.hasReviews) ...[
-                          const SizedBox(width: 4),
-                          Text(
-                            '(${item.reviewCount})',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 8),
-                  
-                  // Product name
-                  Text(
-                    item.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  
-                  const SizedBox(height: 4),
-                  
-                  // Description
-                  if (item.description != null)
-                    Text(
-                      item.description!,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  
-                  const SizedBox(height: 12),
-                  
-                  // Price and badges
-                  Row(
-                    children: [
-                      Text(
-                        '\$${item.estimatedCost.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: Colors.orange,
-                        ),
-                      ),
-                      const Spacer(),
-                      if (item.hasFreeShipping)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'FREE SHIPPING',
-                            style: TextStyle(
-                              color: Colors.green,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      if (item.isAutoShipEligible) ...[
-                        const SizedBox(width: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'AUTO-SHIP',
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 12),
-                  
-                  // Action buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => _addToChewyCart(item),
-                          icon: const Icon(Icons.shopping_cart_outlined),
-                          label: const Text('Add to Cart'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.orange,
-                            side: const BorderSide(color: Colors.orange),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            if (isInList) {
-                              appState.removeShoppingItem(item);
-                            } else {
-                              appState.addShoppingItem(item);
-                            }
-                          },
-                          icon: Icon(
-                            isInList ? Icons.remove_shopping_cart : Icons.add_shopping_cart,
-                          ),
-                          label: Text(isInList ? 'Remove' : 'Add to List'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isInList ? Colors.red : Colors.orange,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
-    );
-  }
-
-  void _addToChewyCart(ShoppingItem item) async {
-    try {
-      final success = await ShoppingService.addToChewyCart(item.id, item.quantity);
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Added ${item.name} to Chewy cart'),
-            backgroundColor: Colors.green,
+        title: Text(
+          item.name,
+          style: TextStyle(
+            decoration: item.isCompleted ? TextDecoration.lineThrough : null,
           ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to add to cart: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  void _showChewyProductDetails(ShoppingItem item, AppStateProvider appState) async {
-    try {
-      final details = await ShoppingService.getProductDetails(item.id);
-      if (mounted) {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          builder: (context) => _buildChewyProductDetailsSheet(item, details, appState),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load product details: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Widget _buildChewyProductDetailsSheet(ShoppingItem item, Map<String, dynamic> details, AppStateProvider appState) {
-    final isInList = appState.shoppingItems.any((i) => i.id == item.id);
-    
-    return DraggableScrollableSheet(
-      initialChildSize: 0.8,
-      minChildSize: 0.6,
-      maxChildSize: 0.95,
-      builder: (context, scrollController) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[400],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            
-            // Product image
-            if (item.imageUrl != null)
-              Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 250,
-                    child: CachedNetworkImage(
-                      imageUrl: item.imageUrl!,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: Colors.grey[300],
-                        child: const Center(child: CircularProgressIndicator()),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Colors.grey[300],
-                        child: const Icon(Icons.image, size: 64),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            
-            const SizedBox(height: 20),
-            
-            // Product info
-            Expanded(
-              child: SingleChildScrollView(
-                controller: scrollController,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Brand and rating
-                    Row(
-                      children: [
-                        if (item.brand != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Text(
-                              item.brand!,
-                              style: const TextStyle(
-                                color: Colors.orange,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        const Spacer(),
-                        if (item.hasRating) ...[
-                          Icon(Icons.star, size: 20, color: Colors.amber),
-                          const SizedBox(width: 4),
-                          Text(
-                            item.rating!.toStringAsFixed(1),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          if (item.hasReviews) ...[
-                            const SizedBox(width: 4),
-                            Text(
-                              '(${item.reviewCount} reviews)',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 12),
-                    
-                    // Product name
-                    Text(
-                      item.name,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 8),
-                    
-                    // Price
-                    Text(
-                      '\$${item.estimatedCost.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                        color: Colors.orange,
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // Chewy badges
-                    if (item.hasFreeShipping || item.isAutoShipEligible) ...[
-                      Row(
-                        children: [
-                          if (item.hasFreeShipping)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                'FREE SHIPPING',
-                                style: TextStyle(
-                                  color: Colors.green,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          if (item.hasFreeShipping && item.isAutoShipEligible)
-                            const SizedBox(width: 8),
-                          if (item.isAutoShipEligible)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                'AUTO-SHIP & SAVE 5%',
-                                style: TextStyle(
-                                  color: Colors.blue,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    
-                    // Description
-                    if (item.description != null) ...[
-                      const Text(
-                        'Description',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        item.description!,
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                    
-                    // Action buttons
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => _addToChewyCart(item),
-                            icon: const Icon(Icons.shopping_cart_outlined),
-                            label: const Text('Add to Cart'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.orange,
-                              side: const BorderSide(color: Colors.orange),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              if (isInList) {
-                                appState.removeShoppingItem(item);
-                              } else {
-                                appState.addShoppingItem(item);
-                              }
-                              Navigator.pop(context);
-                            },
-                            icon: Icon(
-                              isInList ? Icons.remove_shopping_cart : Icons.add_shopping_cart,
-                            ),
-                            label: Text(isInList ? 'Remove from List' : 'Add to List'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isInList ? Colors.red : Colors.orange,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    if (item.isAutoShipEligible) ...[
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _setupAutoShip(item),
-                          icon: const Icon(Icons.repeat),
-                          label: const Text('Setup Auto-Ship'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ],
         ),
-      ),
-    );
-  }
-
-  void _setupAutoShip(ShoppingItem item) async {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Setup Auto-Ship'),
-        content: Column(
+        subtitle: Text(
+          '${item.brand ?? ''} • \$${item.estimatedCost.toStringAsFixed(2)}',
+          style: TextStyle(color: Colors.grey[600]),
+        ),
+        trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('How often would you like this item delivered?'),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: 'Monthly',
-              decoration: const InputDecoration(
-                labelText: 'Frequency',
-                border: OutlineInputBorder(),
-              ),
-              items: ['Weekly', 'Bi-weekly', 'Monthly', 'Every 6 weeks', 'Every 2 months']
-                  .map((f) => DropdownMenuItem(value: f, child: Text(f)))
-                  .toList(),
-              onChanged: (value) {},
+            Checkbox(
+              value: item.isCompleted,
+              onChanged: (value) {
+                final updatedItem = item.copyWith(isCompleted: value ?? false);
+                appState.updateShoppingItem(updatedItem);
+              },
+            ),
+            IconButton(
+              onPressed: () => appState.removeShoppingItem(item),
+              icon: const Icon(Icons.delete, color: Colors.red),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                final success = await ShoppingService.setupChewyAutoShip(item.id, item.quantity, 'Monthly');
-                Navigator.pop(context);
-                if (success && mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Auto-ship setup successfully!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              } catch (e) {
-                Navigator.pop(context);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to setup auto-ship: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Setup'),
-          ),
-        ],
       ),
     );
   }
@@ -924,11 +330,13 @@ class _ShoppingScreenState extends State<ShoppingScreen>
         mainAxisSpacing: 16,
         childAspectRatio: 1.2,
       ),
-      itemCount: _categories.length - 1, // Exclude 'All'
+      itemCount: 9, // Number of categories excluding 'All'
       itemBuilder: (context, index) {
-        final category = _categories[index + 1]; // Skip 'All'
-        final items = ShoppingService.getSuggestionsByCategory(category);
-        
+        final categories = ['Food', 'Toys', 'Beds', 'Accessories', 'Grooming', 'Treats', 'Hygiene', 'Equipment', 'Housing'];
+        final category = categories[index];
+        final items = _selectedPetType == 'All'
+            ? ShoppingService.getSuggestionsByCategory(category)
+            : ShoppingService.getProductsForPet(_selectedPetType).where((item) => item.category.toLowerCase() == category.toLowerCase()).toList();
         return _buildCategoryCard(category, items, appState);
       },
     );
@@ -1103,20 +511,36 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                   // Action buttons
                   Row(
                     children: [
-                      if (item.isChewyProduct) ...[
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => _addToChewyCart(item),
-                            icon: const Icon(Icons.shopping_cart_outlined),
-                            label: const Text('Add to Cart'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.orange,
-                              side: const BorderSide(color: Colors.orange),
-                            ),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            String urlString;
+                            if (item.chewyUrl != null && item.chewyUrl!.isNotEmpty && !item.chewyUrl!.endsWith('/dp/')) {
+                              urlString = item.chewyUrl!;
+                            } else {
+                              // If URL is incomplete or missing, search for the product on Chewy
+                              final searchQuery = Uri.encodeComponent(item.name);
+                              urlString = 'https://www.chewy.com/s?query=$searchQuery';
+                            }
+                            
+                            final url = Uri.parse(urlString);
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(url, mode: LaunchMode.externalApplication);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Could not open link')),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.open_in_new),
+                          label: const Text('Open Link'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                      ],
+                      ),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () {
@@ -1131,7 +555,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                           ),
                           label: Text(isInList ? 'Remove' : 'Add to List'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isInList ? Colors.red : Colors.orange,
+                            backgroundColor: isInList ? Colors.red : Colors.green,
                             foregroundColor: Colors.white,
                           ),
                         ),
@@ -1147,269 +571,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
     );
   }
 
-  Widget _buildShoppingListItem(ShoppingItem item, AppStateProvider appState) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: ListTile(
-        leading: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: SizedBox(
-            width: 50,
-            height: 50,
-            child: item.imageUrl != null
-                ? CachedNetworkImage(
-                    imageUrl: item.imageUrl!,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: Colors.grey[300],
-                      child: const Center(child: CircularProgressIndicator()),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.image),
-                    ),
-                  )
-                : Container(
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.image),
-                  ),
-          ),
-        ),
-        title: Text(
-          item.name,
-          style: TextStyle(
-            decoration: item.isCompleted ? TextDecoration.lineThrough : null,
-          ),
-        ),
-        subtitle: Text(
-          '${item.brand ?? ''} • \$${item.estimatedCost.toStringAsFixed(2)}',
-          style: TextStyle(color: Colors.grey[600]),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Checkbox(
-              value: item.isCompleted,
-              onChanged: (value) {
-                final updatedItem = item.copyWith(isCompleted: value ?? false);
-                appState.updateShoppingItem(updatedItem);
-              },
-            ),
-            IconButton(
-              onPressed: () => appState.removeShoppingItem(item),
-              icon: const Icon(Icons.delete, color: Colors.red),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildSearchResults(AppStateProvider appState) {
-    final results = ShoppingService.searchSuggestions(_searchQuery);
-    
-    if (results.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text('No results found'),
-            SizedBox(height: 8),
-            Text('Try different keywords'),
-          ],
-        ),
-      );
-    }
-    
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: results.length,
-      itemBuilder: (context, index) {
-        return _buildSuggestionCard(results[index], appState);
-      },
-    );
-  }
-
-  Widget _buildCategoryCard(String category, List<ShoppingItem> items, AppStateProvider appState) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () => _showCategoryItems(category, items, appState),
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              _getCategoryIcon(category),
-              size: 48,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              category,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${items.length} items',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilterChips() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          FilterChip(
-            label: const Text('All'),
-            selected: _selectedCategory == 'All' && _selectedPriority == 'All',
-            onSelected: (selected) {
-              setState(() {
-                _selectedCategory = 'All';
-                _selectedPriority = 'All';
-              });
-            },
-          ),
-          const SizedBox(width: 8),
-          ..._categories.skip(1).map((category) => Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              label: Text(category),
-              selected: _selectedCategory == category,
-              onSelected: (selected) {
-                setState(() {
-                  _selectedCategory = selected ? category : 'All';
-                });
-              },
-            ),
-          )),
-          const SizedBox(width: 16),
-          ..._priorities.skip(1).map((priority) => Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              label: Text(priority),
-              selected: _selectedPriority == priority,
-              onSelected: (selected) {
-                setState(() {
-                  _selectedPriority = selected ? priority : 'All';
-                });
-              },
-            ),
-          )),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPriorityChip(String priority) {
-    Color color;
-    switch (priority.toLowerCase()) {
-      case 'high':
-        color = Colors.red;
-        break;
-      case 'medium':
-        color = Colors.orange;
-        break;
-      case 'low':
-        color = Colors.green;
-        break;
-      default:
-        color = Colors.grey;
-    }
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        priority,
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  List<ShoppingItem> _getFilteredSuggestions(AppStateProvider appState) {
-    List<ShoppingItem> suggestions = [];
-    
-    // Get suggestions based on user's pets
-    for (final pet in appState.pets) {
-      suggestions.addAll(ShoppingService.getSuggestionsForPet(pet.species));
-    }
-    
-    // If no pets, show all suggestions
-    if (suggestions.isEmpty) {
-      suggestions = ShoppingService.getAllSuggestions();
-    }
-    
-    // Apply filters
-    if (_selectedCategory != 'All') {
-      suggestions = suggestions.where((item) => 
-        item.category.toLowerCase() == _selectedCategory.toLowerCase()
-      ).toList();
-    }
-    
-    if (_selectedPriority != 'All') {
-      suggestions = suggestions.where((item) => 
-        item.priority.toLowerCase() == _selectedPriority.toLowerCase()
-      ).toList();
-    }
-    
-    return suggestions;
-  }
-
-  double _calculateTotalCost(List<ShoppingItem> items) {
-    return items.fold(0.0, (sum, item) => sum + item.totalCost);
-  }
-
-  void _clearShoppingList(AppStateProvider appState) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear Shopping List'),
-        content: const Text('Are you sure you want to clear all items?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              // Clear all items
-              for (final item in appState.shoppingItems) {
-                appState.removeShoppingItem(item);
-              }
-              Navigator.pop(context);
-            },
-            child: const Text('Clear All'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showItemDetails(ShoppingItem item, AppStateProvider appState) {
     showModalBottomSheet(
@@ -1587,6 +749,138 @@ class _ShoppingScreenState extends State<ShoppingScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSearchResults(AppStateProvider appState) {
+    final searchResults = ShoppingService.searchProducts(_searchQuery);
+    
+    if (searchResults.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('No products found'),
+            SizedBox(height: 8),
+            Text('Try different keywords'),
+          ],
+        ),
+      );
+    }
+    
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: searchResults.length,
+      itemBuilder: (context, index) {
+        return _buildSuggestionCard(searchResults[index], appState);
+      },
+    );
+  }
+
+  Widget _buildCategoryCard(String category, List<ShoppingItem> items, AppStateProvider appState) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () => _showCategoryItems(category, items, appState),
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              _getCategoryIcon(category),
+              size: 48,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              category,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${items.length} items',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+
+  Widget _buildPriorityChip(String priority) {
+    Color color;
+    switch (priority.toLowerCase()) {
+      case 'high':
+        color = Colors.red;
+        break;
+      case 'medium':
+        color = Colors.orange;
+        break;
+      case 'low':
+        color = Colors.green;
+        break;
+      default:
+        color = Colors.grey;
+    }
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        priority,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+
+
+  double _calculateTotalCost(List<ShoppingItem> items) {
+    return items.fold(0.0, (sum, item) => sum + item.totalCost);
+  }
+
+  void _clearShoppingList(AppStateProvider appState) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear Shopping List'),
+        content: const Text('Are you sure you want to clear all items?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              // Clear all items
+              for (final item in appState.shoppingItems) {
+                appState.removeShoppingItem(item);
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Clear All'),
+          ),
+        ],
       ),
     );
   }

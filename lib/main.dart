@@ -54,7 +54,7 @@ class PetformApp extends StatelessWidget {
           secondary: Colors.orange,
           surface: Colors.grey[900]!,
         ),
-        scaffoldBackgroundColor: Colors.grey[900],
+        scaffoldBackgroundColor: Colors.transparent,
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.grey[900],
           titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
@@ -115,7 +115,7 @@ class PetformApp extends StatelessWidget {
           secondary: Colors.orange,
           surface: Colors.grey[900]!,
         ),
-        scaffoldBackgroundColor: Colors.grey[900],
+        scaffoldBackgroundColor: Colors.transparent,
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.grey[900],
           titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20),
@@ -170,7 +170,28 @@ class PetformApp extends StatelessWidget {
             ),
       ),
       themeMode: themeProvider.themeMode,
-      home: const WelcomeScreen(),
+      home: const BackdropWrapper(child: WelcomeScreen()),
+    );
+  }
+}
+
+class BackdropWrapper extends StatelessWidget {
+  final Widget child;
+  
+  const BackdropWrapper({super.key, required this.child});
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('lib/assets/petform_backdrop.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: child,
+      ),
     );
   }
 }

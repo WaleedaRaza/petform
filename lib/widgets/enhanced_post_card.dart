@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/app_state_provider.dart';
 import '../models/post.dart';
 import '../views/post_detail_screen.dart';
+import '../views/comment_screen.dart';
 import 'package:flutter/foundation.dart';
 
 class EnhancedPostCard extends StatelessWidget {
@@ -135,7 +136,7 @@ class EnhancedPostCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  post.author,
+                  post.author.contains('@') ? post.author.split('@')[0] : post.author, // Show username part of email or full username
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -172,6 +173,24 @@ class EnhancedPostCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (post.editedAt != null) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[400],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          '(edited)',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],
@@ -291,18 +310,28 @@ class EnhancedPostCard extends StatelessWidget {
           
           // Comments
           if (post.postType == 'community') ...[
-            Row(
-              children: [
-                Icon(Icons.comment, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text(
-                  '${post.comments.length}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
+            InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CommentScreen(post: post),
                   ),
-                ),
-              ],
+                );
+              },
+              child: Row(
+                children: [
+                  Icon(Icons.comment, size: 16, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${post.comments.length}',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(width: 16),
           ],

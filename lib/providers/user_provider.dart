@@ -1,17 +1,20 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../services/firebase_auth_service.dart';
 import '../models/pet.dart';
 
 class UserProvider with ChangeNotifier {
   User? _firebaseUser;
+  String? _username;
   List<Pet> _pets = [];
   final FirebaseAuthService _authService = FirebaseAuthService();
   final ApiService _apiService = ApiService();
 
   User? get firebaseUser => _firebaseUser;
   String? get email => _firebaseUser?.email;
+  String? get username => _username;
   List<Pet> get pets => _pets;
   bool get isLoggedIn => _firebaseUser != null;
   bool get isAdmin => _firebaseUser != null && _authService.isAdmin(_firebaseUser!);
@@ -32,7 +35,8 @@ class UserProvider with ChangeNotifier {
   Future<void> _loadUserData() async {
     try {
       // Load user data from API or local storage
-      // For now, we'll use mock data
+      final prefs = await SharedPreferences.getInstance();
+      _username = prefs.getString('user_username');
       _pets = await _apiService.getPets();
       notifyListeners();
     } catch (e) {
@@ -48,9 +52,16 @@ class UserProvider with ChangeNotifier {
   }
 
   // Email/Password sign up
-  Future<void> signUp(String email, String password) async {
+  Future<void> signUp(String email, String username, String password, [String? profilePhotoBase64]) async {
     try {
       await _authService.signUpWithEmailAndPassword(email, password);
+      _username = username;
+      // Save username to SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_username', username);
+      if (profilePhotoBase64 != null) {
+        await prefs.setString('user_profile_photo', profilePhotoBase64);
+      }
     } catch (e) {
       if (kDebugMode) {
         print('UserProvider: Sign up error: $e');
@@ -162,5 +173,20 @@ class UserProvider with ChangeNotifier {
       _pets[index] = updatedPet;
       notifyListeners();
     }
+  }
+
+  // Update username
+  Future<void> updateUsername(String newUsername) async {
+    _username = newUsername;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_username', newUsername);
+    notifyListeners();
+  }
+
+  // Update profile photo
+  Future<void> updateProfilePhoto(String base64Photo) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_profile_photo', base64Photo);
+    notifyListeners();
   }
 }

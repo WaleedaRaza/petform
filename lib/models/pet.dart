@@ -17,6 +17,7 @@ class Pet {
   final String? tankSize;
   final String? cageSize;
   final String? favoriteToy;
+  final String? photoUrl;
   final Map<String, dynamic>? customFields;
   final List<ShoppingItem> shoppingList;
   final List<TrackingMetric> trackingMetrics;
@@ -36,6 +37,7 @@ class Pet {
     this.tankSize,
     this.cageSize,
     this.favoriteToy,
+    this.photoUrl,
     this.customFields,
     this.shoppingList = const [],
     this.trackingMetrics = const [],
@@ -56,6 +58,7 @@ class Pet {
     String? tankSize,
     String? cageSize,
     String? favoriteToy,
+    String? photoUrl,
     Map<String, dynamic>? customFields,
     List<ShoppingItem>? shoppingList,
     List<TrackingMetric>? trackingMetrics,
@@ -75,6 +78,7 @@ class Pet {
       tankSize: tankSize ?? this.tankSize,
       cageSize: cageSize ?? this.cageSize,
       favoriteToy: favoriteToy ?? this.favoriteToy,
+      photoUrl: photoUrl ?? this.photoUrl,
       customFields: customFields ?? this.customFields,
       shoppingList: shoppingList ?? this.shoppingList,
       trackingMetrics: trackingMetrics ?? this.trackingMetrics,
@@ -97,6 +101,7 @@ class Pet {
       tankSize: json['tankSize'] as String?,
       cageSize: json['cageSize'] as String?,
       favoriteToy: json['favoriteToy'] as String?,
+      photoUrl: json['photoUrl'] as String?,
       customFields: Map<String, dynamic>.from(json['customFields'] ?? {}),
       shoppingList: (json['shoppingList'] as List<dynamic>?)
               ?.map((item) => ShoppingItem.fromJson(item))
@@ -125,6 +130,7 @@ class Pet {
       'tankSize': tankSize,
       'cageSize': cageSize,
       'favoriteToy': favoriteToy,
+      'photoUrl': photoUrl,
       'customFields': customFields,
       'shoppingList': shoppingList.map((item) => item.toJson()).toList(),
       'trackingMetrics': trackingMetrics.map((metric) => metric.toJson()).toList(),

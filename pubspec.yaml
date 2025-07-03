@@ -1,5 +1,5 @@
 name: petform
-description: A pet management app.
+description: Your comprehensive pet management companion. Track health, get AI advice, shop for supplies, and connect with the pet community.
 
 version: 1.0.0+1
 
@@ -15,6 +15,8 @@ dependencies:
   shimmer: ^2.0.0
   url_launcher: ^6.0.3
   http: ^1.4.0
+  image_picker: ^1.0.4
+  path_provider: ^2.1.1
   firebase_core: ^3.14.0
   firebase_auth: ^5.3.3
   google_sign_in: ^6.2.1
@@ -27,5 +29,6 @@ flutter:
   uses-material-design: true
   assets:
     - lib/assets/reddit.png
+    - lib/assets/petform_backdrop.png
 
 
