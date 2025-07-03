@@ -233,6 +233,7 @@ class ApiService {
     required String petType,
     required String author,
     String? imageUrl,
+    String? imageBase64,
   }) async {
     await Future.delayed(const Duration(seconds: 1));
     final prefs = await SharedPreferences.getInstance();
@@ -247,6 +248,7 @@ class ApiService {
       imageUrl: imageUrl,
       upvotes: 0,
       createdAt: DateTime.now(),
+      editedAt: null,
       postType: 'community',
       redditUrl: null,
     );

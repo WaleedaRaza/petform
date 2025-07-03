@@ -39,6 +39,7 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
     }
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
           // Header with title
@@ -72,6 +73,7 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
 
   Widget _buildNoPetsView() {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
           // Header with title

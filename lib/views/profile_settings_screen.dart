@@ -8,8 +8,10 @@ import '../models/post.dart';
 import '../providers/user_provider.dart';
 import '../providers/app_state_provider.dart';
 import '../providers/theme_provider.dart';
+import '../services/image_service.dart';
 import 'welcome_screen.dart';
 import 'pet_profile_creation_screen.dart';
+import 'edit_pet_screen.dart';
 import '../widgets/rounded_button.dart';
 import 'post_detail_screen.dart';
 import 'saved_posts_screen.dart';
@@ -29,6 +31,21 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         .map((p) => Post.fromJson(p as Map<String, dynamic>))
         .where((post) => post.author == email)
         .toList();
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    
+    if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
   }
 
   @override
@@ -74,7 +91,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              userProvider.email ?? 'N/A',
+                              userProvider.username ?? userProvider.email ?? 'N/A',
                               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -117,6 +134,19 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     value: themeProvider.themeMode == ThemeMode.dark,
                     onChanged: (value) => themeProvider.toggleTheme(),
                     activeColor: Theme.of(context).colorScheme.secondary,
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(Icons.edit),
+                    title: const Text('Edit Username'),
+                    subtitle: Text(userProvider.username ?? 'Not set'),
+                    onTap: () => _showEditUsernameDialog(context, userProvider),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.photo_camera),
+                    title: const Text('Change Profile Photo'),
+                    subtitle: const Text('Update your profile picture'),
+                    onTap: () => _showChangePhotoDialog(context, userProvider),
                   ),
                 ],
               ),
@@ -254,9 +284,64 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           else
                             ...posts.take(3).map((post) => Padding(
                               padding: const EdgeInsets.only(top: 8),
-                              child: Text(
-                                '• ${post.title}',
-                                style: Theme.of(context).textTheme.bodyMedium,
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => PostDetailScreen(post: post),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey[300]!),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        post.title,
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        post.content.length > 100 
+                                          ? '${post.content.substring(0, 100)}...' 
+                                          : post.content,
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: Colors.grey[600],
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.comment, size: 14, color: Colors.grey[500]),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '${post.comments.length} comments',
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: Colors.grey[500],
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          Text(
+                                            _formatDate(post.createdAt),
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: Colors.grey[500],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             )),
                         ],
@@ -500,10 +585,15 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   onSelected: (value) async {
                     switch (value) {
                       case 'edit':
-                        // TODO: Navigate to edit pet screen
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Edit functionality coming soon!')),
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EditPetScreen(pet: pet),
+                          ),
                         );
+                        if (result == true) {
+                          setState(() {}); // Refresh the pets list
+                        }
                         break;
                       case 'delete':
                         final confirm = await showDialog<bool>(
@@ -789,21 +879,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-    
-    if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
-  }
-
   void _showAllSavedPosts(BuildContext context) {
     Navigator.push(
       context,
@@ -811,5 +886,49 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         builder: (context) => const SavedPostsScreen(),
       ),
     );
+  }
+
+  void _showEditUsernameDialog(BuildContext context, UserProvider userProvider) {
+    final controller = TextEditingController(text: userProvider.username ?? '');
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Username'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Username',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (controller.text.trim().isNotEmpty) {
+                await userProvider.updateUsername(controller.text.trim());
+                Navigator.pop(context);
+                setState(() {}); // Refresh UI
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePhotoDialog(BuildContext context, UserProvider userProvider) async {
+    final image = await ImageService.pickImageSimple(context);
+    if (image != null) {
+      final base64 = await ImageService.imageToBase64(image);
+      if (base64 != null) {
+        await userProvider.updateProfilePhoto(base64);
+        setState(() {}); // Refresh UI
+      }
+    }
   }
 }

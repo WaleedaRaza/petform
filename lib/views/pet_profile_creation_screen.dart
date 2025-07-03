@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
 import '../models/pet.dart';
 import '../providers/app_state_provider.dart';
+import '../services/image_service.dart';
 import '../widgets/rounded_button.dart';
 import '../models/pet_types.dart';
 
@@ -22,6 +24,8 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
   final _foodSourceController = TextEditingController();
   final Map<String, TextEditingController> _additionalFieldControllers = {};
   final List<MapEntry<String, TextEditingController>> _customFields = [];
+  File? _selectedImage;
+  String? _imageBase64;
 
   @override
   void initState() {
@@ -54,6 +58,20 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
     });
   }
 
+  Future<void> _pickImage() async {
+    final image = await ImageService.pickImageSimple(context);
+    if (image != null) {
+      setState(() {
+        _selectedImage = image;
+      });
+      // Convert to base64 for storage
+      final base64 = await ImageService.imageToBase64(image);
+      if (base64 != null) {
+        _imageBase64 = base64;
+      }
+    }
+  }
+
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       final additionalFields = <String, String>{};
@@ -82,6 +100,7 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
         tankSize: additionalFields['Tank Size'],
         cageSize: additionalFields['Cage Size'],
         favoriteToy: additionalFields['Favorite Toy'],
+        photoUrl: _imageBase64 != null ? 'data:image/jpeg;base64,$_imageBase64' : null,
         customFields: customFields,
         shoppingList: [],
       );
@@ -132,6 +151,60 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
                   if (value == null) return 'Please select a pet type';
                   return null;
                 },
+              ),
+              const SizedBox(height: 16),
+              
+              // Pet Photo Section
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Pet Photo',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Center(
+                        child: GestureDetector(
+                          onTap: _pickImage,
+                          child: Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.grey[300]!, width: 2),
+                              color: Colors.grey[100],
+                            ),
+                            child: _selectedImage != null
+                                ? ClipOval(
+                                    child: Image.file(
+                                      _selectedImage!,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.add_a_photo,
+                                    size: 40,
+                                    color: Colors.grey,
+                                  ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Center(
+                        child: TextButton(
+                          onPressed: _pickImage,
+                          child: Text(_selectedImage != null ? 'Change Photo' : 'Add Photo'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(

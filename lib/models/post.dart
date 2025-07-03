@@ -39,6 +39,7 @@ class Post {
   final String? imageUrl;
   final int? upvotes;
   final DateTime createdAt;
+  final DateTime? editedAt;
   final String postType;
   final String? redditUrl;
   final List<Comment> comments;
@@ -52,6 +53,7 @@ class Post {
     this.imageUrl,
     this.upvotes,
     required this.createdAt,
+    this.editedAt,
     required this.postType,
     this.redditUrl,
     this.comments = const [],
@@ -67,6 +69,7 @@ class Post {
       imageUrl: json['imageUrl'] as String?,
       upvotes: json['upvotes'] as int?,
       createdAt: DateTime.parse(json['createdAt'] as String),
+      editedAt: json['editedAt'] != null ? DateTime.parse(json['editedAt'] as String) : null,
       postType: json['postType'] as String,
       redditUrl: json['redditUrl'] as String?,
       comments: (json['comments'] as List<dynamic>?)
@@ -85,6 +88,7 @@ class Post {
       'imageUrl': imageUrl,
       'upvotes': upvotes,
       'createdAt': createdAt.toIso8601String(),
+      'editedAt': editedAt?.toIso8601String(),
       'postType': postType,
       'redditUrl': redditUrl,
       'comments': comments.map((c) => c.toJson()).toList(),

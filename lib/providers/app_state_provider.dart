@@ -6,6 +6,8 @@ import '../models/pet.dart';
 import '../models/post.dart';
 import '../models/shopping_item.dart';
 import '../models/tracking_metric.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class AppStateProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
@@ -147,22 +149,34 @@ class AppStateProvider with ChangeNotifier {
   
   // Saved posts management
   Future<void> _loadSavedPosts() async {
-    // TODO: Implement saved posts loading from local storage
-    _savedPosts = [];
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedPostsJson = prefs.getString('saved_posts') ?? '[]';
+      final List<dynamic> savedPostsData = jsonDecode(savedPostsJson);
+      _savedPosts = savedPostsData.map((p) => Post.fromJson(p as Map<String, dynamic>)).toList();
+    } catch (e) {
+      _savedPosts = [];
+    }
     // Don't call notifyListeners here - it will be called by initialize
   }
   
   Future<void> savePost(Post post) async {
     if (!_savedPosts.any((p) => p.id == post.id)) {
       _savedPosts.add(post);
-      // TODO: Save to local storage
+      // Save to local storage
+      final prefs = await SharedPreferences.getInstance();
+      final savedPostsJson = jsonEncode(_savedPosts.map((p) => p.toJson()).toList());
+      await prefs.setString('saved_posts', savedPostsJson);
       notifyListeners();
     }
   }
   
   Future<void> unsavePost(Post post) async {
     _savedPosts.removeWhere((p) => p.id == post.id);
-    // TODO: Remove from local storage
+    // Remove from local storage
+    final prefs = await SharedPreferences.getInstance();
+    final savedPostsJson = jsonEncode(_savedPosts.map((p) => p.toJson()).toList());
+    await prefs.setString('saved_posts', savedPostsJson);
     notifyListeners();
   }
   
@@ -387,5 +401,98 @@ class AppStateProvider with ChangeNotifier {
       _setError('Failed to clear data: $e');
       rethrow;
     }
+  }
+
+  // Add this method to get a post by ID from the current state
+  Post? getPostById(String id) {
+    try {
+      return _posts.firstWhere((p) => p.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Add this method to add a comment to a post and persist
+  Future<Post?> addCommentToPost({
+    required String postId,
+    required String content,
+    required String author,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final postsJson = prefs.getString('posts');
+    final List<dynamic> postsData = postsJson != null ? List<Map<String, dynamic>>.from(jsonDecode(postsJson)) : [];
+    final index = _posts.indexWhere((p) => p.id == postId);
+    if (index == -1) return null;
+    final post = _posts[index];
+    final newComment = Comment(
+      id: post.comments.length + 1,
+      content: content,
+      author: author,
+      createdAt: DateTime.now(),
+    );
+    final updatedComments = List<Comment>.from(post.comments)..add(newComment);
+    final updatedPost = Post(
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      author: post.author,
+      petType: post.petType,
+      imageUrl: post.imageUrl,
+      upvotes: post.upvotes,
+      createdAt: post.createdAt,
+      postType: post.postType,
+      redditUrl: post.redditUrl,
+      comments: updatedComments,
+    );
+    _posts[index] = updatedPost;
+    // Update in postsData for persistence
+    final dataIdx = postsData.indexWhere((p) => p['id'].toString() == postId);
+    if (dataIdx != -1) {
+      postsData[dataIdx] = updatedPost.toJson();
+      await prefs.setString('posts', jsonEncode(postsData));
+    }
+    notifyListeners();
+    return updatedPost;
+  }
+
+  // Add this method to update a post and persist
+  Future<Post?> updatePost({
+    required String postId,
+    required String title,
+    required String content,
+    required String petType,
+    String? imageBase64,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final postsJson = prefs.getString('posts');
+    final List<dynamic> postsData = postsJson != null ? List<Map<String, dynamic>>.from(jsonDecode(postsJson)) : [];
+    final index = _posts.indexWhere((p) => p.id == postId);
+    if (index == -1) return null;
+    
+    final originalPost = _posts[index];
+    final updatedPost = Post(
+      id: originalPost.id,
+      title: title,
+      content: content,
+      author: originalPost.author,
+      petType: petType,
+      imageUrl: imageBase64 != null ? 'data:image/jpeg;base64,$imageBase64' : originalPost.imageUrl,
+      upvotes: originalPost.upvotes,
+      createdAt: originalPost.createdAt,
+      editedAt: DateTime.now(),
+      postType: originalPost.postType,
+      redditUrl: originalPost.redditUrl,
+      comments: originalPost.comments,
+    );
+    
+    _posts[index] = updatedPost;
+    // Update in postsData for persistence
+    final dataIdx = postsData.indexWhere((p) => p['id'].toString() == postId);
+    if (dataIdx != -1) {
+      postsData[dataIdx] = updatedPost.toJson();
+      await prefs.setString('posts', jsonEncode(postsData));
+    }
+    notifyListeners();
+    return updatedPost;
   }
 } 
