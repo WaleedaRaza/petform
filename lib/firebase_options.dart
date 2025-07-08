@@ -47,34 +47,34 @@ class DefaultFirebaseOptions {
     apiKey: 'AIzaSyB1eLSjadNHEAZAIdwfc1iC8mIkP0rbaJM',
     appId: '1:465535464603:web:your-web-app-id-here',
     messagingSenderId: '465535464603',
-    projectId: 'petform-3a41d',
-    authDomain: 'petform-3a41d.firebaseapp.com',
-    storageBucket: 'petform-3a41d.firebasestorage.app',
+    projectId: 'petform-c4058',
+    authDomain: 'petform-c4058.firebaseapp.com',
+    storageBucket: 'petform-c4058.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyB1eLSjadNHEAZAIdwfc1iC8mIkP0rbaJM',
     appId: '1:465535464603:android:your-android-app-id-here',
     messagingSenderId: '465535464603',
-    projectId: 'petform-3a41d',
-    storageBucket: 'petform-3a41d.firebasestorage.app',
+    projectId: 'petform-c4058',
+    storageBucket: 'petform-c4058.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyB1eLSjadNHEAZAIdwfc1iC8mIkP0rbaJM',
     appId: '1:465535464603:ios:6a570fb46a844d0875c23e',
     messagingSenderId: '465535464603',
-    projectId: 'petform-3a41d',
-    storageBucket: 'petform-3a41d.firebasestorage.app',
-    iosBundleId: 'com.example.petform',
+    projectId: 'petform-c4058',
+    storageBucket: 'petform-c4058.firebasestorage.app',
+    iosBundleId: 'com.waleedraza.petform',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyB1eLSjadNHEAZAIdwfc1iC8mIkP0rbaJM',
     appId: '1:465535464603:ios:6a570fb46a844d0875c23e',
     messagingSenderId: '465535464603',
-    projectId: 'petform-3a41d',
-    storageBucket: 'petform-3a41d.firebasestorage.app',
-    iosBundleId: 'com.example.petform',
+    projectId: 'petform-c4058',
+    storageBucket: 'petform-c4058.firebasestorage.app',
+    iosBundleId: 'com.waleedraza.petform',
   );
 } 
