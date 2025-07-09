@@ -1,21 +1,19 @@
 import 'pet.dart';
 
 class User {
-  final int id;
+  final String id;
   final String email;
   final String username;
-  final String? profilePhotoUrl;
-  final List<Pet> pets;
+  final List<String> pets;
 
-  User({required this.id, required this.email, required this.username, this.profilePhotoUrl, required this.pets});
+  User({required this.id, required this.email, required this.username, required this.pets});
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'] as int,
+      id: json['id'] as String,
       email: json['email'] as String,
-      username: json['username'] as String? ?? json['email'] as String, // Fallback to email if no username
-      profilePhotoUrl: json['profilePhotoUrl'] as String?,
-      pets: (json['pets'] as List<dynamic>? ?? []).map((p) => Pet.fromJson(p)).toList(),
+      username: json['username'] as String,
+      pets: List<String>.from(json['pets'] ?? []),
     );
   }
 
@@ -24,8 +22,7 @@ class User {
       'id': id,
       'email': email,
       'username': username,
-      'profilePhotoUrl': profilePhotoUrl,
-      'pets': pets.map((p) => p.toJson()).toList(),
+      'pets': pets,
     };
   }
 }

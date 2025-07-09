@@ -320,17 +320,17 @@ class EnhancedPostCard extends StatelessWidget {
                 );
               },
               child: Row(
-                children: [
-                  Icon(Icons.comment, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${post.comments.length}',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
+              children: [
+                Icon(Icons.comment, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Text(
+                  '${post.comments.length}',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
                   ),
-                ],
+                ),
+              ],
               ),
             ),
             const SizedBox(width: 16),

@@ -7,7 +7,6 @@ import '../models/pet.dart';
 import '../models/post.dart';
 import '../providers/user_provider.dart';
 import '../providers/app_state_provider.dart';
-import '../providers/theme_provider.dart';
 import '../services/image_service.dart';
 import 'welcome_screen.dart';
 import 'pet_profile_creation_screen.dart';
@@ -51,7 +50,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
-    final themeProvider = Provider.of<ThemeProvider>(context);
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -128,26 +126,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  SwitchListTile(
-                    title: const Text('Dark Mode'),
-                    subtitle: const Text('Toggle dark/light theme'),
-                    value: themeProvider.themeMode == ThemeMode.dark,
-                    onChanged: (value) => themeProvider.toggleTheme(),
-                    activeColor: Theme.of(context).colorScheme.secondary,
-                  ),
-                  const Divider(),
+
                   ListTile(
                     leading: const Icon(Icons.edit),
                     title: const Text('Edit Username'),
                     subtitle: Text(userProvider.username ?? 'Not set'),
                     onTap: () => _showEditUsernameDialog(context, userProvider),
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.photo_camera),
-                    title: const Text('Change Profile Photo'),
-                    subtitle: const Text('Update your profile picture'),
-                    onTap: () => _showChangePhotoDialog(context, userProvider),
-                  ),
+
                 ],
               ),
             ),
@@ -921,14 +907,5 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 
-  void _showChangePhotoDialog(BuildContext context, UserProvider userProvider) async {
-    final image = await ImageService.pickImageSimple(context);
-    if (image != null) {
-      final base64 = await ImageService.imageToBase64(image);
-      if (base64 != null) {
-        await userProvider.updateProfilePhoto(base64);
-        setState(() {}); // Refresh UI
-      }
-    }
-  }
+
 }

@@ -17,7 +17,6 @@ class UserProvider with ChangeNotifier {
   String? get username => _username;
   List<Pet> get pets => _pets;
   bool get isLoggedIn => _firebaseUser != null;
-  bool get isAdmin => _firebaseUser != null && _authService.isAdmin(_firebaseUser!);
 
   UserProvider() {
     // Listen to Firebase auth state changes
@@ -52,16 +51,13 @@ class UserProvider with ChangeNotifier {
   }
 
   // Email/Password sign up
-  Future<void> signUp(String email, String username, String password, [String? profilePhotoBase64]) async {
+  Future<void> signUp(String email, String username, String password) async {
     try {
       await _authService.signUpWithEmailAndPassword(email, password);
       _username = username;
       // Save username to SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_username', username);
-      if (profilePhotoBase64 != null) {
-        await prefs.setString('user_profile_photo', profilePhotoBase64);
-      }
     } catch (e) {
       if (kDebugMode) {
         print('UserProvider: Sign up error: $e');
@@ -77,42 +73,6 @@ class UserProvider with ChangeNotifier {
     } catch (e) {
       if (kDebugMode) {
         print('UserProvider: Sign in error: $e');
-      }
-      rethrow;
-    }
-  }
-
-  // Google sign in
-  Future<void> signInWithGoogle() async {
-    try {
-      await _authService.signInWithGoogle();
-    } catch (e) {
-      if (kDebugMode) {
-        print('UserProvider: Google sign in error: $e');
-      }
-      rethrow;
-    }
-  }
-
-  // Apple sign in
-  Future<void> signInWithApple() async {
-    try {
-      await _authService.signInWithApple();
-    } catch (e) {
-      if (kDebugMode) {
-        print('UserProvider: Apple sign in error: $e');
-      }
-      rethrow;
-    }
-  }
-
-  // Admin login
-  Future<void> adminLogin() async {
-    try {
-      await _authService.adminLogin();
-    } catch (e) {
-      if (kDebugMode) {
-        print('UserProvider: Admin login error: $e');
       }
       rethrow;
     }
@@ -180,13 +140,6 @@ class UserProvider with ChangeNotifier {
     _username = newUsername;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_username', newUsername);
-    notifyListeners();
-  }
-
-  // Update profile photo
-  Future<void> updateProfilePhoto(String base64Photo) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_profile_photo', base64Photo);
     notifyListeners();
   }
 }

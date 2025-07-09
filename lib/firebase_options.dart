@@ -44,35 +44,35 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyB1eLSjadNHEAZAIdwfc1iC8mIkP0rbaJM',
-    appId: '1:465535464603:web:your-web-app-id-here',
-    messagingSenderId: '465535464603',
+    apiKey: 'AIzaSyBscaZVGjktbhKDtI4rTxM5bkuAe02w1SM',
+    appId: '1:248552661178:web:your-web-app-id-here',
+    messagingSenderId: '248552661178',
     projectId: 'petform-c4058',
     authDomain: 'petform-c4058.firebaseapp.com',
     storageBucket: 'petform-c4058.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyB1eLSjadNHEAZAIdwfc1iC8mIkP0rbaJM',
-    appId: '1:465535464603:android:your-android-app-id-here',
-    messagingSenderId: '465535464603',
+    apiKey: 'AIzaSyBscaZVGjktbhKDtI4rTxM5bkuAe02w1SM',
+    appId: '1:248552661178:android:your-android-app-id-here',
+    messagingSenderId: '248552661178',
     projectId: 'petform-c4058',
     storageBucket: 'petform-c4058.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyB1eLSjadNHEAZAIdwfc1iC8mIkP0rbaJM',
-    appId: '1:465535464603:ios:6a570fb46a844d0875c23e',
-    messagingSenderId: '465535464603',
+    apiKey: 'AIzaSyBscaZVGjktbhKDtI4rTxM5bkuAe02w1SM',
+    appId: '1:248552661178:ios:ae2fc8f150e0dd95f1a283',
+    messagingSenderId: '248552661178',
     projectId: 'petform-c4058',
     storageBucket: 'petform-c4058.firebasestorage.app',
     iosBundleId: 'com.waleedraza.petform',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyB1eLSjadNHEAZAIdwfc1iC8mIkP0rbaJM',
-    appId: '1:465535464603:ios:6a570fb46a844d0875c23e',
-    messagingSenderId: '465535464603',
+    apiKey: 'AIzaSyBscaZVGjktbhKDtI4rTxM5bkuAe02w1SM',
+    appId: '1:248552661178:ios:ae2fc8f150e0dd95f1a283',
+    messagingSenderId: '248552661178',
     projectId: 'petform-c4058',
     storageBucket: 'petform-c4058.firebasestorage.app',
     iosBundleId: 'com.waleedraza.petform',

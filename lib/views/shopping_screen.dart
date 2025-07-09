@@ -198,11 +198,11 @@ class _ShoppingScreenState extends State<ShoppingScreen>
         ? ShoppingService.getAllProducts()
         : ShoppingService.getProductsForPet(_selectedPetType);
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
       itemCount: allProducts.length,
-      itemBuilder: (context, index) {
+                  itemBuilder: (context, index) {
         return _buildSuggestionCard(allProducts[index], appState);
-      },
+                  },
     );
   }
 
@@ -214,7 +214,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
       child: ListTile(
         leading: ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: SizedBox(
+                child: SizedBox(
             width: 50,
             height: 50,
             child: item.imageUrl != null
@@ -231,24 +231,24 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                     ),
                   )
                 : Container(
-                    color: Colors.grey[300],
+                color: Colors.grey[300],
                     child: const Icon(Icons.image),
-                  ),
-          ),
-        ),
+                            ),
+                          ),
+                        ),
         title: Text(
-          item.name,
-          style: TextStyle(
+                            item.name,
+                              style: TextStyle(
             decoration: item.isCompleted ? TextDecoration.lineThrough : null,
-          ),
-        ),
+                                ),
+                              ),
         subtitle: Text(
           '${item.brand ?? ''} • \$${item.estimatedCost.toStringAsFixed(2)}',
           style: TextStyle(color: Colors.grey[600]),
-        ),
+                                  ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
-          children: [
+                            children: [
             Checkbox(
               value: item.isCompleted,
               onChanged: (value) {
@@ -261,7 +261,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
               icon: const Icon(Icons.delete, color: Colors.red),
             ),
           ],
-        ),
+          ),
       ),
     );
   }
@@ -511,7 +511,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                   // Action buttons
                   Row(
                     children: [
-                      Expanded(
+                        Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () async {
                             String urlString;
@@ -537,10 +537,10 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.orange,
                             foregroundColor: Colors.white,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
+                        const SizedBox(width: 8),
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () {
