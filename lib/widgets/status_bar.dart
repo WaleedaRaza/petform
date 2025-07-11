@@ -62,7 +62,7 @@ class _StatusBarState extends State<StatusBar>
           child: FadeTransition(
             opacity: _fadeAnimation,
             child: Container(
-              margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16, top: 54),
+              margin: const EdgeInsets.only(left: 16, right: 16, top: 52),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,

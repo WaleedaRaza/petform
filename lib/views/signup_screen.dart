@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
-import 'pet_profile_creation_screen.dart';
+import 'email_verification_screen.dart';
 import '../widgets/rounded_button.dart';
 import '../widgets/video_background.dart';
 
@@ -53,14 +53,30 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
 
+    // Validate username format
+    final username = _usernameController.text.trim();
+    if (username.length < 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Username must be at least 3 characters')),
+      );
+      return;
+    }
+
+    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(username)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Username can only contain letters, numbers, and underscores')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      await userProvider.signUp(_emailController.text, _usernameController.text, _passwordController.text);
+      await userProvider.signUp(_emailController.text, username, _passwordController.text);
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const PetProfileCreationScreen()),
+        MaterialPageRoute(builder: (context) => const EmailVerificationScreen()),
       );
     } catch (e) {
       if (!mounted) return;
@@ -84,9 +100,9 @@ class _SignupScreenState extends State<SignupScreen> {
           elevation: 0,
         ),
         body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Form Fields
               Card(
@@ -94,12 +110,12 @@ class _SignupScreenState extends State<SignupScreen> {
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
-                    children: [
-                      TextField(
-                        controller: _emailController,
+          children: [
+            TextField(
+              controller: _emailController,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          labelText: 'Email',
+                labelText: 'Email',
                           labelStyle: const TextStyle(color: Colors.white),
                           border: const OutlineInputBorder(),
                           enabledBorder: OutlineInputBorder(
@@ -110,9 +126,9 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                           filled: true,
                           fillColor: Colors.grey[800],
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                      ),
+              ),
+              keyboardType: TextInputType.emailAddress,
+            ),
                       const SizedBox(height: 16),
                       TextField(
                         controller: _usernameController,
@@ -129,16 +145,16 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                           filled: true,
                           fillColor: Colors.grey[800],
-                          helperText: 'This will be displayed instead of your email',
+                          helperText: '3+ characters, letters, numbers, underscores only. Must be unique.',
                           helperStyle: TextStyle(color: Colors.grey[400]),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _passwordController,
+            const SizedBox(height: 16),
+            TextField(
+              controller: _passwordController,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          labelText: 'Password',
+                labelText: 'Password',
                           labelStyle: const TextStyle(color: Colors.white),
                           border: const OutlineInputBorder(),
                           enabledBorder: OutlineInputBorder(
@@ -149,17 +165,17 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                           filled: true,
                           fillColor: Colors.grey[800],
-                          helperText: 'Must be at least 6 characters',
+                helperText: 'Must be at least 6 characters',
                           helperStyle: TextStyle(color: Colors.grey[400]),
-                        ),
-                        obscureText: true,
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _confirmPasswordController,
+              ),
+              obscureText: true,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _confirmPasswordController,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          labelText: 'Confirm Password',
+                labelText: 'Confirm Password',
                           labelStyle: const TextStyle(color: Colors.white),
                           border: const OutlineInputBorder(),
                           enabledBorder: OutlineInputBorder(
@@ -170,20 +186,20 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                           filled: true,
                           fillColor: Colors.grey[800],
-                        ),
-                        obscureText: true,
-                      ),
-                      const SizedBox(height: 20),
-                      _isLoading
-                          ? const CircularProgressIndicator()
-                          : RoundedButton(text: 'Sign Up', onPressed: _signup),
+              ),
+              obscureText: true,
+            ),
+            const SizedBox(height: 20),
+            _isLoading
+                ? const CircularProgressIndicator()
+                : RoundedButton(text: 'Sign Up', onPressed: _signup),
                     ],
                   ),
                 ),
               ),
-            ],
-          ),
+          ],
         ),
+      ),
       ),
     );
   }

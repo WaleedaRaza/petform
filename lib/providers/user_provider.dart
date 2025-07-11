@@ -17,6 +17,7 @@ class UserProvider with ChangeNotifier {
   String? get username => _username;
   List<Pet> get pets => _pets;
   bool get isLoggedIn => _firebaseUser != null;
+  FirebaseAuthService get authService => _authService;
 
   UserProvider() {
     // Listen to Firebase auth state changes
@@ -53,11 +54,28 @@ class UserProvider with ChangeNotifier {
   // Email/Password sign up
   Future<void> signUp(String email, String username, String password) async {
     try {
+      // Check if username is unique
+      final isUnique = await _apiService.isUsernameUnique(username);
+      if (!isUnique) {
+        throw Exception('Username "$username" is already taken. Please choose a different username.');
+      }
+      
       await _authService.signUpWithEmailAndPassword(email, password);
       _username = username;
+      
+      // Register the username globally
+      await _apiService.registerUsername(username, email);
+      
       // Save username to SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_username', username);
+      
+      // Initialize user data in API service
+      await _apiService.signup(email, password);
+      
+      if (kDebugMode) {
+        print('UserProvider: User signed up and data initialized');
+      }
     } catch (e) {
       if (kDebugMode) {
         print('UserProvider: Sign up error: $e');
@@ -82,6 +100,16 @@ class UserProvider with ChangeNotifier {
   Future<void> signOut() async {
     try {
       await _authService.signOut();
+      // Clear user data from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('user_email');
+      await prefs.remove('user_password');
+      await prefs.remove('user_username');
+      await prefs.remove('user_id');
+      
+      if (kDebugMode) {
+        print('UserProvider: Cleared user data on sign out');
+      }
     } catch (e) {
       if (kDebugMode) {
         print('UserProvider: Sign out error: $e');
@@ -137,9 +165,37 @@ class UserProvider with ChangeNotifier {
 
   // Update username
   Future<void> updateUsername(String newUsername) async {
+    final currentUsername = _username;
+    final userEmail = _firebaseUser?.email;
+    
+    if (userEmail == null) {
+      throw Exception('No user logged in');
+    }
+    
+    // If username hasn't changed, no need to update
+    if (currentUsername == newUsername) {
+      return;
+    }
+    
+    // Check if the new username is unique (excluding current user)
+    final isUnique = await _apiService.isUsernameUnique(newUsername, currentUserEmail: userEmail);
+    if (!isUnique) {
+      throw Exception('Username "$newUsername" is already taken. Please choose a different username.');
+    }
+    
+    // Remove old username from global list if it exists
+    if (currentUsername != null) {
+      await _apiService.removeUsername(currentUsername);
+    }
+    
+    // Update local username
     _username = newUsername;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_username', newUsername);
+    
+    // Register the new username globally
+    await _apiService.registerUsername(newUsername, userEmail);
+    
     notifyListeners();
   }
 }

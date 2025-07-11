@@ -5,6 +5,7 @@ import '../models/pet.dart';
 import '../providers/app_state_provider.dart';
 import '../services/image_service.dart';
 import '../widgets/rounded_button.dart';
+import '../widgets/video_background.dart';
 import '../models/pet_types.dart';
 
 class EditPetScreen extends StatefulWidget {
@@ -168,225 +169,218 @@ class _EditPetScreenState extends State<EditPetScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Edit ${widget.pet.name}'),
+    return VideoBackground(
+      videoPath: 'lib/assets/animation2.mp4',
+      child: Scaffold(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('lib/assets/petform_backdrop.png'),
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: Scaffold(
+        appBar: AppBar(
+          title: Text('Edit ${widget.pet.name}'),
           backgroundColor: Colors.transparent,
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Pet Photo Section
-                  Card(
-                    color: Colors.white.withOpacity(0.9),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Pet Photo',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+          elevation: 0,
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Pet Photo Section
+                Card(
+                  color: Colors.white.withOpacity(0.9),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Pet Photo',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
-                          const SizedBox(height: 12),
-                          Center(
-                            child: GestureDetector(
-                              onTap: _pickImage,
-                              child: Container(
-                                width: 120,
-                                height: 120,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.grey[300]!, width: 2),
-                                  color: Colors.grey[100],
-                                ),
-                                child: _selectedImage != null
-                                    ? ClipOval(
-                                        child: Image.file(
-                                          _selectedImage!,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      )
-                                    : widget.pet.photoUrl != null
-                                        ? ClipOval(
-                                            child: Image.network(
-                                              widget.pet.photoUrl!,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stackTrace) => const Icon(
-                                                Icons.add_a_photo,
-                                                size: 40,
-                                                color: Colors.grey,
-                                              ),
-                                            ),
-                                          )
-                                        : const Icon(
-                                            Icons.add_a_photo,
-                                            size: 40,
-                                            color: Colors.grey,
-                                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Center(
+                          child: GestureDetector(
+                            onTap: _pickImage,
+                            child: Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.grey[300]!, width: 2),
+                                color: Colors.grey[100],
                               ),
+                              child: _selectedImage != null
+                                  ? ClipOval(
+                                      child: Image.file(
+                                        _selectedImage!,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                  : widget.pet.photoUrl != null
+                                      ? ClipOval(
+                                          child: Image.network(
+                                            widget.pet.photoUrl!,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) => const Icon(
+                                              Icons.add_a_photo,
+                                              size: 40,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.add_a_photo,
+                                          size: 40,
+                                          color: Colors.grey,
+                                        ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Center(
-                            child: TextButton(
-                              onPressed: _pickImage,
-                              child: Text(_selectedImage != null ? 'Change Photo' : 'Change Photo'),
-                            ),
+                        ),
+                        const SizedBox(height: 8),
+                        Center(
+                          child: TextButton(
+                            onPressed: _pickImage,
+                            child: Text(_selectedImage != null ? 'Change Photo' : 'Change Photo'),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  
-                  // Form Fields
-                  Card(
-                    color: Colors.white.withOpacity(0.9),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          DropdownButtonFormField<String>(
-                            value: _selectedPetType,
-                            decoration: const InputDecoration(
-                              labelText: 'Pet Type',
-                              border: OutlineInputBorder(),
-                            ),
-                            items: petTypes.map((String type) {
-                              return DropdownMenuItem<String>(
-                                value: type,
-                                child: Text(type),
-                              );
-                            }).toList(),
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                _selectedPetType = newValue!;
-                              });
-                            },
-                            validator: (value) {
-                              if (value == null) return 'Please select a pet type';
-                              return null;
-                            },
+                ),
+                const SizedBox(height: 16),
+                
+                // Form Fields
+                Card(
+                  color: Colors.white.withOpacity(0.9),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        DropdownButtonFormField<String>(
+                          value: _selectedPetType,
+                          decoration: const InputDecoration(
+                            labelText: 'Pet Type',
+                            border: OutlineInputBorder(),
                           ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _nameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Name',
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) return 'Please enter a name';
-                              return null;
-                            },
+                          items: petTypes.map((String type) {
+                            return DropdownMenuItem<String>(
+                              value: type,
+                              child: Text(type),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedPetType = newValue!;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null) return 'Please select a pet type';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Name',
+                            border: OutlineInputBorder(),
                           ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _ageController,
-                            decoration: const InputDecoration(
-                              labelText: 'Age (Optional)',
-                              border: OutlineInputBorder(),
-                            ),
-                            keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) return 'Please enter a name';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _ageController,
+                          decoration: const InputDecoration(
+                            labelText: 'Age (Optional)',
+                            border: OutlineInputBorder(),
                           ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _breedController,
-                            decoration: const InputDecoration(
-                              labelText: 'Breed (Optional)',
-                              border: OutlineInputBorder(),
-                            ),
+                          keyboardType: TextInputType.number,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _breedController,
+                          decoration: const InputDecoration(
+                            labelText: 'Breed (Optional)',
+                            border: OutlineInputBorder(),
                           ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _personalityController,
-                            decoration: const InputDecoration(
-                              labelText: 'Personality (Optional)',
-                              border: OutlineInputBorder(),
-                            ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _personalityController,
+                          decoration: const InputDecoration(
+                            labelText: 'Personality (Optional)',
+                            border: OutlineInputBorder(),
                           ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _foodSourceController,
-                            decoration: const InputDecoration(
-                              labelText: 'Food Source (Optional)',
-                              border: OutlineInputBorder(),
-                            ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _foodSourceController,
+                          decoration: const InputDecoration(
+                            labelText: 'Food Source (Optional)',
+                            border: OutlineInputBorder(),
                           ),
-                          const SizedBox(height: 16),
-                          if (petFields[_selectedPetType] != null) ...[
-                            const Text(
-                              'Additional Information (Optional)',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 8),
-                            ...(petFields[_selectedPetType] ?? []).map((field) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 16.0),
-                                child: TextFormField(
-                                  controller: _additionalFieldControllers['$_selectedPetType-$field'],
-                                  decoration: InputDecoration(
-                                    labelText: field,
-                                    border: const OutlineInputBorder(),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ],
-                          const SizedBox(height: 16),
+                        ),
+                        const SizedBox(height: 16),
+                        if (petFields[_selectedPetType] != null) ...[
                           const Text(
-                            'Custom Fields (Optional)',
+                            'Additional Information (Optional)',
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
-                          ..._customFields.map((entry) {
+                          ...(petFields[_selectedPetType] ?? []).map((field) {
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 16.0),
                               child: TextFormField(
-                                controller: entry.value,
+                                controller: _additionalFieldControllers['$_selectedPetType-$field'],
                                 decoration: InputDecoration(
-                                  labelText: entry.key,
+                                  labelText: field,
                                   border: const OutlineInputBorder(),
                                 ),
-                              )
+                              ),
                             );
                           }),
-                          TextButton(
-                            onPressed: _addCustomField,
-                            child: const Text('Add Custom Field'),
-                          ),
-                          const SizedBox(height: 16),
-                          _isLoading
-                              ? const Center(child: CircularProgressIndicator())
-                              : RoundedButton(
-                                  text: 'Update Pet Profile',
-                                  onPressed: _submitForm,
-                                ),
                         ],
-                      ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Custom Fields (Optional)',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        ..._customFields.map((entry) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16.0),
+                            child: TextFormField(
+                              controller: entry.value,
+                              decoration: InputDecoration(
+                                labelText: entry.key,
+                                border: const OutlineInputBorder(),
+                              ),
+                            ),
+                          );
+                        }),
+                        TextButton(
+                          onPressed: _addCustomField,
+                          child: const Text('Add Custom Field'),
+                        ),
+                        const SizedBox(height: 16),
+                        _isLoading
+                            ? const Center(child: CircularProgressIndicator())
+                            : RoundedButton(
+                                text: 'Update Pet Profile',
+                                onPressed: _submitForm,
+                              ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

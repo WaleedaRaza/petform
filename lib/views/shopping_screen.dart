@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../providers/app_state_provider.dart';
 import '../services/shopping_service.dart';
 import '../models/shopping_item.dart';
+import '../widgets/video_background.dart';
 
 
 class ShoppingScreen extends StatefulWidget {
@@ -32,6 +33,16 @@ class _ShoppingScreenState extends State<ShoppingScreen>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
   }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh shopping items when this screen becomes visible
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
+      appState.refreshShoppingItems();
+    });
+  }
 
   @override
   void dispose() {
@@ -44,80 +55,83 @@ class _ShoppingScreenState extends State<ShoppingScreen>
   Widget build(BuildContext context) {
     return Consumer<AppStateProvider>(
       builder: (context, appState, child) {
-            return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Column(
-            children: [
-              // Header with title
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Shopping',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    // Pet type filter dropdown
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: DropdownButtonFormField<String>(
-                        value: _selectedPetType,
-                        decoration: InputDecoration(
-                          labelText: 'Pet Type',
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        return VideoBackground(
+          videoPath: 'lib/assets/animation2.mp4',
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            body: Column(
+              children: [
+                // Header with title
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Shopping',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
-                        dropdownColor: Theme.of(context).colorScheme.surface,
-                        items: _petTypes.map((String type) {
-                          return DropdownMenuItem<String>(
-                            value: type,
-                            child: Text(type),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            _selectedPetType = newValue!;
-                          });
-                        },
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 12),
+                      // Pet type filter dropdown
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedPetType,
+                          decoration: InputDecoration(
+                            labelText: 'Pet Type',
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          ),
+                          dropdownColor: Theme.of(context).colorScheme.surface,
+                          items: _petTypes.map((String type) {
+                            return DropdownMenuItem<String>(
+                              value: type,
+                              child: Text(type),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedPetType = newValue!;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              // Tab bar
-              Container(
-                color: Theme.of(context).colorScheme.surface,
-                child: TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  tabs: const [
-                    Tab(text: 'Browse All'),
-                    Tab(text: 'My List'),
-                    Tab(text: 'Search'),
-                    Tab(text: 'Categories'),
-                  ],
+                // Tab bar
+                Container(
+                  color: Theme.of(context).colorScheme.surface,
+                  child: TabBar(
+                    controller: _tabController,
+                    isScrollable: true,
+                    tabs: const [
+                      Tab(text: 'Browse All'),
+                      Tab(text: 'My List'),
+                      Tab(text: 'Search'),
+                      Tab(text: 'Categories'),
+                    ],
+                  ),
                 ),
-              ),
-              // Tab content
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildBrowseAllTab(appState),
-                    _buildMyListTab(appState),
-                    _buildSearchTab(appState),
-                    _buildCategoriesTab(appState),
-                  ],
+                // Tab content
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildBrowseAllTab(appState),
+                      _buildMyListTab(appState),
+                      _buildSearchTab(appState),
+                      _buildCategoriesTab(appState),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

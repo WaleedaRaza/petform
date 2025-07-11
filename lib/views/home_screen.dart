@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/app_state_provider.dart';
 import '../widgets/status_bar.dart';
+import '../widgets/video_background.dart';
 import 'community_feed_screen.dart';
 import 'ask_ai_screen.dart';
 import 'shopping_screen.dart';
@@ -20,6 +21,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   bool _isInitialized = false;
+  final GlobalKey _statusBarKey = GlobalKey();
+  double _statusBarHeight = 0;
 
   static final List<Widget> _pages = <Widget>[
     const CommunityFeedScreen(),
@@ -32,15 +35,26 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Defer initialization to avoid setState during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeAppState();
+      _measureStatusBar();
     });
   }
 
+  void _measureStatusBar() {
+    final context = _statusBarKey.currentContext;
+    if (context != null) {
+      final box = context.findRenderObject() as RenderBox?;
+      if (box != null && mounted) {
+        setState(() {
+          _statusBarHeight = box.size.height;
+        });
+      }
+    }
+  }
+
   Future<void> _initializeAppState() async {
-    if (_isInitialized) return; // Prevent multiple initializations
-    
+    if (_isInitialized) return;
     final appState = Provider.of<AppStateProvider>(context, listen: false);
     await appState.initialize();
     if (mounted) {
@@ -53,20 +67,15 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      print('HomeScreen: Navigated to index $index');
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    print('HomeScreen: Building UI, selectedIndex: $_selectedIndex');
     final userProvider = Provider.of<UserProvider>(context);
-    
-    // Redirect to WelcomeScreen only if user is not logged in and not a guest
     if (!userProvider.isLoggedIn) {
       return const WelcomeScreen();
     }
-
     if (!_isInitialized) {
       return const Scaffold(
         body: Center(
@@ -74,38 +83,35 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
-
-    return Container(
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('lib/assets/petform_backdrop.png'),
-          fit: BoxFit.cover,
-        ),
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      extendBody: true,
+      body: Stack(
+        children: [
+          const VideoBackground(
+            videoPath: 'lib/assets/animation2.mp4',
+            child: SizedBox.shrink(),
+          ),
+          const StatusBar(),
+          Padding(
+            padding: const EdgeInsets.only(top: 225), // Move main content down by 100 pixels
+            child: _pages[_selectedIndex],
+          ),
+        ],
       ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Column(
-          children: [
-            const StatusBar(),
-            Expanded(
-              child: _pages[_selectedIndex],
-            ),
-          ],
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(icon: Icon(Icons.feed), label: 'Feed'),
-            BottomNavigationBarItem(icon: Icon(Icons.question_answer), label: 'Ask AI'),
-            BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Shopping'),
-            BottomNavigationBarItem(icon: Icon(Icons.track_changes), label: 'Tracking'),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-          ],
-          currentIndex: _selectedIndex,
-          selectedItemColor: Theme.of(context).colorScheme.secondary,
-          unselectedItemColor: Colors.grey,
-          onTap: _onItemTapped,
-          type: BottomNavigationBarType.fixed,
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.feed), label: 'Feed'),
+          BottomNavigationBarItem(icon: Icon(Icons.question_answer), label: 'Ask AI'),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Shopping'),
+          BottomNavigationBarItem(icon: Icon(Icons.track_changes), label: 'Tracking'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Theme.of(context).colorScheme.secondary,
+        unselectedItemColor: Colors.grey,
+        onTap: _onItemTapped,
+        type: BottomNavigationBarType.fixed,
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/api_service.dart';
 import '../services/shopping_service.dart';
 import '../services/tracking_service.dart';
@@ -46,7 +47,6 @@ class AppStateProvider with ChangeNotifier {
     try {
       await Future.wait([
         _loadPets(),
-        _loadPosts(),
         _loadShoppingItems(),
         _loadTrackingMetrics(),
         _loadSavedPosts(),
@@ -118,96 +118,290 @@ class AppStateProvider with ChangeNotifier {
     }
   }
   
-  // Post management
-  Future<void> _loadPosts() async {
-    try {
-      _posts = await _apiService.getPosts();
-      // Don't call notifyListeners here - it will be called by initialize
-    } catch (e) {
-      if (kDebugMode) {
-        print('AppStateProvider: Error loading posts: $e');
-      }
-      rethrow;
-    }
-  }
-  
-  Future<void> addPost(Post post) async {
-    try {
-      await _apiService.createPost(
-        title: post.title,
-        content: post.content,
-        petType: post.petType,
-        author: post.author,
-      );
-      _posts.add(post);
-      notifyListeners();
-    } catch (e) {
-      _setError('Failed to add post: $e');
-      rethrow;
-    }
-  }
+  // Posts are now handled globally by the FeedProvider
+  // AppStateProvider no longer manages posts
   
   // Saved posts management
   Future<void> _loadSavedPosts() async {
     try {
+      // Get user email from Firebase Auth instead of SharedPreferences
+      final user = FirebaseAuth.instance.currentUser;
+      final userEmail = user?.email;
+      
+      if (kDebugMode) {
+        print('AppStateProvider._loadSavedPosts: Starting to load saved posts');
+        print('AppStateProvider._loadSavedPosts: User email: $userEmail');
+      }
+      
+      if (userEmail == null) {
+        _savedPosts = [];
+        if (kDebugMode) {
+          print('AppStateProvider._loadSavedPosts: No user email found, setting empty saved posts');
+        }
+        return;
+      }
+      
+      // Use user-specific key for saved posts
+      final sanitizedEmail = userEmail.replaceAll('@', '_at_').replaceAll('.', '_');
+      final savedPostsKey = '${sanitizedEmail}_saved_posts';
       final prefs = await SharedPreferences.getInstance();
-      final savedPostsJson = prefs.getString('saved_posts') ?? '[]';
+      final savedPostsJson = prefs.getString(savedPostsKey) ?? '[]';
+      
+      if (kDebugMode) {
+        print('AppStateProvider._loadSavedPosts: Raw saved posts JSON: $savedPostsJson');
+      }
+      
       final List<dynamic> savedPostsData = jsonDecode(savedPostsJson);
       _savedPosts = savedPostsData.map((p) => Post.fromJson(p as Map<String, dynamic>)).toList();
+      
+      if (kDebugMode) {
+        print('AppStateProvider._loadSavedPosts: Loaded ${_savedPosts.length} saved posts for user $userEmail');
+        print('AppStateProvider._loadSavedPosts: Using key: $savedPostsKey');
+        print('AppStateProvider._loadSavedPosts: Saved posts:');
+        for (final post in _savedPosts) {
+          print('  - ${post.title} (ID: ${post.id})');
+        }
+      }
     } catch (e) {
       _savedPosts = [];
+      if (kDebugMode) {
+        print('AppStateProvider._loadSavedPosts: Error loading saved posts: $e');
     }
+  }
     // Don't call notifyListeners here - it will be called by initialize
   }
   
   Future<void> savePost(Post post) async {
+    if (kDebugMode) {
+      print('AppStateProvider.savePost: Attempting to save post ${post.id}');
+      print('AppStateProvider.savePost: Current saved posts count: ${_savedPosts.length}');
+      print('AppStateProvider.savePost: Post already saved: ${_savedPosts.any((p) => p.id == post.id)}');
+    }
+    
     if (!_savedPosts.any((p) => p.id == post.id)) {
       _savedPosts.add(post);
-      // Save to local storage
+      // Save to local storage with user-specific key
       final prefs = await SharedPreferences.getInstance();
-      final savedPostsJson = jsonEncode(_savedPosts.map((p) => p.toJson()).toList());
-      await prefs.setString('saved_posts', savedPostsJson);
+      final user = FirebaseAuth.instance.currentUser;
+      final userEmail = user?.email;
+      if (userEmail != null) {
+        final sanitizedEmail = userEmail.replaceAll('@', '_at_').replaceAll('.', '_');
+        final savedPostsKey = '${sanitizedEmail}_saved_posts';
+        final savedPostsJson = jsonEncode(_savedPosts.map((p) => p.toJson()).toList());
+        await prefs.setString(savedPostsKey, savedPostsJson);
+        
+        if (kDebugMode) {
+          print('AppStateProvider.savePost: Saved post ${post.id} for user $userEmail');
+          print('AppStateProvider.savePost: Using key: $savedPostsKey');
+          print('AppStateProvider.savePost: Total saved posts after save: ${_savedPosts.length}');
+        }
+      } else {
+        if (kDebugMode) {
+          print('AppStateProvider.savePost: No user email found, cannot save');
+        }
+      }
       notifyListeners();
+    } else {
+      if (kDebugMode) {
+        print('AppStateProvider.savePost: Post ${post.id} already saved, skipping');
+      }
     }
   }
   
   Future<void> unsavePost(Post post) async {
     _savedPosts.removeWhere((p) => p.id == post.id);
-    // Remove from local storage
+    // Remove from local storage with user-specific key
     final prefs = await SharedPreferences.getInstance();
-    final savedPostsJson = jsonEncode(_savedPosts.map((p) => p.toJson()).toList());
-    await prefs.setString('saved_posts', savedPostsJson);
+    final user = FirebaseAuth.instance.currentUser;
+    final userEmail = user?.email;
+    if (userEmail != null) {
+      final sanitizedEmail = userEmail.replaceAll('@', '_at_').replaceAll('.', '_');
+      final savedPostsKey = '${sanitizedEmail}_saved_posts';
+      final savedPostsJson = jsonEncode(_savedPosts.map((p) => p.toJson()).toList());
+      await prefs.setString(savedPostsKey, savedPostsJson);
+      
+      if (kDebugMode) {
+        print('AppStateProvider.unsavePost: Unsaved post ${post.id} for user $userEmail');
+        print('AppStateProvider.unsavePost: Using key: $savedPostsKey');
+      }
+    }
     notifyListeners();
   }
   
   bool isPostSaved(Post post) {
-    return _savedPosts.any((p) => p.id == post.id);
+    final isSaved = _savedPosts.any((p) => p.id == post.id);
+    if (kDebugMode) {
+      print('AppStateProvider.isPostSaved: Checking if post ${post.id} is saved: $isSaved');
+      print('AppStateProvider.isPostSaved: Total saved posts: ${_savedPosts.length}');
+    }
+    return isSaved;
+  }
+  
+  // Clear all user data (for sign out or reset)
+  Future<void> clearAllUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final user = FirebaseAuth.instance.currentUser;
+      final userEmail = user?.email;
+      if (userEmail != null) {
+        final sanitizedEmail = userEmail.replaceAll('@', '_at_').replaceAll('.', '_');
+        
+        // Clear all user-specific data
+        await prefs.remove('${sanitizedEmail}_pets');
+        await prefs.remove('${sanitizedEmail}_posts');
+        await prefs.remove('${sanitizedEmail}_saved_posts');
+        await prefs.remove('${sanitizedEmail}_shopping_items');
+        await prefs.remove('${sanitizedEmail}_tracking_metrics');
+        
+        // Clear current app state
+        _pets.clear();
+        _posts.clear();
+        _savedPosts.clear();
+        _shoppingItems.clear();
+        _trackingMetrics.clear();
+        
+        if (kDebugMode) {
+          print('AppStateProvider.clearAllUserData: Cleared all data for user $userEmail');
+        }
+        
+        notifyListeners();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('AppStateProvider.clearAllUserData: Error clearing user data: $e');
+      }
+    }
   }
   
   // Shopping items management
   Future<void> _loadShoppingItems() async {
-    // TODO: Implement shopping items loading
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final user = FirebaseAuth.instance.currentUser;
+      final userEmail = user?.email;
+      
+      if (kDebugMode) {
+        print('AppStateProvider._loadShoppingItems: Starting to load shopping items');
+        print('AppStateProvider._loadShoppingItems: User email: $userEmail');
+      }
+      
+      if (userEmail == null) {
+        _shoppingItems = [];
+        if (kDebugMode) {
+          print('AppStateProvider._loadShoppingItems: No user email found, setting empty shopping items');
+        }
+        return;
+      }
+      
+      // Use user-specific key for shopping items
+      final sanitizedEmail = userEmail.replaceAll('@', '_at_').replaceAll('.', '_');
+      final shoppingItemsKey = '${sanitizedEmail}_shopping_items';
+      final shoppingItemsJson = prefs.getString(shoppingItemsKey) ?? '[]';
+      
+      if (kDebugMode) {
+        print('AppStateProvider._loadShoppingItems: Raw shopping items JSON: $shoppingItemsJson');
+      }
+      
+      final List<dynamic> shoppingItemsData = jsonDecode(shoppingItemsJson);
+      _shoppingItems = shoppingItemsData.map((i) => ShoppingItem.fromJson(i as Map<String, dynamic>)).toList();
+      
+      if (kDebugMode) {
+        print('AppStateProvider._loadShoppingItems: Loaded ${_shoppingItems.length} shopping items for user $userEmail');
+        print('AppStateProvider._loadShoppingItems: Using key: $shoppingItemsKey');
+        print('AppStateProvider._loadShoppingItems: Shopping items:');
+        for (final item in _shoppingItems) {
+          print('  - ${item.name} (ID: ${item.id})');
+        }
+      }
+    } catch (e) {
     _shoppingItems = [];
+      if (kDebugMode) {
+        print('AppStateProvider._loadShoppingItems: Error loading shopping items: $e');
+      }
+    }
     // Don't call notifyListeners here - it will be called by initialize
   }
   
   Future<void> addShoppingItem(ShoppingItem item) async {
+    if (kDebugMode) {
+      print('AppStateProvider.addShoppingItem: Attempting to add shopping item ${item.id}');
+      print('AppStateProvider.addShoppingItem: Current shopping items count: ${_shoppingItems.length}');
+    }
+    
     _shoppingItems.add(item);
-    // TODO: Save to storage
+    
+    // Save to local storage with user-specific key
+    final prefs = await SharedPreferences.getInstance();
+    final user = FirebaseAuth.instance.currentUser;
+    final userEmail = user?.email;
+    if (userEmail != null) {
+      final sanitizedEmail = userEmail.replaceAll('@', '_at_').replaceAll('.', '_');
+      final shoppingItemsKey = '${sanitizedEmail}_shopping_items';
+      final shoppingItemsJson = jsonEncode(_shoppingItems.map((i) => i.toJson()).toList());
+      await prefs.setString(shoppingItemsKey, shoppingItemsJson);
+      
+      if (kDebugMode) {
+        print('AppStateProvider.addShoppingItem: Added shopping item ${item.id} for user $userEmail');
+        print('AppStateProvider.addShoppingItem: Using key: $shoppingItemsKey');
+        print('AppStateProvider.addShoppingItem: Total shopping items after add: ${_shoppingItems.length}');
+      }
+    } else {
+      if (kDebugMode) {
+        print('AppStateProvider.addShoppingItem: No user email found, cannot save');
+      }
+    }
     notifyListeners();
   }
   
   Future<void> removeShoppingItem(ShoppingItem item) async {
+    if (kDebugMode) {
+      print('AppStateProvider.removeShoppingItem: Attempting to remove shopping item ${item.id}');
+    }
+    
     _shoppingItems.remove(item);
-    // TODO: Remove from storage
+    
+    // Remove from local storage with user-specific key
+    final prefs = await SharedPreferences.getInstance();
+    final user = FirebaseAuth.instance.currentUser;
+    final userEmail = user?.email;
+    if (userEmail != null) {
+      final sanitizedEmail = userEmail.replaceAll('@', '_at_').replaceAll('.', '_');
+      final shoppingItemsKey = '${sanitizedEmail}_shopping_items';
+      final shoppingItemsJson = jsonEncode(_shoppingItems.map((i) => i.toJson()).toList());
+      await prefs.setString(shoppingItemsKey, shoppingItemsJson);
+      
+      if (kDebugMode) {
+        print('AppStateProvider.removeShoppingItem: Removed shopping item ${item.id} for user $userEmail');
+        print('AppStateProvider.removeShoppingItem: Using key: $shoppingItemsKey');
+      }
+    }
     notifyListeners();
   }
   
   Future<void> updateShoppingItem(ShoppingItem item) async {
+    if (kDebugMode) {
+      print('AppStateProvider.updateShoppingItem: Attempting to update shopping item ${item.id}');
+    }
+    
     final index = _shoppingItems.indexWhere((i) => i.id == item.id);
     if (index != -1) {
       _shoppingItems[index] = item;
-      // TODO: Update in storage
+      
+      // Update in local storage with user-specific key
+      final prefs = await SharedPreferences.getInstance();
+      final user = FirebaseAuth.instance.currentUser;
+      final userEmail = user?.email;
+      if (userEmail != null) {
+        final sanitizedEmail = userEmail.replaceAll('@', '_at_').replaceAll('.', '_');
+        final shoppingItemsKey = '${sanitizedEmail}_shopping_items';
+        final shoppingItemsJson = jsonEncode(_shoppingItems.map((i) => i.toJson()).toList());
+        await prefs.setString(shoppingItemsKey, shoppingItemsJson);
+        
+        if (kDebugMode) {
+          print('AppStateProvider.updateShoppingItem: Updated shopping item ${item.id} for user $userEmail');
+          print('AppStateProvider.updateShoppingItem: Using key: $shoppingItemsKey');
+        }
+      }
       notifyListeners();
     }
   }
@@ -256,14 +450,67 @@ class AppStateProvider with ChangeNotifier {
   
   // Tracking metrics management
   Future<void> _loadTrackingMetrics() async {
-    // TODO: Implement tracking metrics loading from storage
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final user = FirebaseAuth.instance.currentUser;
+      final userEmail = user?.email;
+      if (userEmail != null) {
+        final sanitizedEmail = userEmail.replaceAll('@', '_at_').replaceAll('.', '_');
+        final trackingMetricsKey = '${sanitizedEmail}_tracking_metrics';
+        final trackingMetricsJson = prefs.getString(trackingMetricsKey);
+        
+        if (trackingMetricsJson != null) {
+          final List<dynamic> metricsList = jsonDecode(trackingMetricsJson);
+          _trackingMetrics = metricsList
+              .map((json) => TrackingMetric.fromJson(json as Map<String, dynamic>))
+              .toList();
+          
+          if (kDebugMode) {
+            print('AppStateProvider._loadTrackingMetrics: Loaded ${_trackingMetrics.length} tracking metrics for user $userEmail');
+          }
+        } else {
+          _trackingMetrics = [];
+          if (kDebugMode) {
+            print('AppStateProvider._loadTrackingMetrics: No tracking metrics found for user $userEmail');
+          }
+        }
+      } else {
+        _trackingMetrics = [];
+        if (kDebugMode) {
+          print('AppStateProvider._loadTrackingMetrics: No user email found');
+        }
+      }
+    } catch (e) {
     _trackingMetrics = [];
+      if (kDebugMode) {
+        print('AppStateProvider._loadTrackingMetrics: Error loading tracking metrics: $e');
+      }
+    }
     // Don't call notifyListeners here - it will be called by initialize
   }
   
   Future<void> addTrackingMetric(TrackingMetric metric) async {
     _trackingMetrics.add(metric);
-    // TODO: Save to storage
+    
+    // Save to local storage with user-specific key
+    final prefs = await SharedPreferences.getInstance();
+    final user = FirebaseAuth.instance.currentUser;
+    final userEmail = user?.email;
+    if (userEmail != null) {
+      final sanitizedEmail = userEmail.replaceAll('@', '_at_').replaceAll('.', '_');
+      final trackingMetricsKey = '${sanitizedEmail}_tracking_metrics';
+      final trackingMetricsJson = jsonEncode(_trackingMetrics.map((m) => m.toJson()).toList());
+      await prefs.setString(trackingMetricsKey, trackingMetricsJson);
+      
+      if (kDebugMode) {
+        print('AppStateProvider.addTrackingMetric: Added tracking metric ${metric.id} for user $userEmail');
+        print('AppStateProvider.addTrackingMetric: Total tracking metrics after add: ${_trackingMetrics.length}');
+      }
+    } else {
+      if (kDebugMode) {
+        print('AppStateProvider.addTrackingMetric: No user email found, cannot save');
+      }
+    }
     notifyListeners();
   }
   
@@ -279,14 +526,51 @@ class AppStateProvider with ChangeNotifier {
         category: existingMetric.category,
       );
       _trackingMetrics[index] = updatedMetric;
-      // TODO: Update in storage
+      
+      // Save to local storage with user-specific key
+      final prefs = await SharedPreferences.getInstance();
+      final user = FirebaseAuth.instance.currentUser;
+      final userEmail = user?.email;
+      if (userEmail != null) {
+        final sanitizedEmail = userEmail.replaceAll('@', '_at_').replaceAll('.', '_');
+        final trackingMetricsKey = '${sanitizedEmail}_tracking_metrics';
+        final trackingMetricsJson = jsonEncode(_trackingMetrics.map((m) => m.toJson()).toList());
+        await prefs.setString(trackingMetricsKey, trackingMetricsJson);
+        
+        if (kDebugMode) {
+          print('AppStateProvider.updateTrackingMetric: Updated tracking metric ${metric.id} for user $userEmail');
+        }
+      } else {
+        if (kDebugMode) {
+          print('AppStateProvider.updateTrackingMetric: No user email found, cannot save');
+        }
+      }
       notifyListeners();
     }
   }
   
   Future<void> removeTrackingMetric(TrackingMetric metric) async {
     _trackingMetrics.removeWhere((m) => m.id == metric.id);
-    // TODO: Remove from storage
+    
+    // Save to local storage with user-specific key
+    final prefs = await SharedPreferences.getInstance();
+    final user = FirebaseAuth.instance.currentUser;
+    final userEmail = user?.email;
+    if (userEmail != null) {
+      final sanitizedEmail = userEmail.replaceAll('@', '_at_').replaceAll('.', '_');
+      final trackingMetricsKey = '${sanitizedEmail}_tracking_metrics';
+      final trackingMetricsJson = jsonEncode(_trackingMetrics.map((m) => m.toJson()).toList());
+      await prefs.setString(trackingMetricsKey, trackingMetricsJson);
+      
+      if (kDebugMode) {
+        print('AppStateProvider.removeTrackingMetric: Removed tracking metric ${metric.id} for user $userEmail');
+        print('AppStateProvider.removeTrackingMetric: Total tracking metrics after remove: ${_trackingMetrics.length}');
+      }
+    } else {
+      if (kDebugMode) {
+        print('AppStateProvider.removeTrackingMetric: No user email found, cannot save');
+      }
+    }
     notifyListeners();
   }
   
@@ -388,6 +672,24 @@ class AppStateProvider with ChangeNotifier {
     await initialize();
   }
   
+  // Refresh only saved posts (for when navigating back to feed)
+  Future<void> refreshSavedPosts() async {
+    await _loadSavedPosts();
+    notifyListeners();
+  }
+  
+  // Refresh only shopping items (for when navigating to shopping screen)
+  Future<void> refreshShoppingItems() async {
+    await _loadShoppingItems();
+    notifyListeners();
+  }
+  
+  // Refresh only tracking metrics (for when navigating to tracking screen)
+  Future<void> refreshTrackingMetrics() async {
+    await _loadTrackingMetrics();
+    notifyListeners();
+  }
+  
   // Clear all data (for debugging)
   Future<void> clearAllData() async {
     try {
@@ -418,41 +720,26 @@ class AppStateProvider with ChangeNotifier {
     required String content,
     required String author,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final postsJson = prefs.getString('posts');
-    final List<dynamic> postsData = postsJson != null ? List<Map<String, dynamic>>.from(jsonDecode(postsJson)) : [];
-    final index = _posts.indexWhere((p) => p.id == postId);
-    if (index == -1) return null;
-    final post = _posts[index];
-    final newComment = Comment(
-      id: post.comments.length + 1,
-      content: content,
-      author: author,
-      createdAt: DateTime.now(),
-    );
-    final updatedComments = List<Comment>.from(post.comments)..add(newComment);
-    final updatedPost = Post(
-      id: post.id,
-      title: post.title,
-      content: post.content,
-      author: post.author,
-      petType: post.petType,
-      imageUrl: post.imageUrl,
-      upvotes: post.upvotes,
-      createdAt: post.createdAt,
-      postType: post.postType,
-      redditUrl: post.redditUrl,
-      comments: updatedComments,
-    );
-    _posts[index] = updatedPost;
-    // Update in postsData for persistence
-    final dataIdx = postsData.indexWhere((p) => p['id'].toString() == postId);
-    if (dataIdx != -1) {
-      postsData[dataIdx] = updatedPost.toJson();
-      await prefs.setString('posts', jsonEncode(postsData));
+    try {
+      // Use API service to add comment (which handles user-specific storage)
+      await _apiService.addComment(
+        postId: postId,
+        content: content,
+        author: author,
+      );
+      
+      // Refresh posts from API service to get updated data
+      _posts = await _apiService.getPosts();
+      notifyListeners();
+      
+      // Return the updated post
+      return _posts.firstWhere((p) => p.id == postId);
+    } catch (e) {
+      if (kDebugMode) {
+        print('AppStateProvider.addCommentToPost: Error adding comment: $e');
+      }
+      rethrow;
     }
-    notifyListeners();
-    return updatedPost;
   }
 
   // Add this method to update a post and persist
@@ -464,7 +751,8 @@ class AppStateProvider with ChangeNotifier {
     String? imageBase64,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    final postsJson = prefs.getString('posts');
+    // Use global posts key for community posts (shared across all users)
+    final postsJson = prefs.getString('global_posts');
     final List<dynamic> postsData = postsJson != null ? List<Map<String, dynamic>>.from(jsonDecode(postsJson)) : [];
     final index = _posts.indexWhere((p) => p.id == postId);
     if (index == -1) return null;
@@ -490,7 +778,7 @@ class AppStateProvider with ChangeNotifier {
     final dataIdx = postsData.indexWhere((p) => p['id'].toString() == postId);
     if (dataIdx != -1) {
       postsData[dataIdx] = updatedPost.toJson();
-      await prefs.setString('posts', jsonEncode(postsData));
+      await prefs.setString('global_posts', jsonEncode(postsData));
     }
     notifyListeners();
     return updatedPost;

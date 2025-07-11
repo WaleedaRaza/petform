@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../providers/feed_provider.dart';
 import '../providers/app_state_provider.dart';
 import '../widgets/enhanced_post_card.dart';
+import '../widgets/video_background.dart';
 import 'create_post_screen.dart';
 import '../models/pet_types.dart';
+import '../services/api_service.dart';
 
 class FeedFilter extends StatelessWidget {
   const FeedFilter({super.key});
@@ -142,11 +145,25 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     });
   }
   
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh saved posts when this screen becomes visible
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
+      appState.refreshSavedPosts();
+    });
+  }
+  
   Future<void> _initializeAppState() async {
     if (_isInitialized) return; // Prevent multiple initializations
     
     final appState = Provider.of<AppStateProvider>(context, listen: false);
+    final feedProvider = Provider.of<FeedProvider>(context, listen: false);
+    
     await appState.initialize();
+    await feedProvider.fetchPosts(context);
+    
     if (mounted) {
       setState(() {
         _isInitialized = true;
@@ -164,11 +181,11 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
       );
     }
     
-    return ChangeNotifierProvider(
-      create: (context) => FeedProvider()..fetchPosts(context),
-      child: Consumer2<FeedProvider, AppStateProvider>(
+    return Consumer2<FeedProvider, AppStateProvider>(
         builder: (context, feedProvider, appState, child) {
-          return Scaffold(
+        return VideoBackground(
+          videoPath: 'lib/assets/animation2.mp4',
+          child: Scaffold(
             backgroundColor: Colors.transparent,
             body: RefreshIndicator(
               onRefresh: () async {
@@ -242,16 +259,25 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
               ),
             ),
             floatingActionButton: FloatingActionButton(
-              onPressed: () => Navigator.push(
+              onPressed: () async {
+                final result = await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const CreatePostScreen()),
-              ),
+                );
+                // If a post was created, refresh the feed
+                if (result == true) {
+                  await feedProvider.fetchPosts(context);
+                  if (kDebugMode) {
+                    print('Post created, refreshed feed. Posts count: ${feedProvider.posts.length}');
+                  }
+                }
+              },
               backgroundColor: Theme.of(context).colorScheme.secondary,
               child: const Icon(Icons.add, color: Colors.white),
             ),
+            ),
           );
         },
-      ),
     );
   }
 }

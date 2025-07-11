@@ -2,12 +2,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart'; // Added for kDebugMode
 
 import '../models/pet.dart';
 import '../models/post.dart';
 import '../providers/user_provider.dart';
 import '../providers/app_state_provider.dart';
+import '../services/api_service.dart';
 import '../services/image_service.dart';
+import '../widgets/video_background.dart';
 import 'welcome_screen.dart';
 import 'pet_profile_creation_screen.dart';
 import 'edit_pet_screen.dart';
@@ -25,7 +28,8 @@ class ProfileSettingsScreen extends StatefulWidget {
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   Future<List<Post>> _loadUserPosts(String email) async {
     final prefs = await SharedPreferences.getInstance();
-    final posts = jsonDecode(prefs.getString('posts') ?? '[]') as List;
+    // Use global posts key to get all posts, then filter by author
+    final posts = jsonDecode(prefs.getString('global_posts') ?? '[]') as List;
     return posts
         .map((p) => Post.fromJson(p as Map<String, dynamic>))
         .where((post) => post.author == email)
@@ -50,11 +54,15 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
-
-    return Scaffold(
+    return VideoBackground(
+      videoPath: 'lib/assets/animation2.mp4',
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // Header with title
           Padding(
             padding: const EdgeInsets.only(bottom: 16.0),
@@ -89,7 +97,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              userProvider.username ?? userProvider.email ?? 'N/A',
+                                  userProvider.username ?? userProvider.email ?? 'N/A',
                               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -127,12 +135,22 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  ListTile(
-                    leading: const Icon(Icons.edit),
-                    title: const Text('Edit Username'),
-                    subtitle: Text(userProvider.username ?? 'Not set'),
-                    onTap: () => _showEditUsernameDialog(context, userProvider),
+                      ListTile(
+                        leading: const Icon(Icons.edit),
+                        title: const Text('Edit Username'),
+                        subtitle: Text(userProvider.username ?? 'Not set'),
+                        onTap: () => _showEditUsernameDialog(context, userProvider),
+                      ),
+
+                      // Temporary debug button to clean up duplicate usernames
+                      if (kDebugMode) ...[
+                        ListTile(
+                          leading: const Icon(Icons.cleaning_services, color: Colors.orange),
+                          title: const Text('Debug: Clean Duplicate Usernames'),
+                          subtitle: const Text('Fix username database issues'),
+                          onTap: () => _cleanupDuplicateUsernames(context),
                   ),
+                      ],
 
                 ],
               ),
@@ -270,64 +288,64 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           else
                             ...posts.take(3).map((post) => Padding(
                               padding: const EdgeInsets.only(top: 8),
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => PostDetailScreen(post: post),
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.grey[300]!),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        post.title,
-                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                          fontWeight: FontWeight.w600,
+                                  child: InkWell(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => PostDetailScreen(post: post),
                                         ),
+                                      );
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey[300]!),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        post.content.length > 100 
-                                          ? '${post.content.substring(0, 100)}...' 
-                                          : post.content,
-                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          color: Colors.grey[600],
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Icon(Icons.comment, size: 14, color: Colors.grey[500]),
-                                          const SizedBox(width: 4),
                                           Text(
-                                            '${post.comments.length} comments',
-                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                              color: Colors.grey[500],
+                                            post.title,
+                                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
-                                          const Spacer(),
+                                          const SizedBox(height: 4),
                                           Text(
-                                            _formatDate(post.createdAt),
+                                            post.content.length > 100 
+                                              ? '${post.content.substring(0, 100)}...' 
+                                              : post.content,
                                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                              color: Colors.grey[500],
+                                              color: Colors.grey[600],
                                             ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              Icon(Icons.comment, size: 14, color: Colors.grey[500]),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                '${post.comments.length} comments',
+                                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                  color: Colors.grey[500],
+                                                ),
+                                              ),
+                                              const Spacer(),
+                                              Text(
+                                                _formatDate(post.createdAt),
+                                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                  color: Colors.grey[500],
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
-                                    ],
-                                  ),
-                                ),
+                                    ),
                               ),
                             )),
                         ],
@@ -462,6 +480,54 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       },
                     ),
                   ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: RoundedButton(
+                          text: 'Reset All Data',
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Reset All Data'),
+                                content: const Text(
+                                  'This will clear all your pets, posts, and saved data. This action cannot be undone.',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, true),
+                                    child: const Text(
+                                      'Reset',
+                                      style: TextStyle(color: Colors.orange),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                            
+                            if (confirm == true) {
+                              try {
+                                final appState = Provider.of<AppStateProvider>(context, listen: false);
+                                await appState.clearAllUserData();
+                                setState(() {}); // Refresh the UI
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('All data has been reset')),
+                                );
+                              } catch (e) {
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Reset failed: $e')),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                      ),
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
@@ -513,7 +579,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               ),
             ),
           ),
-        ]),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -753,18 +821,24 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Text(
+                            Expanded(
+                              child: Text(
                               isReddit ? 'Reddit' : 'Community',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: Colors.grey[600],
                                 fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(
+                            Expanded(
+                              child: Text(
                               'by ${post.author}',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: Colors.grey[500],
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -775,10 +849,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Colors.grey[400],
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert),
                     onSelected: (value) async {
@@ -885,6 +961,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           decoration: const InputDecoration(
             labelText: 'Username',
             border: OutlineInputBorder(),
+            helperText: 'Username must be unique across all users',
           ),
         ),
         actions: [
@@ -895,9 +972,26 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           ElevatedButton(
             onPressed: () async {
               if (controller.text.trim().isNotEmpty) {
-                await userProvider.updateUsername(controller.text.trim());
-                Navigator.pop(context);
-                setState(() {}); // Refresh UI
+                try {
+                  await userProvider.updateUsername(controller.text.trim());
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    setState(() {}); // Refresh UI
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Username updated successfully')),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to update username: $e')),
+                    );
+                  }
+                }
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Username cannot be empty')),
+                );
               }
             },
             child: const Text('Save'),
@@ -907,5 +1001,23 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 
+  void _cleanupDuplicateUsernames(BuildContext context) async {
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      await apiService.cleanupDuplicateUsernames();
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Duplicate usernames cleaned up successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error cleaning up usernames: $e')),
+        );
+      }
+    }
+  }
 
 }

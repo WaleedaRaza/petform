@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/user_provider.dart';
 import 'providers/app_state_provider.dart';
+import 'providers/feed_provider.dart';
 import 'services/api_service.dart';
 import 'views/welcome_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -23,13 +24,13 @@ void main() async {
     }
   } catch (e) {
     // Firebase not initialized, initialize it
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    if (kDebugMode) {
-      print('Main: Firebase initialized successfully');
-      print('Main: Firebase app name: ${Firebase.app().name}');
-      print('Main: Firebase app options: ${Firebase.app().options.projectId}');
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  if (kDebugMode) {
+    print('Main: Firebase initialized successfully');
+    print('Main: Firebase app name: ${Firebase.app().name}');
+    print('Main: Firebase app options: ${Firebase.app().options.projectId}');
     }
   }
   
@@ -39,6 +40,7 @@ void main() async {
         ChangeNotifierProvider(create: (context) => UserProvider()),
         Provider(create: (context) => ApiService()),
         ChangeNotifierProvider(create: (context) => AppStateProvider()),
+        ChangeNotifierProvider(create: (context) => FeedProvider()),
       ],
       child: const PetformApp(),
     ),

@@ -4,6 +4,7 @@ import '../providers/app_state_provider.dart';
 import '../models/pet.dart';
 import '../models/tracking_metric.dart';
 import '../widgets/enhanced_tracking_card.dart';
+import '../widgets/video_background.dart';
 import 'metric_detail_screen.dart';
 import 'pet_profile_creation_screen.dart';
 
@@ -20,7 +21,10 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeAppState();
+    // Defer initialization to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeAppState();
+    });
   }
 
   Future<void> _initializeAppState() async {
@@ -35,125 +39,130 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
     final metrics = appState.trackingMetrics;
 
     if (pets.isEmpty) {
-      return _buildNoPetsView();
+      return VideoBackground(
+        videoPath: 'lib/assets/animation2.mp4',
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: _buildNoPetsView(),
+        ),
+      );
     }
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Column(
-        children: [
-          // Header with title
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Pet Tracking',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
+    return VideoBackground(
+      videoPath: 'lib/assets/animation2.mp4',
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Column(
+          children: [
+            // Header with title
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Pet Tracking',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ),
-          // Search bar
-          _buildSearchSection(),
-          
-          // Main content
-          Expanded(
-            child: _buildMetricsList(metrics: metrics, pets: pets),
-          ),
-        ],
+            // Search bar
+            _buildSearchSection(),
+            // Main content
+            Expanded(
+              child: _buildMetricsList(metrics: metrics, pets: pets),
+            ),
+          ],
+        ),
+        floatingActionButton: pets.isNotEmpty 
+            ? FloatingActionButton.extended(
+                onPressed: () => _showAddMetricDialog(context, pets.first),
+                icon: const Icon(Icons.add),
+                label: const Text('Add Metric'),
+              )
+            : null,
       ),
-      floatingActionButton: pets.isNotEmpty 
-          ? FloatingActionButton.extended(
-              onPressed: () => _showAddMetricDialog(context, pets.first),
-              icon: const Icon(Icons.add),
-              label: const Text('Add Metric'),
-            )
-          : null,
     );
   }
 
   Widget _buildNoPetsView() {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Column(
-        children: [
-          // Header with title
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Pet Tracking',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+    return Column(
+      children: [
+        // Header with title
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            'Pet Tracking',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
             ),
           ),
-          // Content
-          Expanded(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.pets,
-                        size: 80,
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
+        ),
+        // Content
+        Expanded(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'No Pets Added Yet',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
+                    child: Icon(
+                      Icons.pets,
+                      size: 80,
+                      color: Theme.of(context).colorScheme.secondary,
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Add a pet to start tracking their health and activities. You can monitor weight, exercise, feeding schedules, and more!',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[500],
-                      ),
-                      textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'No Pets Added Yet',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 32),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PetProfileCreationScreen(),
-                          ),
-                        );
-                        if (result == true) {
-                          setState(() {}); // Refresh the screen
-                        }
-                      },
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Your First Pet'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.secondary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Add a pet to start tracking their health and activities. You can monitor weight, exercise, feeding schedules, and more!',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[500],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PetProfileCreationScreen(),
                         ),
+                      );
+                      if (result == true) {
+                        setState(() {}); // Refresh the screen
+                      }
+                    },
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Your First Pet'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -244,12 +253,6 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
               color: Colors.grey[500],
             ),
             textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () => _showAddMetricDialog(context, null),
-            icon: const Icon(Icons.add),
-            label: const Text('Add Your First Metric'),
           ),
         ],
       ),

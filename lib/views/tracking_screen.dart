@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/pet.dart';
 import '../models/tracking_metric.dart';
-import '../providers/user_provider.dart';
+import '../providers/app_state_provider.dart';
 import '../services/api_service.dart';
 import 'metric_detail_screen.dart';
 
@@ -17,16 +17,15 @@ class TrackingScreen extends StatelessWidget {
 
     if (result != null && result['name'] != null && result['frequency'] != null) {
       final newMetric = TrackingMetric(
-        id: '${pet.id}-${pet.trackingMetrics.length}',
+        id: 'metric_${DateTime.now().millisecondsSinceEpoch}',
         petId: pet.id.toString(),
         name: result['name']!,
         frequency: result['frequency']!,
         targetValue: double.tryParse(result['targetValue'] ?? '10.0') ?? 10.0,
       );
 
-      pet.trackingMetrics.add(newMetric);
-      await Provider.of<ApiService>(context, listen: false).updatePet(pet);
-      (context as Element).markNeedsBuild();
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
+      await appState.addTrackingMetric(newMetric);
     }
   }
 
@@ -44,20 +43,15 @@ class TrackingScreen extends StatelessWidget {
     );
 
     if (confirmed == true) {
-      pet.trackingMetrics.remove(metric);
-      await Provider.of<ApiService>(context, listen: false).updatePet(pet);
-      (context as Element).markNeedsBuild();
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
+      await appState.removeTrackingMetric(metric);
     }
   }
 
   void _updateMetricValue(BuildContext context, Pet pet, TrackingMetric metric, double newValue) async {
     final updatedMetric = metric.addEntry(newValue);
-    final index = pet.trackingMetrics.indexWhere((m) => m.id == metric.id);
-    if (index != -1) {
-      pet.trackingMetrics[index] = updatedMetric;
-    await Provider.of<ApiService>(context, listen: false).updatePet(pet);
-    (context as Element).markNeedsBuild();
-    }
+    final appState = Provider.of<AppStateProvider>(context, listen: false);
+    await appState.updateTrackingMetric(updatedMetric);
   }
 
   void _showEditDialog(BuildContext context, Pet pet, TrackingMetric metric) {
@@ -103,26 +97,22 @@ class TrackingScreen extends StatelessWidget {
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
             ),
-            TextButton(
-              onPressed: () {
-                final targetValue = double.tryParse(targetValueController.text);
-                if (nameController.text.isNotEmpty && targetValue != null) {
-                  final updatedMetric = metric.copyWith(
-                    name: nameController.text,
-                    frequency: selectedFrequency,
-                    targetValue: targetValue,
-                  );
-                  final index = pet.trackingMetrics.indexWhere((m) => m.id == metric.id);
-                  if (index != -1) {
-                    pet.trackingMetrics[index] = updatedMetric;
-                    Provider.of<ApiService>(context, listen: false).updatePet(pet);
-                    (context as Element).markNeedsBuild();
+                          TextButton(
+                onPressed: () {
+                  final targetValue = double.tryParse(targetValueController.text);
+                  if (nameController.text.isNotEmpty && targetValue != null) {
+                    final updatedMetric = metric.copyWith(
+                      name: nameController.text,
+                      frequency: selectedFrequency,
+                      targetValue: targetValue,
+                    );
+                    final appState = Provider.of<AppStateProvider>(context, listen: false);
+                    appState.updateTrackingMetric(updatedMetric);
                   }
-                }
-                Navigator.pop(context);
-              },
-              child: const Text('Save'),
-            ),
+                  Navigator.pop(context);
+                },
+                child: const Text('Save'),
+              ),
           ],
         ),
       ),
@@ -164,12 +154,12 @@ class TrackingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    if (userProvider.pets.isEmpty) {
+    final appState = Provider.of<AppStateProvider>(context);
+    if (appState.pets.isEmpty) {
       return const Scaffold(body: Center(child: Text('No pet added yet')));
     }
-    final pet = userProvider.pets.first;
-    final metrics = pet.trackingMetrics;
+    final pet = appState.pets.first;
+    final metrics = appState.getMetricsByPet(pet.id.toString());
 
     return Scaffold(
       appBar: AppBar(title: const Text('Tracking')),

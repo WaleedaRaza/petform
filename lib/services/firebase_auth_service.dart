@@ -21,8 +21,13 @@ class FirebaseAuthService {
         email: email,
         password: password,
       );
+      
+      // Send email verification
+      await credential.user?.sendEmailVerification();
+      
       if (kDebugMode) {
         print('FirebaseAuthService: User signed up successfully: ${credential.user?.email}');
+        print('FirebaseAuthService: Email verification sent to: ${credential.user?.email}');
       }
       return credential;
     } on FirebaseAuthException catch (e) {
@@ -96,6 +101,31 @@ class FirebaseAuthService {
     } catch (e) {
       if (kDebugMode) {
         print('FirebaseAuthService: Reset password error: $e');
+      }
+      rethrow;
+    }
+  }
+
+  // Check if email is verified
+  bool isEmailVerified() {
+    return _auth.currentUser?.emailVerified ?? false;
+  }
+
+  // Reload user to get latest verification status
+  Future<void> reloadUser() async {
+    await _auth.currentUser?.reload();
+  }
+
+  // Resend email verification
+  Future<void> resendEmailVerification() async {
+    try {
+      await _auth.currentUser?.sendEmailVerification();
+      if (kDebugMode) {
+        print('FirebaseAuthService: Email verification resent to ${_auth.currentUser?.email}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('FirebaseAuthService: Resend email verification error: $e');
       }
       rethrow;
     }

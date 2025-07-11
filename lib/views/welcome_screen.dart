@@ -14,26 +14,26 @@ class WelcomeScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
-          child: Padding(
+      child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40.0),
-            child: Column(
+        child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
-              children: [
+          children: [
                 const Spacer(),
                 const Spacer(),
-                RoundedButton(
-                  text: 'Sign Up',
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SignupScreen())),
-                ),
-                const SizedBox(height: 16),
-                RoundedButton(
-                  text: 'Log In',
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen())),
-                ),
-                const SizedBox(height: 40),
-              ],
+            RoundedButton(
+              text: 'Sign Up',
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SignupScreen())),
             ),
-          ),
+                const SizedBox(height: 16),
+            RoundedButton(
+              text: 'Log In',
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen())),
+            ),
+                const SizedBox(height: 40),
+          ],
+        ),
+      ),
         ),
       ),
     );

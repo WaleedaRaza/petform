@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../models/post.dart';
 import '../models/pet_types.dart';
+import '../providers/app_state_provider.dart';
 
 class FeedProvider with ChangeNotifier {
   String _selectedPetType = 'All';
@@ -44,6 +46,9 @@ class FeedProvider with ChangeNotifier {
         postType: _selectedPostType == 'All' ? null : (_selectedPostType.toLowerCase() == 'community' ? 'community' : null),
       );
       
+      // Posts are now global, so we don't need to merge user posts from AppStateProvider
+      // All community posts are stored globally and accessible to all users
+      
       List<Post> redditPosts = [];
       if (_selectedPostType == 'All' || _selectedPostType.toLowerCase() == 'reddit') {
         String subreddit = 'pets';
@@ -76,12 +81,16 @@ class FeedProvider with ChangeNotifier {
         }
       }
       
-      // Merge and sort by date (descending)
+      // Merge community and reddit posts and sort by date (descending)
       _posts = [...communityPosts, ...redditPosts];
       _posts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       
       if (kDebugMode) {
         print('FeedProvider: Total posts: ${_posts.length} (${communityPosts.length} community + ${redditPosts.length} reddit)');
+        print('FeedProvider: Community posts:');
+        for (final post in communityPosts) {
+          print('  - ${post.title} by ${post.author} (ID: ${post.id})');
+        }
       }
     } catch (e) {
       _posts = [];

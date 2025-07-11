@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/ai_service.dart';
 import '../models/pet.dart';
 import '../models/tracking_metric.dart';
+import '../widgets/video_background.dart';
 
 import '../providers/app_state_provider.dart';
 
@@ -531,101 +532,103 @@ class AskAiScreen extends StatelessWidget {
       builder: (context, child) {
         final aiProvider = Provider.of<AiProvider>(context);
         final textController = TextEditingController();
-
-        return Scaffold(
-          backgroundColor: Colors.transparent,
-          body: Column(
-            children: [
-              // Header with title and clear button
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    Text(
-                      'Ask PetPal AI',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => aiProvider.clearChat(),
-                      tooltip: 'Clear Chat',
-                    ),
-                  ],
-                ),
-              ),
-              const QueryTypeDropdown(),
-              const PetSelector(),
-              const QuickActions(),
-              Expanded(
-                child: aiProvider.messages.isEmpty
-                    ? const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
-                            SizedBox(height: 16),
-                            Text(
-                              'Start a conversation with PetPal!',
-                              style: TextStyle(fontSize: 18, color: Colors.grey),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Select a pet for personalized advice',
-                              style: TextStyle(fontSize: 14, color: Colors.grey),
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              '💡 Tip: Use the quick action buttons above for specific advice',
-                              style: TextStyle(fontSize: 12, color: Colors.grey),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+        return VideoBackground(
+          videoPath: 'lib/assets/animation2.mp4',
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            body: Column(
+              children: [
+                // Header with title and clear button
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Ask PetPal AI',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
-                      )
-                    : ListView.builder(
-                        itemCount: aiProvider.messages.length,
-                        itemBuilder: (context, index) {
-                          return MessageBubble(message: aiProvider.messages[index]);
-                        },
                       ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: textController,
-                        decoration: InputDecoration(
-                          hintText: _getHintText(aiProvider.selectedQueryType),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
-                        ),
-                        onSubmitted: (value) async {
-                          await aiProvider.sendMessage(value, context);
-                          textController.clear();
-                        },
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () => aiProvider.clearChat(),
+                        tooltip: 'Clear Chat',
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    aiProvider.isLoading
-                        ? const CircularProgressIndicator()
-                        : IconButton(
-                            icon: const Icon(Icons.send),
-                            onPressed: () async {
-                              await aiProvider.sendMessage(textController.text, context);
-                              textController.clear();
-                            },
-                          ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                const QueryTypeDropdown(),
+                const PetSelector(),
+                const QuickActions(),
+                Expanded(
+                  child: aiProvider.messages.isEmpty
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
+                              SizedBox(height: 16),
+                              Text(
+                                'Start a conversation with PetPal!',
+                                style: TextStyle(fontSize: 18, color: Colors.grey),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Select a pet for personalized advice',
+                                style: TextStyle(fontSize: 14, color: Colors.grey),
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                '💡 Tip: Use the quick action buttons above for specific advice',
+                                style: TextStyle(fontSize: 12, color: Colors.grey),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: aiProvider.messages.length,
+                          itemBuilder: (context, index) {
+                            return MessageBubble(message: aiProvider.messages[index]);
+                          },
+                        ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: textController,
+                          decoration: InputDecoration(
+                            hintText: _getHintText(aiProvider.selectedQueryType),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                          ),
+                          onSubmitted: (value) async {
+                            await aiProvider.sendMessage(value, context);
+                            textController.clear();
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      aiProvider.isLoading
+                          ? const CircularProgressIndicator()
+                          : IconButton(
+                              icon: const Icon(Icons.send),
+                              onPressed: () async {
+                                await aiProvider.sendMessage(textController.text, context);
+                                textController.clear();
+                              },
+                            ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
