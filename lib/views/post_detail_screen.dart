@@ -9,6 +9,7 @@ import '../providers/app_state_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/feed_provider.dart';
 import '../services/api_service.dart';
+import '../services/firebase_auth_service.dart';
 import '../widgets/video_background.dart';
 import 'create_post_screen.dart';
 
@@ -42,7 +43,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       await Provider.of<ApiService>(context, listen: false).addComment(
         postId: widget.post.id!,
         content: _commentController.text,
-        author: userProvider.email ?? 'Anonymous',
+        author: FirebaseAuthService().currentUser?.email ?? 'Anonymous',
       );
       
       // Refresh feed provider to update the post in the feed
@@ -62,8 +63,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   Future<void> _deleteComment(Comment comment) async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final currentUser = userProvider.email ?? 'Anonymous';
+    final currentUser = FirebaseAuthService().currentUser?.email ?? 'Anonymous';
     
     // Only allow deletion if the user is the author of the comment
     if (comment.author != currentUser) {
@@ -126,8 +126,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   Future<void> _deletePost(Post post) async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final currentUser = userProvider.email ?? 'Anonymous';
+    final currentUser = FirebaseAuthService().currentUser?.email ?? 'Anonymous';
     
     // Only allow deletion if the user is the author of the post
     if (post.author != currentUser) {
@@ -208,7 +207,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           actions: [
-            if (post.postType == 'community' && post.author == Provider.of<UserProvider>(context, listen: false).email) ...[
+            if (post.postType == 'community' && post.author == FirebaseAuthService().currentUser?.email) ...[
               IconButton(
                 icon: const Icon(Icons.edit),
                 onPressed: () {
@@ -366,8 +365,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     )
                   else
                     ...post.comments.map((comment) {
-                      final userProvider = Provider.of<UserProvider>(context);
-                      final currentUser = userProvider.email ?? 'Anonymous';
+                      final currentUser = FirebaseAuthService().currentUser?.email ?? 'Anonymous';
                       final isAuthor = comment.author == currentUser;
                       
                       return Card(

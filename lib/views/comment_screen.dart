@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
+import '../providers/comment_provider.dart';
 import '../providers/user_provider.dart';
 import '../widgets/video_background.dart';
+import '../services/firebase_auth_service.dart';
 
 class CommentScreen extends StatefulWidget {
   final Post post;
@@ -32,10 +33,11 @@ class _CommentScreenState extends State<CommentScreen> {
     setState(() => _isLoading = true);
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final userEmail = FirebaseAuthService().currentUser?.email ?? 'Anonymous';
       await Provider.of<ApiService>(context, listen: false).addComment(
         postId: widget.post.id!,
         content: _commentController.text,
-        author: userProvider.email ?? 'Anonymous',
+        author: userEmail,
       );
       if (!mounted) return;
       _commentController.clear();
@@ -51,15 +53,12 @@ class _CommentScreenState extends State<CommentScreen> {
   }
 
   Future<void> _deleteComment(Comment comment) async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    // Try to get email from UserProvider first, then fallback to Firebase Auth
-    final currentUser = userProvider.email ?? FirebaseAuth.instance.currentUser?.email ?? 'Anonymous';
+    final currentUser = FirebaseAuthService().currentUser?.email ?? 'Anonymous';
     
     if (kDebugMode) {
       print('CommentScreen._deleteComment: Comment author: ${comment.author}');
       print('CommentScreen._deleteComment: Current user: $currentUser');
-      print('CommentScreen._deleteComment: UserProvider email: ${userProvider.email}');
-      print('CommentScreen._deleteComment: Firebase Auth email: ${FirebaseAuth.instance.currentUser?.email}');
+      print('CommentScreen._deleteComment: Firebase Auth email: ${FirebaseAuthService().currentUser?.email}');
     }
     
     // Only allow deletion if the user is the author of the comment
@@ -143,17 +142,14 @@ class _CommentScreenState extends State<CommentScreen> {
                     itemCount: post.comments.length,
                     itemBuilder: (context, index) {
                       final comment = post.comments[index];
-                      final userProvider = Provider.of<UserProvider>(context);
-                      // Try to get email from UserProvider first, then fallback to Firebase Auth
-                      String currentUser = userProvider.email ?? FirebaseAuth.instance.currentUser?.email ?? 'Anonymous';
+                      final currentUser = FirebaseAuthService().currentUser?.email ?? 'Anonymous';
                       final isAuthor = comment.author == currentUser;
                       
                       if (kDebugMode) {
                         print('CommentScreen: Comment author: ${comment.author}');
                         print('CommentScreen: Current user: $currentUser');
                         print('CommentScreen: Is author: $isAuthor');
-                        print('CommentScreen: UserProvider email: ${userProvider.email}');
-                        print('CommentScreen: Firebase Auth email: ${FirebaseAuth.instance.currentUser?.email}');
+                        print('CommentScreen: Firebase Auth email: ${FirebaseAuthService().currentUser?.email}');
                       }
                       
                       return Card(

@@ -8,6 +8,14 @@ import 'views/welcome_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:flutter/foundation.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'models/user.dart';
+import 'models/pet.dart';
+import 'models/shopping_item.dart';
+import 'models/tracking_metric.dart';
+import 'models/post.dart';
+import 'models/reddit_post.dart';
+import 'models/username_reservation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,8 +39,31 @@ void main() async {
     print('Main: Firebase initialized successfully');
     print('Main: Firebase app name: ${Firebase.app().name}');
     print('Main: Firebase app options: ${Firebase.app().options.projectId}');
-    }
   }
+  }
+
+  await Hive.initFlutter();
+
+  // Register Hive adapters
+  Hive.registerAdapter(UserAdapter());
+  Hive.registerAdapter(PetAdapter());
+  Hive.registerAdapter(ShoppingItemAdapter());
+  Hive.registerAdapter(TrackingMetricAdapter());
+  Hive.registerAdapter(TrackingEntryAdapter());
+  Hive.registerAdapter(PostAdapter());
+  Hive.registerAdapter(CommentAdapter());
+  Hive.registerAdapter(RedditPostAdapter());
+  Hive.registerAdapter(UsernameReservationAdapter());
+
+  // Open boxes for each model
+  await Hive.openBox<User>('users');
+  await Hive.openBox<Pet>('pets');
+  await Hive.openBox<ShoppingItem>('shoppingItems');
+  await Hive.openBox<TrackingMetric>('trackingMetrics');
+  await Hive.openBox<Post>('posts');
+  await Hive.openBox<UsernameReservation>('usernameReservations');
+  await Hive.openBox<Comment>('comments');
+  await Hive.openBox<RedditPost>('redditPosts');
   
   runApp(
     MultiProvider(

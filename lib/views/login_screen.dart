@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import '../services/firebase_auth_service.dart';
 import 'home_screen.dart';
 import 'forgot_password_screen.dart';
 import 'email_verification_screen.dart';
@@ -29,20 +30,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      await userProvider.signIn(_emailController.text, _passwordController.text);
+      final authService = FirebaseAuthService();
+      await authService.signInWithEmailAndPassword(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
       
       // Check if email is verified
-      final authService = userProvider.authService;
       await authService.reloadUser();
       
       if (!mounted) return;
       
       if (authService.isEmailVerified()) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
       } else {
         // Show email verification screen
         Navigator.pushReplacement(

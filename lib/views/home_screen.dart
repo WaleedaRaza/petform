@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/app_state_provider.dart';
+import '../services/firebase_auth_service.dart';
 import '../widgets/status_bar.dart';
 import '../widgets/video_background.dart';
 import 'community_feed_screen.dart';
@@ -72,8 +73,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    if (!userProvider.isLoggedIn) {
+    final isLoggedIn = FirebaseAuthService().currentUser != null;
+    if (!isLoggedIn) {
       return const WelcomeScreen();
     }
     if (!_isInitialized) {

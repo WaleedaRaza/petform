@@ -7,6 +7,7 @@ import '../widgets/enhanced_tracking_card.dart';
 import '../widgets/video_background.dart';
 import 'metric_detail_screen.dart';
 import 'pet_profile_creation_screen.dart';
+import 'package:flutter/foundation.dart';
 
 class EnhancedTrackingScreen extends StatefulWidget {
   const EnhancedTrackingScreen({super.key});
@@ -32,11 +33,61 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
     await appState.initialize();
   }
 
+  Widget _buildSearchSection() {
+    final appState = Provider.of<AppStateProvider>(context, listen: false);
+    final pets = appState.pets;
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Search tracking metrics...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            onPressed: pets.isNotEmpty
+                ? () => _showAddMetricDialog(context, pets.first)
+                : null,
+            icon: const Icon(Icons.add),
+            label: const Text('Add Metric'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppStateProvider>(context);
     final pets = appState.pets;
     final metrics = appState.trackingMetrics;
+
+    if (kDebugMode) {
+      print('EnhancedTrackingScreen: Pets count: ${pets.length}');
+      print('EnhancedTrackingScreen: Metrics count: ${metrics.length}');
+      print('EnhancedTrackingScreen: Pets: ${pets.map((p) => '${p.name} (${p.id})').toList()}');
+      print('EnhancedTrackingScreen: Building with search+add row...');
+    }
 
     if (pets.isEmpty) {
       return VideoBackground(
@@ -48,37 +99,35 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
       );
     }
 
-    return VideoBackground(
-      videoPath: 'lib/assets/animation2.mp4',
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Column(
-          children: [
-            // Header with title
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Pet Tracking',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          VideoBackground(
+            videoPath: 'lib/assets/animation2.mp4',
+            child: Container(),
+          ),
+          Column(
+            children: [
+              // Header with title
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Pet Tracking',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ),
-            // Search bar
-            _buildSearchSection(),
-            // Main content
-            Expanded(
-              child: _buildMetricsList(metrics: metrics, pets: pets),
-            ),
-          ],
-        ),
-        floatingActionButton: pets.isNotEmpty 
-            ? FloatingActionButton.extended(
-                onPressed: () => _showAddMetricDialog(context, pets.first),
-                icon: const Icon(Icons.add),
-                label: const Text('Add Metric'),
-              )
-            : null,
+              // Search + Add Metric row
+              _buildSearchSection(),
+              // Main content
+              Expanded(
+                child: _buildMetricsList(metrics: metrics, pets: pets),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -163,27 +212,6 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSearchSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: TextField(
-        onChanged: (value) {
-          setState(() {
-            _searchQuery = value;
-          });
-        },
-        decoration: InputDecoration(
-          hintText: 'Search tracking metrics...',
-          prefixIcon: const Icon(Icons.search),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          filled: true,
-        ),
-      ),
     );
   }
 

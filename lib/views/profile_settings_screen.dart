@@ -17,6 +17,7 @@ import 'edit_pet_screen.dart';
 import '../widgets/rounded_button.dart';
 import 'post_detail_screen.dart';
 import 'saved_posts_screen.dart';
+import '../services/firebase_auth_service.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -26,6 +27,8 @@ class ProfileSettingsScreen extends StatefulWidget {
 }
 
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
+  final FirebaseAuthService _authService = FirebaseAuthService();
+
   Future<List<Post>> _loadUserPosts(String email) async {
     final prefs = await SharedPreferences.getInstance();
     // Use global posts key to get all posts, then filter by author
@@ -54,6 +57,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
+    final currentUser = _authService.currentUser;
+    final userEmail = currentUser?.email ?? 'N/A';
+    final userDisplayName = currentUser?.displayName ?? userEmail;
+
     return VideoBackground(
       videoPath: 'lib/assets/animation2.mp4',
       child: Scaffold(
@@ -85,10 +92,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       CircleAvatar(
                         radius: 30,
                         backgroundColor: Theme.of(context).colorScheme.secondary,
-                        child: Icon(
-                          Icons.person,
-                          size: 30,
+                            child: Text(
+                              userDisplayName.isNotEmpty ? userDisplayName[0].toUpperCase() : 'U',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
                           color: Colors.white,
+                              ),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -97,7 +107,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                                  userProvider.username ?? userProvider.email ?? 'N/A',
+                                  userDisplayName,
                               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -137,20 +147,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
                       ListTile(
                         leading: const Icon(Icons.edit),
-                        title: const Text('Edit Username'),
-                        subtitle: Text(userProvider.username ?? 'Not set'),
-                        onTap: () => _showEditUsernameDialog(context, userProvider),
+                        title: const Text('Edit Display Name'),
+                        subtitle: Text(currentUser?.displayName ?? 'Not set'),
+                        onTap: () => _showEditDisplayNameDialog(context),
                       ),
-
-                      // Temporary debug button to clean up duplicate usernames
-                      if (kDebugMode) ...[
-                        ListTile(
-                          leading: const Icon(Icons.cleaning_services, color: Colors.orange),
-                          title: const Text('Debug: Clean Duplicate Usernames'),
-                          subtitle: const Text('Fix username database issues'),
-                          onTap: () => _cleanupDuplicateUsernames(context),
-                  ),
-                      ],
 
                 ],
               ),
@@ -263,7 +263,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   ),
                   const SizedBox(height: 16),
                   FutureBuilder<List<Post>>(
-                    future: _loadUserPosts(userProvider.email ?? ''),
+                        future: _loadUserPosts(userEmail),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const CircularProgressIndicator();
@@ -288,64 +288,64 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           else
                             ...posts.take(3).map((post) => Padding(
                               padding: const EdgeInsets.only(top: 8),
-                                  child: InkWell(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => PostDetailScreen(post: post),
-                                        ),
-                                      );
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey[300]!),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            post.title,
-                                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                              fontWeight: FontWeight.w600,
+                                      child: InkWell(
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => PostDetailScreen(post: post),
                                             ),
+                                          );
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: Colors.grey[300]!),
+                                            borderRadius: BorderRadius.circular(8),
                                           ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            post.content.length > 100 
-                                              ? '${post.content.substring(0, 100)}...' 
-                                              : post.content,
-                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                              color: Colors.grey[600],
-                                            ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Row(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Icon(Icons.comment, size: 14, color: Colors.grey[500]),
-                                              const SizedBox(width: 4),
                                               Text(
-                                                '${post.comments.length} comments',
-                                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                  color: Colors.grey[500],
+                                                post.title,
+                                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                  fontWeight: FontWeight.w600,
                                                 ),
                                               ),
-                                              const Spacer(),
+                                              const SizedBox(height: 4),
                                               Text(
-                                                _formatDate(post.createdAt),
+                                                post.content.length > 100 
+                                                  ? '${post.content.substring(0, 100)}...' 
+                                                  : post.content,
                                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                  color: Colors.grey[500],
+                                                  color: Colors.grey[600],
                                                 ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  Icon(Icons.comment, size: 14, color: Colors.grey[500]),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    '${post.comments.length} comments',
+                                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                      color: Colors.grey[500],
+                                                    ),
+                                                  ),
+                                                  const Spacer(),
+                                                  Text(
+                                                    _formatDate(post.createdAt),
+                                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                      color: Colors.grey[500],
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ],
                                           ),
-                                        ],
-                                      ),
-                                    ),
+                                        ),
                               ),
                             )),
                         ],
@@ -465,7 +465,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       text: 'Sign Out',
                       onPressed: () async {
                         try {
-                          await userProvider.signOut();
+                              await _authService.signOut();
                           if (!mounted) return;
                           Navigator.pushReplacement(
                             context,
@@ -476,58 +476,58 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Sign out failed: $e')),
                           );
-                        }
-                      },
-                    ),
-                  ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: RoundedButton(
-                          text: 'Reset All Data',
-                          onPressed: () async {
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Reset All Data'),
-                                content: const Text(
-                                  'This will clear all your pets, posts, and saved data. This action cannot be undone.',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context, false),
-                                    child: const Text('Cancel'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context, true),
-                                    child: const Text(
-                                      'Reset',
-                                      style: TextStyle(color: Colors.orange),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                            
-                            if (confirm == true) {
-                              try {
-                                final appState = Provider.of<AppStateProvider>(context, listen: false);
-                                await appState.clearAllUserData();
-                                setState(() {}); // Refresh the UI
-                                if (!mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('All data has been reset')),
-                                );
-                              } catch (e) {
-                                if (!mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Reset failed: $e')),
-                                );
-                              }
                             }
                           },
                         ),
                       ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: RoundedButton(
+                              text: 'Reset All Data',
+                              onPressed: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Reset All Data'),
+                                    content: const Text(
+                                      'This will clear all your pets, posts, and saved data. This action cannot be undone.',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context, false),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context, true),
+                                        child: const Text(
+                                          'Reset',
+                                          style: TextStyle(color: Colors.orange),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                
+                                if (confirm == true) {
+                                  try {
+                                    final appState = Provider.of<AppStateProvider>(context, listen: false);
+                                    await appState.clearAllUserData();
+                                    setState(() {}); // Refresh the UI
+                                    if (!mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('All data has been reset')),
+                                    );
+                                  } catch (e) {
+                                    if (!mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Reset failed: $e')),
+                                    );
+                                  }
+                        }
+                      },
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
@@ -559,7 +559,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         
                         if (confirm == true) {
                           try {
-                            await userProvider.deleteAccount();
+                                await _authService.deleteAccount();
                             if (!mounted) return;
                             Navigator.pushReplacement(
                               context,
@@ -950,18 +950,18 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 
-  void _showEditUsernameDialog(BuildContext context, UserProvider userProvider) {
-    final controller = TextEditingController(text: userProvider.username ?? '');
+  void _showEditDisplayNameDialog(BuildContext context) {
+    final controller = TextEditingController(text: _authService.currentUser?.displayName ?? '');
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Edit Username'),
+        title: const Text('Edit Display Name'),
         content: TextField(
           controller: controller,
           decoration: const InputDecoration(
-            labelText: 'Username',
+            labelText: 'Display Name',
             border: OutlineInputBorder(),
-            helperText: 'Username must be unique across all users',
+            helperText: 'Your display name will be visible to other users',
           ),
         ),
         actions: [
@@ -973,24 +973,24 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             onPressed: () async {
               if (controller.text.trim().isNotEmpty) {
                 try {
-                  await userProvider.updateUsername(controller.text.trim());
+                  await _authService.updateDisplayName(controller.text.trim());
                   if (context.mounted) {
                     Navigator.pop(context);
                     setState(() {}); // Refresh UI
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Username updated successfully')),
+                      const SnackBar(content: Text('Display name updated successfully')),
                     );
                   }
                 } catch (e) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to update username: $e')),
+                      SnackBar(content: Text('Failed to update display name: $e')),
                     );
                   }
                 }
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Username cannot be empty')),
+                  const SnackBar(content: Text('Display name cannot be empty')),
                 );
               }
             },

@@ -7,15 +7,6 @@ class TrackingService {
       case 'dog':
         return [
           TrackingMetric(
-            id: 'weight_dog_${DateTime.now().millisecondsSinceEpoch}',
-            name: 'Weight Check',
-            frequency: 'monthly',
-            petId: '',
-            targetValue: 50.0,
-            description: 'Monitor your dog\'s weight to ensure healthy growth.',
-            category: 'health',
-          ),
-          TrackingMetric(
             id: 'exercise_dog_${DateTime.now().millisecondsSinceEpoch}',
             name: 'Exercise Time',
             frequency: 'daily',
@@ -47,15 +38,6 @@ class TrackingService {
       case 'cat':
         return [
           TrackingMetric(
-            id: 'weight_cat_${DateTime.now().millisecondsSinceEpoch}',
-            name: 'Weight Check',
-            frequency: 'monthly',
-            petId: '',
-            targetValue: 12.0,
-            description: 'Monitor your cat\'s weight to ensure they maintain a healthy size.',
-            category: 'health',
-          ),
-          TrackingMetric(
             id: 'litter_cat_${DateTime.now().millisecondsSinceEpoch}',
             name: 'Litter Box Usage',
             frequency: 'daily',
@@ -86,15 +68,6 @@ class TrackingService {
         
       case 'bird':
         return [
-          TrackingMetric(
-            id: 'weight_bird_${DateTime.now().millisecondsSinceEpoch}',
-            name: 'Weight Check',
-            frequency: 'monthly',
-            petId: '',
-            targetValue: 2.0,
-            description: 'Monitor your bird\'s weight as it can indicate health issues.',
-            category: 'health',
-          ),
           TrackingMetric(
             id: 'feeding_bird_${DateTime.now().millisecondsSinceEpoch}',
             name: 'Feeding',
@@ -142,15 +115,6 @@ class TrackingService {
       case 'rabbit':
         return [
           TrackingMetric(
-            id: 'weight_small_${DateTime.now().millisecondsSinceEpoch}',
-            name: 'Weight Check',
-            frequency: 'monthly',
-            petId: '',
-            targetValue: 4.0,
-            description: 'Monitor weight to ensure healthy growth.',
-            category: 'health',
-          ),
-          TrackingMetric(
             id: 'feeding_small_${DateTime.now().millisecondsSinceEpoch}',
             name: 'Feeding',
             frequency: 'daily',
@@ -172,15 +136,6 @@ class TrackingService {
         
       default:
         return [
-          TrackingMetric(
-            id: 'weight_default_${DateTime.now().millisecondsSinceEpoch}',
-            name: 'Weight Check',
-            frequency: 'monthly',
-            petId: '',
-            targetValue: 10.0,
-            description: 'Monitor your pet\'s weight for health tracking.',
-            category: 'health',
-          ),
           TrackingMetric(
             id: 'feeding_default_${DateTime.now().millisecondsSinceEpoch}',
             name: 'Feeding',

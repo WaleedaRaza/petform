@@ -7,6 +7,7 @@ import '../widgets/rounded_button.dart';
 import '../widgets/video_background.dart';
 import '../models/pet_types.dart';
 import '../models/post.dart';
+import '../services/firebase_auth_service.dart';
 
 class CreatePostScreen extends StatefulWidget {
   final Post? postToEdit; // For editing existing posts
@@ -51,6 +52,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         final feedProvider = Provider.of<FeedProvider>(context, listen: false);
         
+        final userEmail = FirebaseAuthService().currentUser?.email ?? 'Anonymous';
+
         if (widget.postToEdit != null) {
           // Edit existing post - for now, we'll just create a new post
           // since editing requires more complex logic
@@ -58,7 +61,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             title: _titleController.text,
             content: _contentController.text,
             petType: _selectedPetType,
-            author: userProvider.email ?? 'Anonymous',
+            author: userEmail,
           );
         } else {
           // Create new post
@@ -66,7 +69,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           title: _titleController.text,
           content: _contentController.text,
           petType: _selectedPetType,
-          author: userProvider.email ?? 'Anonymous',
+          author: userEmail,
         );
         }
         

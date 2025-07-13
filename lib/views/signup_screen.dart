@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import '../services/firebase_auth_service.dart';
 import 'email_verification_screen.dart';
 import '../widgets/rounded_button.dart';
 import '../widgets/video_background.dart';
@@ -72,7 +73,25 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => _isLoading = true);
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      await userProvider.signUp(_emailController.text, username, _passwordController.text);
+      final isUnique = await userProvider.isUsernameUnique(username);
+      if (!isUnique) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Username is already taken. Please choose another.')),
+        );
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      final authService = FirebaseAuthService();
+      final credential = await authService.signUpWithEmailAndPassword(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+      // Reserve the username in Hive
+      final userId = credential.user?.uid ?? DateTime.now().millisecondsSinceEpoch.toString();
+      await userProvider.reserveUsername(username, userId, _emailController.text.trim());
+      // Optionally, add the user to Hive users box here as well
+      // ...
       if (!mounted) return;
       Navigator.pushReplacement(
         context,

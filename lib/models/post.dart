@@ -1,7 +1,15 @@
-class Comment {
+import 'package:hive/hive.dart';
+part 'post.g.dart';
+
+@HiveType(typeId: 7)
+class Comment extends HiveObject {
+  @HiveField(0)
   final int? id;
+  @HiveField(1)
   final String content;
+  @HiveField(2)
   final String author;
+  @HiveField(3)
   final DateTime createdAt;
 
   Comment({
@@ -30,19 +38,34 @@ class Comment {
   }
 }
 
-class Post {
+@HiveType(typeId: 6)
+class Post extends HiveObject {
+  @HiveField(0)
   final String? id;
+  @HiveField(1)
   final String title;
+  @HiveField(2)
   final String content;
+  @HiveField(3)
   final String author;
+  @HiveField(4)
   final String petType;
+  @HiveField(5)
   final String? imageUrl;
+  @HiveField(6)
   final int? upvotes;
+  @HiveField(7)
   final DateTime createdAt;
+  @HiveField(8)
   final DateTime? editedAt;
+  @HiveField(9)
   final String postType;
+  @HiveField(10)
   final String? redditUrl;
+  @HiveField(11)
   final List<Comment> comments;
+  @HiveField(13)
+  final bool isSaved;
 
   Post({
     this.id,
@@ -57,6 +80,7 @@ class Post {
     required this.postType,
     this.redditUrl,
     this.comments = const [],
+    this.isSaved = false,
   });
 
   factory Post.fromJson(Map<String, dynamic> json) {
@@ -75,6 +99,7 @@ class Post {
       comments: (json['comments'] as List<dynamic>?)
           ?.map((c) => Comment.fromJson(c as Map<String, dynamic>))
           .toList() ?? [],
+      isSaved: json['isSaved'] as bool? ?? false,
     );
   }
 
@@ -92,6 +117,39 @@ class Post {
       'postType': postType,
       'redditUrl': redditUrl,
       'comments': comments.map((c) => c.toJson()).toList(),
+      'isSaved': isSaved,
     };
+  }
+
+  Post copyWith({
+    String? id,
+    String? title,
+    String? content,
+    String? author,
+    String? petType,
+    String? imageUrl,
+    int? upvotes,
+    DateTime? createdAt,
+    DateTime? editedAt,
+    String? postType,
+    String? redditUrl,
+    List<Comment>? comments,
+    bool? isSaved,
+  }) {
+    return Post(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      author: author ?? this.author,
+      petType: petType ?? this.petType,
+      imageUrl: imageUrl ?? this.imageUrl,
+      upvotes: upvotes ?? this.upvotes,
+      createdAt: createdAt ?? this.createdAt,
+      editedAt: editedAt ?? this.editedAt,
+      postType: postType ?? this.postType,
+      redditUrl: redditUrl ?? this.redditUrl,
+      comments: comments ?? this.comments,
+      isSaved: isSaved ?? this.isSaved,
+    );
   }
 }

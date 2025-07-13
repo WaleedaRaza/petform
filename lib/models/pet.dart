@@ -1,25 +1,46 @@
 
 import 'shopping_item.dart';
 import 'tracking_metric.dart';
+import 'package:hive/hive.dart';
+part 'pet.g.dart';
 
-class Pet {
+@HiveType(typeId: 1)
+class Pet extends HiveObject {
+  @HiveField(0)
   final int? id;
+  @HiveField(1)
   final String name;
+  @HiveField(2)
   final String species;
+  @HiveField(3)
   final String? breed;
+  @HiveField(4)
   final int? age;
+  @HiveField(5)
   final String? personality;
+  @HiveField(6)
   final String? foodSource;
+  @HiveField(7)
   final String? favoritePark;
+  @HiveField(8)
   final String? leashSource;
+  @HiveField(9)
   final String? litterType;
+  @HiveField(10)
   final String? waterProducts;
+  @HiveField(11)
   final String? tankSize;
+  @HiveField(12)
   final String? cageSize;
+  @HiveField(13)
   final String? favoriteToy;
+  @HiveField(14)
   final String? photoUrl;
+  @HiveField(15)
   final Map<String, dynamic>? customFields;
+  @HiveField(16)
   final List<ShoppingItem> shoppingList;
+  @HiveField(17)
   final List<TrackingMetric> trackingMetrics;
 
   Pet({

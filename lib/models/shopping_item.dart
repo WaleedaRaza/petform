@@ -1,27 +1,53 @@
-class ShoppingItem {
+import 'package:hive/hive.dart';
+part 'shopping_item.g.dart';
+
+@HiveType(typeId: 2)
+class ShoppingItem extends HiveObject {
+  @HiveField(0)
   final String id;
+  @HiveField(1)
   final String name;
+  @HiveField(2)
   final String category;
+  @HiveField(3)
   final String priority; // 'High', 'Medium', 'Low'
+  @HiveField(4)
   final double estimatedCost;
+  @HiveField(5)
   final String? petId; // Associated pet
+  @HiveField(6)
   final String? description;
+  @HiveField(7)
   final String? brand;
+  @HiveField(8)
   final String? store;
+  @HiveField(9)
   final bool isCompleted;
+  @HiveField(10)
   final DateTime createdAt;
+  @HiveField(11)
   final DateTime? completedAt;
+  @HiveField(12)
   final List<String> tags;
+  @HiveField(13)
   final String? imageUrl;
+  @HiveField(14)
   final int quantity;
+  @HiveField(15)
   final String? notes;
   
   // Chewy-specific fields
+  @HiveField(16)
   final String? chewyUrl;
+  @HiveField(17)
   final double? rating;
+  @HiveField(18)
   final int? reviewCount;
+  @HiveField(19)
   final bool? inStock;
+  @HiveField(20)
   final bool? autoShip;
+  @HiveField(21)
   final bool? freeShipping;
 
   ShoppingItem({

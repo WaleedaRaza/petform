@@ -1,9 +1,15 @@
-import 'pet.dart';
+import 'package:hive/hive.dart';
+part 'user.g.dart';
 
-class User {
+@HiveType(typeId: 5)
+class User extends HiveObject {
+  @HiveField(0)
   final String id;
+  @HiveField(1)
   final String email;
+  @HiveField(2)
   final String username;
+  @HiveField(3)
   final List<String> pets;
 
   User({required this.id, required this.email, required this.username, required this.pets});
