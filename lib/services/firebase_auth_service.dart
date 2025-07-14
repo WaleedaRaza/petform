@@ -1,17 +1,17 @@
-import 'package:firebase_auth/firebase_auth.dart' as auth;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 class FirebaseAuthService {
-  final auth.FirebaseAuth _auth = auth.FirebaseAuth.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // Get current user
-  auth.User? get currentUser => _auth.currentUser;
+  User? get currentUser => _auth.currentUser;
 
   // Auth state changes stream
-  Stream<auth.User?> get authStateChanges => _auth.authStateChanges();
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   // Sign up with email and password
-  Future<auth.UserCredential> signUpWithEmailAndPassword(String email, String password) async {
+  Future<UserCredential> signUpWithEmailAndPassword(String email, String password) async {
     try {
       if (kDebugMode) {
         print('FirebaseAuthService: Attempting to sign up user: $email');
@@ -30,7 +30,7 @@ class FirebaseAuthService {
         print('FirebaseAuthService: Email verification sent to: ${credential.user?.email}');
       }
       return credential;
-    } on auth.FirebaseAuthException catch (e) {
+    } on FirebaseAuthException catch (e) {
       if (kDebugMode) {
         print('FirebaseAuthService: Sign up error: ${e.code} - ${e.message}');
       }
@@ -39,7 +39,7 @@ class FirebaseAuthService {
   }
 
   // Sign in with email and password
-  Future<auth.UserCredential> signInWithEmailAndPassword(String email, String password) async {
+  Future<UserCredential> signInWithEmailAndPassword(String email, String password) async {
     try {
       if (kDebugMode) {
         print('FirebaseAuthService: Attempting to sign in user: $email');
@@ -53,7 +53,7 @@ class FirebaseAuthService {
         print('FirebaseAuthService: User signed in successfully: ${credential.user?.email}');
       }
       return credential;
-    } on auth.FirebaseAuthException catch (e) {
+    } on FirebaseAuthException catch (e) {
       if (kDebugMode) {
         print('FirebaseAuthService: Sign in error: ${e.code} - ${e.message}');
       }
@@ -147,7 +147,7 @@ class FirebaseAuthService {
   }
 
   // Handle Firebase auth exceptions
-  String _handleAuthException(auth.FirebaseAuthException e) {
+  String _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
         return 'No user found with this email address.';

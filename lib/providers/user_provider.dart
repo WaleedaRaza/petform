@@ -1,74 +1,85 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart' as auth;
+import 'package:hive/hive.dart';
 import '../models/user.dart';
+import '../models/username_reservation.dart';
 
 class UserProvider with ChangeNotifier {
-  final _firestore = FirebaseFirestore.instance;
-  final _auth = auth.FirebaseAuth.instance;
+  final Box<User> _userBox = Hive.box<User>('users');
+  final Box<UsernameReservation> _usernameBox = Hive.box<UsernameReservation>('usernameReservations');
 
-  // Check if user is logged in
-  bool get isLoggedIn => _auth.currentUser != null;
+  List<User> get users => _userBox.values.toList();
 
-  Future<User?> getUserProfile() async {
-    final userId = _auth.currentUser?.uid;
-    if (userId == null) return null;
-    final doc = await _firestore.collection('users').doc(userId).get();
-    if (!doc.exists) return null;
-    return User.fromJson(doc.data()!);
+  Future<void> addUser(User user) async {
+    await _userBox.add(user);
+      notifyListeners();
   }
 
-  Future<void> setUserProfile(User user) async {
-    final userId = _auth.currentUser?.uid;
-    if (userId == null) return;
-    await _firestore.collection('users').doc(userId).set(user.toJson());
+  Future<void> updateUser(int key, User user) async {
+    await _userBox.put(key, user);
+      notifyListeners();
+  }
+
+  Future<void> deleteUser(int key) async {
+    await _userBox.delete(key);
     notifyListeners();
   }
 
-  Future<void> updateUserProfile(User user) async {
-    final userId = _auth.currentUser?.uid;
-    if (userId == null) return;
-    await _firestore.collection('users').doc(userId).update(user.toJson());
-    notifyListeners();
-  }
-
-  // Username management methods
+  // Username reservation logic
   Future<bool> isUsernameUnique(String username) async {
-    final normalizedUsername = username.toLowerCase();
-    final query = await _firestore
-        .collection('username_reservations')
-        .where('username', isEqualTo: normalizedUsername)
-        .get();
-    return query.docs.isEmpty;
+    UsernameReservation? reserved;
+    try {
+      reserved = _usernameBox.values.firstWhere(
+        (r) => r.username.toLowerCase() == username.toLowerCase(),
+      );
+    } catch (_) {
+      reserved = null;
+    }
+    return reserved == null;
   }
 
   Future<void> reserveUsername(String username, String userId, String email) async {
-    final normalizedUsername = username.toLowerCase();
-    await _firestore.collection('username_reservations').doc(normalizedUsername).set({
-      'username': normalizedUsername,
-      'userId': userId,
-      'email': email,
-      'reservedAt': FieldValue.serverTimestamp(),
-    });
+    UsernameReservation? existing;
+    try {
+      existing = _usernameBox.values.firstWhere((r) => r.userId == userId);
+    } catch (_) {
+      existing = null;
+    }
+    if (existing != null) {
+      await existing.delete();
+    }
+    UsernameReservation? taken;
+    try {
+      taken = _usernameBox.values.firstWhere((r) => r.username.toLowerCase() == username.toLowerCase());
+    } catch (_) {
+      taken = null;
+    }
+    if (taken != null) {
+      await taken.delete();
+    }
+    await _usernameBox.add(UsernameReservation(username: username, userId: userId, email: email));
+    notifyListeners();
   }
 
   Future<void> releaseUsername(String username) async {
-    final normalizedUsername = username.toLowerCase();
-    await _firestore.collection('username_reservations').doc(normalizedUsername).delete();
+    UsernameReservation? reservation;
+    try {
+      reservation = _usernameBox.values.firstWhere((r) => r.username.toLowerCase() == username.toLowerCase());
+    } catch (_) {
+      reservation = null;
+    }
+    if (reservation != null) {
+      await reservation.delete();
+      notifyListeners();
+    }
   }
 
-  Future<void> updateUsername(String oldUsername, String newUsername, String userId) async {
-    final normalizedOldUsername = oldUsername.toLowerCase();
-    final normalizedNewUsername = newUsername.toLowerCase();
-    
-    // Release old username
-    await releaseUsername(normalizedOldUsername);
-    
-    // Reserve new username
-    await _firestore.collection('username_reservations').doc(normalizedNewUsername).set({
-      'username': normalizedNewUsername,
-      'userId': userId,
-      'reservedAt': FieldValue.serverTimestamp(),
-    });
+  String? getUserIdByUsername(String username) {
+    UsernameReservation? reservation;
+    try {
+      reservation = _usernameBox.values.firstWhere((r) => r.username.toLowerCase() == username.toLowerCase());
+    } catch (_) {
+      reservation = null;
+    }
+    return reservation?.userId;
   }
 }

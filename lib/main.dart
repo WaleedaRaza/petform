@@ -1,10 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'providers/user_provider.dart';
-import 'providers/app_state_provider.dart';
-import 'providers/feed_provider.dart';
-import 'services/api_service.dart';
-import 'views/welcome_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:flutter/foundation.dart';
@@ -42,40 +36,7 @@ void main() async {
   }
   }
 
-  await Hive.initFlutter();
-
-  // Register Hive adapters
-  Hive.registerAdapter(UserAdapter());
-  Hive.registerAdapter(PetAdapter());
-  Hive.registerAdapter(ShoppingItemAdapter());
-  Hive.registerAdapter(TrackingMetricAdapter());
-  Hive.registerAdapter(TrackingEntryAdapter());
-  Hive.registerAdapter(PostAdapter());
-  Hive.registerAdapter(CommentAdapter());
-  Hive.registerAdapter(RedditPostAdapter());
-  Hive.registerAdapter(UsernameReservationAdapter());
-
-  // Open boxes for each model
-  await Hive.openBox<User>('users');
-  await Hive.openBox<Pet>('pets');
-  await Hive.openBox<ShoppingItem>('shoppingItems');
-  await Hive.openBox<TrackingMetric>('trackingMetrics');
-  await Hive.openBox<Post>('posts');
-  await Hive.openBox<UsernameReservation>('usernameReservations');
-  await Hive.openBox<Comment>('comments');
-  await Hive.openBox<RedditPost>('redditPosts');
-  
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (context) => UserProvider()),
-        Provider(create: (context) => ApiService()),
-        ChangeNotifierProvider(create: (context) => AppStateProvider()),
-        ChangeNotifierProvider(create: (context) => FeedProvider()),
-      ],
-      child: const PetformApp(),
-    ),
-  );
+  runApp(const PetformApp());
 }
 
 class PetformApp extends StatelessWidget {

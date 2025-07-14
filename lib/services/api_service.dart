@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_auth/firebase_auth.dart' as auth;
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/pet.dart';
 import '../models/post.dart';
 import 'package:http/http.dart' as http;
@@ -88,7 +88,7 @@ class ApiService {
 
   // Helper method to get current user email from Firebase Auth
   Future<String?> _getCurrentUserEmail() async {
-    final user = auth.FirebaseAuth.instance.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       if (kDebugMode) {
         print('ApiService._getCurrentUserEmail: No Firebase user found');

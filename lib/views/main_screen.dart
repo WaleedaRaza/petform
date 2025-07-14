@@ -5,7 +5,6 @@ import 'community_feed_screen.dart';
 import 'ask_ai_screen.dart';
 import 'tracking_screen.dart';
 import 'profile_settings_screen.dart';
-import 'firestore_test_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -22,7 +21,6 @@ class _MainScreenState extends State<MainScreen> {
     const AskAiScreen(),
     const TrackingScreen(),
     const ProfileSettingsScreen(),
-    const FirestoreTestScreen(), // Add test screen
   ];
 
   void _onItemTapped(int index) {
@@ -61,7 +59,6 @@ class _MainScreenState extends State<MainScreen> {
                   BottomNavigationBarItem(icon: Icon(Icons.question_answer), label: 'Ask AI'),
                   BottomNavigationBarItem(icon: Icon(Icons.track_changes), label: 'Tracking'),
                   BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-                  BottomNavigationBarItem(icon: Icon(Icons.bug_report), label: 'Test'), // Add test tab
                 ],
                 currentIndex: _selectedIndex,
                 selectedItemColor: Colors.blue,

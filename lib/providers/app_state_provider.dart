@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:hive/hive.dart';
 import '../services/api_service.dart';
 import '../services/shopping_service.dart';
@@ -162,8 +163,8 @@ class AppStateProvider with ChangeNotifier {
     } catch (e) {
       if (kDebugMode) {
         print('AppStateProvider._loadSavedPosts: Error loading saved posts: $e');
-      }
     }
+  }
   }
   
   Future<void> savePost(Post post) async {
@@ -178,7 +179,7 @@ class AppStateProvider with ChangeNotifier {
       if (existingPost?.id == post.id) {
         final savedPost = post.copyWith(isSaved: true);
         await _postBox.put(key, savedPost);
-        notifyListeners();
+      notifyListeners();
         return;
       }
     }
@@ -197,7 +198,7 @@ class AppStateProvider with ChangeNotifier {
       if (existingPost?.id == post.id) {
         final unsavedPost = post.copyWith(isSaved: false);
         await _postBox.put(key, unsavedPost);
-        notifyListeners();
+    notifyListeners();
         return;
       }
     }

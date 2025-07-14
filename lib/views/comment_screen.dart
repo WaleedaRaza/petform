@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
-import '../providers/comment_provider.dart';
 import '../providers/user_provider.dart';
 import '../widgets/video_background.dart';
 import '../services/firebase_auth_service.dart';
@@ -123,25 +123,25 @@ class _CommentScreenState extends State<CommentScreen> {
       videoPath: 'lib/assets/animation2.mp4',
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('Comments')),
-        body: FutureBuilder<Post>(
-          future: Provider.of<ApiService>(context, listen: false).getPost(widget.post.id!),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError || !snapshot.hasData) {
-              return const Center(child: Text('Failed to load comments'));
-            }
-            final post = snapshot.data!;
-            return Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16.0),
-                    itemCount: post.comments.length,
-                    itemBuilder: (context, index) {
-                      final comment = post.comments[index];
+      appBar: AppBar(title: const Text('Comments')),
+      body: FutureBuilder<Post>(
+        future: Provider.of<ApiService>(context, listen: false).getPost(widget.post.id!),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return const Center(child: Text('Failed to load comments'));
+          }
+          final post = snapshot.data!;
+          return Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  itemCount: post.comments.length,
+                  itemBuilder: (context, index) {
+                    final comment = post.comments[index];
                       final currentUser = FirebaseAuthService().currentUser?.email ?? 'Anonymous';
                       final isAuthor = comment.author == currentUser;
                       
@@ -152,18 +152,18 @@ class _CommentScreenState extends State<CommentScreen> {
                         print('CommentScreen: Firebase Auth email: ${FirebaseAuthService().currentUser?.email}');
                       }
                       
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        child: ListTile(
-                          title: Text(comment.author, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text(comment.content),
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      child: ListTile(
+                        title: Text(comment.author, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text(comment.content),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                '${comment.createdAt.day}/${comment.createdAt.month}/${comment.createdAt.year}',
-                                style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                              ),
+                          '${comment.createdAt.day}/${comment.createdAt.month}/${comment.createdAt.year}',
+                          style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                        ),
                               if (isAuthor) ...[
                                 const SizedBox(width: 8),
                                 IconButton(
@@ -174,39 +174,39 @@ class _CommentScreenState extends State<CommentScreen> {
                               ],
                             ],
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _commentController,
-                          decoration: const InputDecoration(
-                            hintText: 'Add a comment...',
-                            border: OutlineInputBorder(),
-                            filled: true,
-                          ),
-                          onSubmitted: (_) => _addComment(),
-                        ),
                       ),
-                      const SizedBox(width: 8),
-                      _isLoading
-                          ? const CircularProgressIndicator()
-                          : IconButton(
-                              icon: const Icon(Icons.send),
-                              onPressed: _addComment,
-                            ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
-              ],
-            );
-          },
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _commentController,
+                        decoration: const InputDecoration(
+                          hintText: 'Add a comment...',
+                          border: OutlineInputBorder(),
+                          filled: true,
+                        ),
+                        onSubmitted: (_) => _addComment(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _isLoading
+                        ? const CircularProgressIndicator()
+                        : IconButton(
+                            icon: const Icon(Icons.send),
+                            onPressed: _addComment,
+                          ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
         ),
       ),
     );

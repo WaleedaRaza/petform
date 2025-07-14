@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart' as auth;
+import 'package:firebase_auth/firebase_auth.dart';
 import '../providers/app_state_provider.dart';
 import '../models/post.dart';
 import '../views/post_detail_screen.dart';
@@ -327,7 +327,7 @@ class EnhancedPostCard extends StatelessWidget {
 
   String _getCurrentUserEmail(BuildContext context) {
     // Get current user email from Firebase Auth
-    final user = auth.FirebaseAuth.instance.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     return user?.email ?? 'Anonymous';
   }
 

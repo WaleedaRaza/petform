@@ -1,57 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart' as auth;
+import 'package:hive/hive.dart';
 import '../models/shopping_item.dart';
 
 class ShoppingProvider with ChangeNotifier {
-  final _firestore = FirebaseFirestore.instance;
-  final _auth = auth.FirebaseAuth.instance;
+  final Box<ShoppingItem> _shoppingBox = Hive.box<ShoppingItem>('shoppingItems');
 
-  Stream<List<ShoppingItem>> get shoppingItems {
-    final userId = _auth.currentUser?.uid;
-    if (userId == null) return const Stream.empty();
-    return _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('shoppingItems')
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ShoppingItem.fromJson(doc.data()..['id'] = doc.id))
-            .toList());
-  }
+  List<ShoppingItem> get items => _shoppingBox.values.toList();
 
-  Future<void> addShoppingItem(ShoppingItem item) async {
-    final userId = _auth.currentUser?.uid;
-    if (userId == null) return;
-    await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('shoppingItems')
-        .add(item.toJson());
+  Future<void> addItem(ShoppingItem item) async {
+    await _shoppingBox.add(item);
     notifyListeners();
   }
 
-  Future<void> updateShoppingItem(String itemId, ShoppingItem item) async {
-    final userId = _auth.currentUser?.uid;
-    if (userId == null) return;
-    await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('shoppingItems')
-        .doc(itemId)
-        .update(item.toJson());
+  Future<void> updateItem(int key, ShoppingItem item) async {
+    await _shoppingBox.put(key, item);
     notifyListeners();
   }
 
-  Future<void> deleteShoppingItem(String itemId) async {
-    final userId = _auth.currentUser?.uid;
-    if (userId == null) return;
-    await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('shoppingItems')
-        .doc(itemId)
-        .delete();
+  Future<void> deleteItem(int key) async {
+    await _shoppingBox.delete(key);
     notifyListeners();
   }
 } 
