@@ -24,7 +24,7 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
     super.initState();
     // Defer initialization to avoid setState during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeAppState();
+    _initializeAppState();
     });
   }
 
@@ -108,25 +108,25 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
             child: Container(),
           ),
           Column(
-            children: [
-              // Header with title
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'Pet Tracking',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+        children: [
+          // Header with title
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Pet Tracking',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
               ),
-              // Search + Add Metric row
-              _buildSearchSection(),
-              // Main content
-              Expanded(
-                child: _buildMetricsList(metrics: metrics, pets: pets),
-              ),
-            ],
+            ),
           ),
+              // Search + Add Metric row
+          _buildSearchSection(),
+          // Main content
+          Expanded(
+            child: _buildMetricsList(metrics: metrics, pets: pets),
+          ),
+        ],
+      ),
         ],
       ),
     );
@@ -134,84 +134,84 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
 
   Widget _buildNoPetsView() {
     return Column(
-      children: [
-        // Header with title
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-            'Pet Tracking',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        // Content
-        Expanded(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.pets,
-                      size: 80,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'No Pets Added Yet',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Add a pet to start tracking their health and activities. You can monitor weight, exercise, feeding schedules, and more!',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[500],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const PetProfileCreationScreen(),
-                        ),
-                      );
-                      if (result == true) {
-                        setState(() {}); // Refresh the screen
-                      }
-                    },
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Your First Pet'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.secondary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ],
+        children: [
+          // Header with title
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Pet Tracking',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
-        ),
-      ],
+          // Content
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.pets,
+                        size: 80,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'No Pets Added Yet',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Add a pet to start tracking their health and activities. You can monitor weight, exercise, feeding schedules, and more!',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey[500],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 32),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PetProfileCreationScreen(),
+                          ),
+                        );
+                        if (result == true) {
+                          setState(() {}); // Refresh the screen
+                        }
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add Your First Pet'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.secondary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
     );
   }
 

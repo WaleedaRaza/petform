@@ -42,10 +42,10 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       
       if (authService.isEmailVerified()) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
       } else {
         // Show email verification screen
         Navigator.pushReplacement(

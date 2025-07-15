@@ -11,12 +11,12 @@ class UserProvider with ChangeNotifier {
 
   Future<void> addUser(User user) async {
     await _userBox.add(user);
-      notifyListeners();
+    notifyListeners();
   }
 
   Future<void> updateUser(int key, User user) async {
     await _userBox.put(key, user);
-      notifyListeners();
+    notifyListeners();
   }
 
   Future<void> deleteUser(int key) async {

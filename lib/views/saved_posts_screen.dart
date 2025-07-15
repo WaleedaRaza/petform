@@ -22,163 +22,163 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
       videoPath: 'lib/assets/animation2.mp4',
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('Saved Posts'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () => _showSearchDialog(context),
-            ),
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.filter_list),
-              onSelected: (value) {
-                setState(() {
-                  _selectedFilter = value;
-                });
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(value: 'All', child: Text('All Posts')),
-                const PopupMenuItem(value: 'Community', child: Text('Community Posts')),
-                const PopupMenuItem(value: 'Reddit', child: Text('Reddit Posts')),
-              ],
-            ),
-          ],
-        ),
-        body: Consumer<AppStateProvider>(
-          builder: (context, appState, child) {
-            final savedPosts = appState.savedPosts;
-            
-            if (savedPosts.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.bookmark_border,
-                      size: 80,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No Saved Posts',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Save posts from the community feed to view them here later',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[500],
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            // Apply filters
-            List<Post> filteredPosts = savedPosts;
-            
-            // Apply search filter
-            if (_searchQuery.isNotEmpty) {
-              filteredPosts = filteredPosts.where((post) =>
-                post.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                post.content.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                post.author.toLowerCase().contains(_searchQuery.toLowerCase())
-              ).toList();
-            }
-            
-            // Apply type filter
-            if (_selectedFilter != 'All') {
-              filteredPosts = filteredPosts.where((post) {
-                if (_selectedFilter == 'Reddit') {
-                  return post.postType == 'reddit';
-                } else if (_selectedFilter == 'Community') {
-                  return post.postType == 'community';
-                }
-                return true;
-              }).toList();
-            }
-
-            if (filteredPosts.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.search_off,
-                      size: 80,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No Posts Found',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Try adjusting your search or filter criteria',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[500],
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            return Column(
-              children: [
-                // Filter summary
-                if (_searchQuery.isNotEmpty || _selectedFilter != 'All')
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Icon(Icons.filter_list, size: 16, color: Colors.grey[600]),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Showing ${filteredPosts.length} of ${savedPosts.length} posts',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _searchQuery = '';
-                              _selectedFilter = 'All';
-                            });
-                          },
-                          child: const Text('Clear Filters'),
-                        ),
-                      ],
+      appBar: AppBar(
+        title: const Text('Saved Posts'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () => _showSearchDialog(context),
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.filter_list),
+            onSelected: (value) {
+              setState(() {
+                _selectedFilter = value;
+              });
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'All', child: Text('All Posts')),
+              const PopupMenuItem(value: 'Community', child: Text('Community Posts')),
+              const PopupMenuItem(value: 'Reddit', child: Text('Reddit Posts')),
+            ],
+          ),
+        ],
+      ),
+      body: Consumer<AppStateProvider>(
+        builder: (context, appState, child) {
+          final savedPosts = appState.savedPosts;
+          
+          if (savedPosts.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.bookmark_border,
+                    size: 80,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No Saved Posts',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                
-                // Posts list
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filteredPosts.length,
-                    itemBuilder: (context, index) {
-                      final post = filteredPosts[index];
-                      return _buildSavedPostCard(context, post, appState);
-                    },
+                  const SizedBox(height: 8),
+                  Text(
+                    'Save posts from the community feed to view them here later',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[500],
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                ),
-              ],
+                ],
+              ),
             );
-          },
+          }
+
+          // Apply filters
+          List<Post> filteredPosts = savedPosts;
+          
+          // Apply search filter
+          if (_searchQuery.isNotEmpty) {
+            filteredPosts = filteredPosts.where((post) =>
+              post.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              post.content.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              post.author.toLowerCase().contains(_searchQuery.toLowerCase())
+            ).toList();
+          }
+          
+          // Apply type filter
+          if (_selectedFilter != 'All') {
+            filteredPosts = filteredPosts.where((post) {
+              if (_selectedFilter == 'Reddit') {
+                return post.postType == 'reddit';
+              } else if (_selectedFilter == 'Community') {
+                return post.postType == 'community';
+              }
+              return true;
+            }).toList();
+          }
+
+          if (filteredPosts.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.search_off,
+                    size: 80,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No Posts Found',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Try adjusting your search or filter criteria',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[500],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return Column(
+            children: [
+              // Filter summary
+              if (_searchQuery.isNotEmpty || _selectedFilter != 'All')
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Icon(Icons.filter_list, size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Showing ${filteredPosts.length} of ${savedPosts.length} posts',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _searchQuery = '';
+                            _selectedFilter = 'All';
+                          });
+                        },
+                        child: const Text('Clear Filters'),
+                      ),
+                    ],
+                  ),
+                ),
+              
+              // Posts list
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filteredPosts.length,
+                  itemBuilder: (context, index) {
+                    final post = filteredPosts[index];
+                    return _buildSavedPostCard(context, post, appState);
+                  },
+                ),
+              ),
+            ],
+          );
+        },
         ),
       ),
     );

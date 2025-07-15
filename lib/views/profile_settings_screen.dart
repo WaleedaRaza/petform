@@ -150,7 +150,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         title: const Text('Edit Display Name'),
                         subtitle: Text(currentUser?.displayName ?? 'Not set'),
                         onTap: () => _showEditDisplayNameDialog(context),
-                      ),
+                  ),
 
                 ],
               ),
