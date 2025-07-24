@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/firebase_auth_service.dart';
+import '../services/supabase_auth_service.dart';
 import '../widgets/video_background.dart';
 import '../widgets/rounded_button.dart';
 import 'login_screen.dart';
@@ -13,7 +13,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _emailController = TextEditingController();
-  final FirebaseAuthService _authService = FirebaseAuthService();
+  final SupabaseAuthService _authService = SupabaseAuthService();
   bool _isLoading = false;
   bool _emailSent = false;
 

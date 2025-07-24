@@ -17,7 +17,7 @@ import 'edit_pet_screen.dart';
 import '../widgets/rounded_button.dart';
 import 'post_detail_screen.dart';
 import 'saved_posts_screen.dart';
-import '../services/firebase_auth_service.dart';
+import '../services/supabase_auth_service.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -27,7 +27,7 @@ class ProfileSettingsScreen extends StatefulWidget {
 }
 
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
-  final FirebaseAuthService _authService = FirebaseAuthService();
+  final SupabaseAuthService _authService = SupabaseAuthService();
 
   Future<List<Post>> _loadUserPosts(String email) async {
     final prefs = await SharedPreferences.getInstance();
@@ -59,7 +59,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final userProvider = Provider.of<UserProvider>(context);
     final currentUser = _authService.currentUser;
     final userEmail = currentUser?.email ?? 'N/A';
-    final userDisplayName = currentUser?.displayName ?? userEmail;
+    final userDisplayName = userEmail; // Supabase doesn't have displayName by default
 
     return VideoBackground(
       videoPath: 'lib/assets/animation2.mp4',
@@ -148,7 +148,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       ListTile(
                         leading: const Icon(Icons.edit),
                         title: const Text('Edit Display Name'),
-                        subtitle: Text(currentUser?.displayName ?? 'Not set'),
+                        subtitle: Text(userEmail),
                         onTap: () => _showEditDisplayNameDialog(context),
                   ),
 
@@ -673,7 +673,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         
                         if (confirm == true) {
                           try {
-                            await appState.removePet(pet);
+                            await appState.removePet(pet.id!);
                             setState(() {}); // Refresh the list
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text('Removed ${pet.name}')),
@@ -886,7 +886,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           
                           if (confirm == true) {
                             try {
-                              await appState.unsavePost(post);
+                              await appState.unsavePost(post.id!);
                               setState(() {}); // Refresh the list
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Unsaved "${post.title}"')),
@@ -951,7 +951,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   }
 
   void _showEditDisplayNameDialog(BuildContext context) {
-    final controller = TextEditingController(text: _authService.currentUser?.displayName ?? '');
+    final controller = TextEditingController(text: _authService.currentUser?.email ?? '');
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

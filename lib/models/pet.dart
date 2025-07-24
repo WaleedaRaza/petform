@@ -1,46 +1,25 @@
 
 import 'shopping_item.dart';
 import 'tracking_metric.dart';
-import 'package:hive/hive.dart';
-part 'pet.g.dart';
 
-@HiveType(typeId: 1)
-class Pet extends HiveObject {
-  @HiveField(0)
-  final int? id;
-  @HiveField(1)
+class Pet {
+  final String? id;
   final String name;
-  @HiveField(2)
   final String species;
-  @HiveField(3)
   final String? breed;
-  @HiveField(4)
   final int? age;
-  @HiveField(5)
   final String? personality;
-  @HiveField(6)
   final String? foodSource;
-  @HiveField(7)
   final String? favoritePark;
-  @HiveField(8)
   final String? leashSource;
-  @HiveField(9)
   final String? litterType;
-  @HiveField(10)
   final String? waterProducts;
-  @HiveField(11)
   final String? tankSize;
-  @HiveField(12)
   final String? cageSize;
-  @HiveField(13)
   final String? favoriteToy;
-  @HiveField(14)
   final String? photoUrl;
-  @HiveField(15)
   final Map<String, dynamic>? customFields;
-  @HiveField(16)
   final List<ShoppingItem> shoppingList;
-  @HiveField(17)
   final List<TrackingMetric> trackingMetrics;
 
   Pet({
@@ -65,7 +44,7 @@ class Pet extends HiveObject {
   });
 
   Pet copyWith({
-    int? id,
+    String? id,
     String? name,
     String? species,
     String? breed,
@@ -108,11 +87,11 @@ class Pet extends HiveObject {
 
   factory Pet.fromJson(Map<String, dynamic> json) {
     return Pet(
-      id: json['id'] as int?,
+      id: json['id'] as String?,
       name: json['name'] as String,
       species: json['species'] as String,
       breed: json['breed'] as String?,
-      age: json['age'] as int?,
+      age: json['age'] as int?, // This will be null if age column doesn't exist
       personality: json['personality'] as String?,
       foodSource: json['foodSource'] as String?,
       favoritePark: json['favoritePark'] as String?,
@@ -141,20 +120,21 @@ class Pet extends HiveObject {
       'name': name,
       'species': species,
       'breed': breed,
-      'age': age,
       'personality': personality,
       'foodSource': foodSource,
-      'favoritePark': favoritePark,
-      'leashSource': leashSource,
-      'litterType': litterType,
-      'waterProducts': waterProducts,
-      'tankSize': tankSize,
-      'cageSize': cageSize,
-      'favoriteToy': favoriteToy,
       'photoUrl': photoUrl,
-      'customFields': customFields,
-      'shoppingList': shoppingList.map((item) => item.toJson()).toList(),
-      'trackingMetrics': trackingMetrics.map((metric) => metric.toJson()).toList(),
+      // Removed customFields and other fields that don't exist in Supabase table:
+      // 'customFields': customFields,
+      // 'age': age,
+      // 'favoritePark': favoritePark,
+      // 'leashSource': leashSource,
+      // 'litterType': litterType,
+      // 'waterProducts': waterProducts,
+      // 'tankSize': tankSize,
+      // 'cageSize': cageSize,
+      // 'favoriteToy': favoriteToy,
+      // 'shoppingList': shoppingList.map((item) => item.toJson()).toList(),
+      // 'trackingMetrics': trackingMetrics.map((metric) => metric.toJson()).toList(),
     };
   }
 }

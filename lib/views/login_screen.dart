@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
-import '../services/firebase_auth_service.dart';
+import '../services/supabase_auth_service.dart';
 import 'home_screen.dart';
 import 'forgot_password_screen.dart';
 import 'email_verification_screen.dart';
@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final authService = FirebaseAuthService();
+      final authService = SupabaseAuthService();
       await authService.signInWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text,

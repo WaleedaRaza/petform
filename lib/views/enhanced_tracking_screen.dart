@@ -373,7 +373,7 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
 
   void _addEntryToMetric(TrackingMetric metric, double value) {
     final updatedMetric = metric.addEntry(value);
-    Provider.of<AppStateProvider>(context, listen: false).updateTrackingMetric(updatedMetric);
+            Provider.of<AppStateProvider>(context, listen: false).updateTrackingMetric(updatedMetric.id!, updatedMetric);
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Added entry: $value')),
@@ -382,7 +382,7 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
 
   void _deleteMetric(TrackingMetric metric) {
     final appState = Provider.of<AppStateProvider>(context, listen: false);
-    appState.removeTrackingMetric(metric);
+            appState.removeTrackingMetric(metric.id!);
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Deleted ${metric.name}')),
@@ -600,7 +600,7 @@ class _EditMetricDialogState extends State<_EditMetricDialog> {
     );
 
     final appState = Provider.of<AppStateProvider>(context, listen: false);
-    appState.updateTrackingMetric(updatedMetric);
+            appState.updateTrackingMetric(updatedMetric.id!, updatedMetric);
     
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(

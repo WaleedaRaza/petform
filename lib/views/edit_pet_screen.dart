@@ -153,7 +153,7 @@ class _EditPetScreenState extends State<EditPetScreen> {
         );
 
         final appState = Provider.of<AppStateProvider>(context, listen: false);
-        await appState.updatePet(updatedPet);
+        await appState.updatePet(updatedPet.id!, updatedPet);
         if (!mounted) return;
         Navigator.pop(context, true); // Return true to indicate success
       } catch (e) {

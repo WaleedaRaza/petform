@@ -33,7 +33,7 @@ class _MetricDetailScreenState extends State<MetricDetailScreen> {
       
       final appState = Provider.of<AppStateProvider>(context, listen: false);
       final updatedMetric = widget.metric.addEntry(value);
-      await appState.updateTrackingMetric(updatedMetric);
+              await appState.updateTrackingMetric(updatedMetric.id!, updatedMetric);
       
       _valueController.clear();
       

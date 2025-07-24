@@ -9,7 +9,8 @@ import '../providers/app_state_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/feed_provider.dart';
 import '../services/api_service.dart';
-import '../services/firebase_auth_service.dart';
+import '../services/supabase_auth_service.dart';
+import '../services/supabase_service.dart';
 import '../widgets/video_background.dart';
 import 'create_post_screen.dart';
 
@@ -43,7 +44,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       await Provider.of<ApiService>(context, listen: false).addComment(
         postId: widget.post.id!,
         content: _commentController.text,
-        author: FirebaseAuthService().currentUser?.email ?? 'Anonymous',
+        author: SupabaseAuthService().currentUser?.email ?? 'Anonymous',
       );
       
       // Refresh feed provider to update the post in the feed
@@ -63,7 +64,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   Future<void> _deleteComment(Comment comment) async {
-    final currentUser = FirebaseAuthService().currentUser?.email ?? 'Anonymous';
+    final currentUser = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
     
     // Only allow deletion if the user is the author of the comment
     if (comment.author != currentUser) {
@@ -100,10 +101,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         final feedProvider = Provider.of<FeedProvider>(context, listen: false);
         
         // Use API service to delete comment
-        await Provider.of<ApiService>(context, listen: false).deleteComment(
-          postId: widget.post.id!,
-          commentId: comment.id!,
-          author: currentUser,
+        await SupabaseService.deleteComment(
+          widget.post.id!,
+          comment.id!,
         );
         
         // Refresh feed provider to update the post in the feed
@@ -126,7 +126,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   Future<void> _deletePost(Post post) async {
-    final currentUser = FirebaseAuthService().currentUser?.email ?? 'Anonymous';
+    final currentUser = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
     
     // Only allow deletion if the user is the author of the post
     if (post.author != currentUser) {
@@ -163,10 +163,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         final feedProvider = Provider.of<FeedProvider>(context, listen: false);
         
         // Use API service to delete post
-        await Provider.of<ApiService>(context, listen: false).deletePost(
-          postId: post.id!,
-          author: currentUser,
-        );
+        await SupabaseService.deletePost(post.id!);
         
         // Refresh feed provider to update the posts in the feed
         await feedProvider.fetchPosts(context);
@@ -207,7 +204,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           actions: [
-            if (post.postType == 'community' && post.author == FirebaseAuthService().currentUser?.email) ...[
+            if (post.postType == 'community' && post.author == SupabaseAuthService().currentUser?.email) ...[
               IconButton(
                 icon: const Icon(Icons.edit),
                 onPressed: () {
@@ -365,7 +362,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     )
                   else
                     ...post.comments.map((comment) {
-                      final currentUser = FirebaseAuthService().currentUser?.email ?? 'Anonymous';
+                      final currentUser = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
                       final isAuthor = comment.author == currentUser;
                       
                       return Card(

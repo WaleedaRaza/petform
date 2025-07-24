@@ -7,7 +7,7 @@ import '../widgets/rounded_button.dart';
 import '../widgets/video_background.dart';
 import '../models/pet_types.dart';
 import '../models/post.dart';
-import '../services/firebase_auth_service.dart';
+import '../services/supabase_auth_service.dart';
 
 class CreatePostScreen extends StatefulWidget {
   final Post? postToEdit; // For editing existing posts
@@ -52,7 +52,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         final feedProvider = Provider.of<FeedProvider>(context, listen: false);
         
-        final userEmail = FirebaseAuthService().currentUser?.email ?? 'Anonymous';
+        final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
 
         if (widget.postToEdit != null) {
           // Edit existing post - for now, we'll just create a new post

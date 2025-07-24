@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../models/post.dart';
-import '../services/api_service.dart';
+import '../services/supabase_service.dart';
 import '../providers/user_provider.dart';
 import '../widgets/video_background.dart';
-import '../services/firebase_auth_service.dart';
+import '../services/supabase_auth_service.dart';
 
 class CommentScreen extends StatefulWidget {
   final Post post;
@@ -33,12 +32,12 @@ class _CommentScreenState extends State<CommentScreen> {
     setState(() => _isLoading = true);
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final userEmail = FirebaseAuthService().currentUser?.email ?? 'Anonymous';
-      await Provider.of<ApiService>(context, listen: false).addComment(
-        postId: widget.post.id!,
-        content: _commentController.text,
-        author: userEmail,
-      );
+      final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+              await SupabaseService.addComment(
+          widget.post.id!,
+          _commentController.text,
+          userEmail,
+        );
       if (!mounted) return;
       _commentController.clear();
       setState(() {});
@@ -53,12 +52,12 @@ class _CommentScreenState extends State<CommentScreen> {
   }
 
   Future<void> _deleteComment(Comment comment) async {
-    final currentUser = FirebaseAuthService().currentUser?.email ?? 'Anonymous';
+    final currentUser = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
     
     if (kDebugMode) {
       print('CommentScreen._deleteComment: Comment author: ${comment.author}');
       print('CommentScreen._deleteComment: Current user: $currentUser');
-      print('CommentScreen._deleteComment: Firebase Auth email: ${FirebaseAuthService().currentUser?.email}');
+      print('CommentScreen._deleteComment: Supabase Auth email:  [32m [1m${SupabaseAuthService().currentUser?.email} [0m');
     }
     
     // Only allow deletion if the user is the author of the comment
@@ -96,10 +95,9 @@ class _CommentScreenState extends State<CommentScreen> {
     if (confirm == true) {
       setState(() => _isLoading = true);
       try {
-        await Provider.of<ApiService>(context, listen: false).deleteComment(
-          postId: widget.post.id!,
-          commentId: comment.id!,
-          author: currentUser,
+        await SupabaseService.deleteComment(
+          widget.post.id!,
+          comment.id!,
         );
         if (!mounted) return;
         setState(() {});
@@ -125,7 +123,7 @@ class _CommentScreenState extends State<CommentScreen> {
         backgroundColor: Colors.transparent,
         appBar: AppBar(title: const Text('Comments')),
         body: FutureBuilder<Post>(
-          future: Provider.of<ApiService>(context, listen: false).getPost(widget.post.id!),
+          future: SupabaseService.getPost(widget.post.id!),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -142,14 +140,14 @@ class _CommentScreenState extends State<CommentScreen> {
                     itemCount: post.comments.length,
                     itemBuilder: (context, index) {
                       final comment = post.comments[index];
-                      final currentUser = FirebaseAuthService().currentUser?.email ?? 'Anonymous';
+                      final currentUser = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
                       final isAuthor = comment.author == currentUser;
                       
                       if (kDebugMode) {
                         print('CommentScreen: Comment author: ${comment.author}');
                         print('CommentScreen: Current user: $currentUser');
                         print('CommentScreen: Is author: $isAuthor');
-                        print('CommentScreen: Firebase Auth email: ${FirebaseAuthService().currentUser?.email}');
+                        print('CommentScreen: Supabase Auth email: ${SupabaseAuthService().currentUser?.email}');
                       }
                       
                       return Card(

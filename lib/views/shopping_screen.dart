@@ -267,11 +267,11 @@ class _ShoppingScreenState extends State<ShoppingScreen>
               value: item.isCompleted,
               onChanged: (value) {
                 final updatedItem = item.copyWith(isCompleted: value ?? false);
-                appState.updateShoppingItem(updatedItem);
+                appState.updateShoppingItem(updatedItem.id!, updatedItem);
               },
             ),
             IconButton(
-              onPressed: () => appState.removeShoppingItem(item),
+                              onPressed: () => appState.removeShoppingItem(item.id!),
               icon: const Icon(Icons.delete, color: Colors.red),
             ),
           ],
@@ -559,7 +559,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                         child: ElevatedButton.icon(
                           onPressed: () {
                             if (isInList) {
-                              appState.removeShoppingItem(item);
+                              appState.removeShoppingItem(item.id!);
                             } else {
                               appState.addShoppingItem(item);
                             }
@@ -744,7 +744,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                   child: ElevatedButton.icon(
                     onPressed: () {
                       if (isInList) {
-                        appState.removeShoppingItem(item);
+                        appState.removeShoppingItem(item.id!);
                       } else {
                         appState.addShoppingItem(item);
                       }
@@ -888,7 +888,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
             onPressed: () {
               // Clear all items
               for (final item in appState.shoppingItems) {
-                appState.removeShoppingItem(item);
+                appState.removeShoppingItem(item.id!);
               }
               Navigator.pop(context);
             },

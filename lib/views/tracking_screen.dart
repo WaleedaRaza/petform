@@ -44,14 +44,14 @@ class TrackingScreen extends StatelessWidget {
 
     if (confirmed == true) {
       final appState = Provider.of<AppStateProvider>(context, listen: false);
-      await appState.removeTrackingMetric(metric);
+              await appState.removeTrackingMetric(metric.id!);
     }
   }
 
   void _updateMetricValue(BuildContext context, Pet pet, TrackingMetric metric, double newValue) async {
     final updatedMetric = metric.addEntry(newValue);
     final appState = Provider.of<AppStateProvider>(context, listen: false);
-    await appState.updateTrackingMetric(updatedMetric);
+            await appState.updateTrackingMetric(updatedMetric.id!, updatedMetric);
   }
 
   void _showEditDialog(BuildContext context, Pet pet, TrackingMetric metric) {
@@ -107,7 +107,7 @@ class TrackingScreen extends StatelessWidget {
                       targetValue: targetValue,
                     );
                     final appState = Provider.of<AppStateProvider>(context, listen: false);
-                    appState.updateTrackingMetric(updatedMetric);
+                    appState.updateTrackingMetric(updatedMetric.id!, updatedMetric);
                   }
                   Navigator.pop(context);
                 },

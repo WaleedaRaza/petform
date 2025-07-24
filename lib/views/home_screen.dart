@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/app_state_provider.dart';
-import '../services/firebase_auth_service.dart';
+import '../services/supabase_auth_service.dart';
 import '../widgets/status_bar.dart';
 import '../widgets/video_background.dart';
 import 'community_feed_screen.dart';
@@ -11,6 +11,7 @@ import 'shopping_screen.dart';
 import 'enhanced_tracking_screen.dart';
 import 'profile_settings_screen.dart';
 import 'welcome_screen.dart';
+import 'pet_profile_creation_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -58,11 +59,63 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_isInitialized) return;
     final appState = Provider.of<AppStateProvider>(context, listen: false);
     await appState.initialize();
+    
+    // Check if user has pets and prompt to create one if not
+    if (mounted && appState.pets.isEmpty) {
+      _showPetCreationPrompt();
+    }
+    
     if (mounted) {
       setState(() {
         _isInitialized = true;
       });
     }
+  }
+
+  void _showPetCreationPrompt() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[850],
+          title: const Text(
+            'Welcome to Petform! 🐾',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: const Text(
+            'Let\'s get started by creating a profile for your first pet. This will help personalize your experience.',
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PetProfileCreationScreen(),
+                  ),
+                );
+              },
+              child: const Text(
+                'Create Pet Profile',
+                style: TextStyle(color: Colors.orange),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                'Skip for Now',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _onItemTapped(int index) {
@@ -73,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoggedIn = FirebaseAuthService().currentUser != null;
+    final isLoggedIn = SupabaseAuthService().currentUser != null;
     if (!isLoggedIn) {
       return const WelcomeScreen();
     }

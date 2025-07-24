@@ -291,7 +291,7 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
                           
                           if (confirm == true) {
                             try {
-                              await appState.unsavePost(post);
+                              await appState.unsavePost(post.id!);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Unsaved "${post.title}"')),
                               );

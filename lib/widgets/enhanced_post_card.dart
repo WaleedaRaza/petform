@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../providers/app_state_provider.dart';
 import '../models/post.dart';
 import '../views/post_detail_screen.dart';
 import '../views/comment_screen.dart';
-import '../services/api_service.dart';
+import '../services/supabase_service.dart';
+import '../services/supabase_auth_service.dart';
 import 'package:flutter/foundation.dart';
 
 class EnhancedPostCard extends StatelessWidget {
@@ -22,7 +22,7 @@ class EnhancedPostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AppStateProvider>(
       builder: (context, appState, child) {
-        final isSaved = appState.isPostSaved(post);
+        final isSaved = post.isSaved;
         
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -205,9 +205,9 @@ class EnhancedPostCard extends StatelessWidget {
                 print('EnhancedPostCard: Current saved state: $isSaved');
               }
               if (isSaved) {
-                appState.unsavePost(post);
+                appState.unsavePost(post.id!);
               } else {
-                appState.savePost(post);
+                appState.savePost(post.id!);
               }
             },
             icon: Icon(
@@ -326,8 +326,8 @@ class EnhancedPostCard extends StatelessWidget {
   }
 
   String _getCurrentUserEmail(BuildContext context) {
-    // Get current user email from Firebase Auth
-    final user = FirebaseAuth.instance.currentUser;
+    // Get current user email from Supabase Auth
+    final user = SupabaseAuthService().currentUser;
     return user?.email ?? 'Anonymous';
   }
 
@@ -360,10 +360,7 @@ class EnhancedPostCard extends StatelessWidget {
       final currentUser = _getCurrentUserEmail(context);
       
       // Use API service to delete post
-      await Provider.of<ApiService>(context, listen: false).deletePost(
-        postId: post.id!,
-        author: currentUser,
-      );
+      await SupabaseService.deletePost(post.id!);
       
       // Refresh the feed by triggering a rebuild
       if (context.mounted) {

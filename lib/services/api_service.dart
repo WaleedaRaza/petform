@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../services/supabase_auth_service.dart';
 import '../models/pet.dart';
 import '../models/post.dart';
 import 'package:http/http.dart' as http;
@@ -88,7 +88,7 @@ class ApiService {
 
   // Helper method to get current user email from Firebase Auth
   Future<String?> _getCurrentUserEmail() async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = SupabaseAuthService().currentUser;
     if (user == null) {
       if (kDebugMode) {
         print('ApiService._getCurrentUserEmail: No Firebase user found');
@@ -394,7 +394,7 @@ class ApiService {
     final petsJson = prefs.getString(petsKey) ?? '[]';
     final List<dynamic> petsData = jsonDecode(petsJson);
     final newPet = Pet(
-      id: pet.id ?? (petsData.length + 1),
+      id: pet.id?.toString() ?? (petsData.length + 1).toString(),
       name: pet.name,
       species: pet.species,
       breed: pet.breed,
@@ -597,7 +597,7 @@ class ApiService {
     if (index != -1) {
       final post = Post.fromJson(postsData[index]);
       final newComment = Comment(
-        id: post.comments.length + 1,
+        id: (post.comments.length + 1).toString(),
         content: content,
         author: author,
         createdAt: DateTime.now(),

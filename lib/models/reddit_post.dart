@@ -1,12 +1,7 @@
-import 'package:hive/hive.dart';
 import 'post.dart';
-part 'reddit_post.g.dart';
 
-@HiveType(typeId: 8)
 class RedditPost extends Post {
-  @HiveField(12)
   final String subreddit;
-  @HiveField(14)
   final String thumbnail;
 
   RedditPost({

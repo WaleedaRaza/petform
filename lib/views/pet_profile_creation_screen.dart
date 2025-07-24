@@ -70,22 +70,33 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
       }
 
       final pet = Pet(
-        id: DateTime.now().millisecondsSinceEpoch,
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: _nameController.text,
         species: _selectedPetType,
         breed: _breedController.text.isNotEmpty ? _breedController.text : null,
-        age: int.tryParse(_ageController.text),
+        age: int.tryParse(_ageController.text), // This will be stored in customFields instead
         personality: _personalityController.text.isNotEmpty ? _personalityController.text : null,
         foodSource: _foodSourceController.text.isNotEmpty ? _foodSourceController.text : null,
-        favoritePark: additionalFields['Favorite Park'],
-        leashSource: additionalFields['Leash Source'],
-        litterType: additionalFields['Litter Type'],
-        waterProducts: additionalFields['Water Products'],
-        tankSize: additionalFields['Tank Size'],
-        cageSize: additionalFields['Cage Size'],
-        favoriteToy: additionalFields['Favorite Toy'],
+        // Store all pet-specific fields in customFields since they don't exist in the database table
+        favoritePark: null,
+        leashSource: null,
+        litterType: null,
+        waterProducts: null,
+        tankSize: null,
+        cageSize: null,
+        favoriteToy: null,
         photoUrl: null, // Remove photo functionality
-        customFields: customFields,
+        customFields: {
+          ...customFields,
+          'age': _ageController.text.isNotEmpty ? _ageController.text : null,
+          'favoritePark': additionalFields['Favorite Park'],
+          'leashSource': additionalFields['Leash Source'],
+          'litterType': additionalFields['Litter Type'],
+          'waterProducts': additionalFields['Water Products'],
+          'tankSize': additionalFields['Tank Size'],
+          'cageSize': additionalFields['Cage Size'],
+          'favoriteToy': additionalFields['Favorite Toy'],
+        },
         shoppingList: [],
       );
 

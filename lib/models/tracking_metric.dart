@@ -1,31 +1,15 @@
-import 'package:hive/hive.dart';
-part 'tracking_metric.g.dart';
-
-@HiveType(typeId: 3)
-class TrackingMetric extends HiveObject {
-  @HiveField(0)
+class TrackingMetric {
   final String id;
-  @HiveField(1)
   final String name;
-  @HiveField(2)
   final String frequency; // 'daily', 'weekly', 'monthly'
-  @HiveField(3)
   final String petId;
-  @HiveField(4)
   final double targetValue;
-  @HiveField(5)
   final double currentValue;
-  @HiveField(6)
   final DateTime createdAt;
-  @HiveField(7)
   final DateTime? lastUpdated;
-  @HiveField(8)
   final List<TrackingEntry> history;
-  @HiveField(9)
   final String? description;
-  @HiveField(10)
   final bool isActive;
-  @HiveField(11)
   final String? category; // 'health', 'behavior', 'exercise', etc.
 
   TrackingMetric({
@@ -211,13 +195,9 @@ class TrackingMetric extends HiveObject {
   }
 }
 
-@HiveType(typeId: 4)
-class TrackingEntry extends HiveObject {
-  @HiveField(0)
+class TrackingEntry {
   final double value;
-  @HiveField(1)
   final DateTime timestamp;
-  @HiveField(2)
   final String? notes;
 
   TrackingEntry({

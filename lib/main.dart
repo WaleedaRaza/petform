@@ -5,77 +5,69 @@ import 'providers/app_state_provider.dart';
 import 'providers/feed_provider.dart';
 import 'services/api_service.dart';
 import 'views/welcome_screen.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'config/supabase_config.dart';
 import 'package:flutter/foundation.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'models/user.dart';
-import 'models/pet.dart';
-import 'models/shopping_item.dart';
-import 'models/tracking_metric.dart';
-import 'models/post.dart';
-import 'models/reddit_post.dart';
-import 'models/username_reservation.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  if (kDebugMode) {
-    print('Main: Initializing Firebase...');
-  }
-  
-  // Check if Firebase is already initialized
   try {
-    Firebase.app();
+    WidgetsFlutterBinding.ensureInitialized();
+    
     if (kDebugMode) {
-      print('Main: Firebase already initialized');
+      print('Main: Flutter binding initialized');
+      print('Main: Starting Supabase initialization...');
     }
-  } catch (e) {
-    // Firebase not initialized, initialize it
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  if (kDebugMode) {
-    print('Main: Firebase initialized successfully');
-    print('Main: Firebase app name: ${Firebase.app().name}');
-    print('Main: Firebase app options: ${Firebase.app().options.projectId}');
+    
+    // Initialize Supabase with error handling
+    try {
+      await Supabase.initialize(
+        url: SupabaseConfig.url,
+        anonKey: SupabaseConfig.anonKey,
+        authOptions: const FlutterAuthClientOptions(
+          authFlowType: AuthFlowType.pkce,
+        ),
+      );
+      
+      if (kDebugMode) {
+        print('Main: Supabase initialized successfully');
+        print('Main: Supabase URL: ${SupabaseConfig.url}');
+        print('Main: Redirect URL: petform://login-callback');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Main: Error initializing Supabase: $e');
+      }
+      // Continue without Supabase for now
+    }
+    
+    if (kDebugMode) {
+      print('Main: Starting app...');
+    }
+    
+    runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (context) => UserProvider()),
+          Provider(create: (context) => ApiService()),
+          ChangeNotifierProvider(create: (context) => AppStateProvider()),
+          ChangeNotifierProvider(create: (context) => FeedProvider()),
+        ],
+        child: const PetformApp(),
+      ),
+    );
+    
+    if (kDebugMode) {
+      print('Main: App started successfully');
+    }
+  } catch (e, stackTrace) {
+    if (kDebugMode) {
+      print('Main: Critical error during app startup: $e');
+      print('Main: Stack trace: $stackTrace');
+    }
+    // Re-throw to see the error in the console
+    rethrow;
   }
-  }
-
-  await Hive.initFlutter();
-
-  // Register Hive adapters
-  Hive.registerAdapter(UserAdapter());
-  Hive.registerAdapter(PetAdapter());
-  Hive.registerAdapter(ShoppingItemAdapter());
-  Hive.registerAdapter(TrackingMetricAdapter());
-  Hive.registerAdapter(TrackingEntryAdapter());
-  Hive.registerAdapter(PostAdapter());
-  Hive.registerAdapter(CommentAdapter());
-  Hive.registerAdapter(RedditPostAdapter());
-  Hive.registerAdapter(UsernameReservationAdapter());
-
-  // Open boxes for each model
-  await Hive.openBox<User>('users');
-  await Hive.openBox<Pet>('pets');
-  await Hive.openBox<ShoppingItem>('shoppingItems');
-  await Hive.openBox<TrackingMetric>('trackingMetrics');
-  await Hive.openBox<Post>('posts');
-  await Hive.openBox<UsernameReservation>('usernameReservations');
-  await Hive.openBox<Comment>('comments');
-  await Hive.openBox<RedditPost>('redditPosts');
-  
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (context) => UserProvider()),
-        Provider(create: (context) => ApiService()),
-        ChangeNotifierProvider(create: (context) => AppStateProvider()),
-        ChangeNotifierProvider(create: (context) => FeedProvider()),
-      ],
-      child: const PetformApp(),
-    ),
-  );
 }
 
 class PetformApp extends StatelessWidget {
@@ -147,6 +139,25 @@ class PetformApp extends StatelessWidget {
             ),
       ),
       home: const BackdropWrapper(child: WelcomeScreen()),
+      // Handle deep links for email confirmation
+      onGenerateRoute: (settings) {
+        if (kDebugMode) {
+          print('Main: Deep link received: ${settings.name}');
+        }
+        
+        // Handle email confirmation links
+        if (settings.name?.startsWith('com.waleedraza.petform://') == true) {
+          if (kDebugMode) {
+            print('Main: Handling petform deep link: ${settings.name}');
+          }
+          // Navigate to welcome screen which will handle auth state
+          return MaterialPageRoute(
+            builder: (context) => const BackdropWrapper(child: WelcomeScreen()),
+          );
+        }
+        
+        return null;
+      },
     );
   }
 }

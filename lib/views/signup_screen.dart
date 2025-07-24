@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
-import '../services/firebase_auth_service.dart';
-import 'email_verification_screen.dart';
+import '../services/supabase_auth_service.dart';
+import 'home_screen.dart';
 import '../widgets/rounded_button.dart';
 import '../widgets/video_background.dart';
 
@@ -82,21 +82,37 @@ class _SignupScreenState extends State<SignupScreen> {
         return;
       }
 
-      final authService = FirebaseAuthService();
+      final authService = SupabaseAuthService();
       final credential = await authService.signUpWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text,
       );
-      // Reserve the username in Hive
-      final userId = credential.user?.uid ?? DateTime.now().millisecondsSinceEpoch.toString();
-      await userProvider.reserveUsername(username, userId, _emailController.text.trim());
-      // Optionally, add the user to Hive users box here as well
-      // ...
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const EmailVerificationScreen()),
-      );
+      
+      // Since email confirmation is disabled, user should be automatically logged in
+      if (credential.user != null) {
+        // Reserve username and create user profile
+        final userId = credential.user!.id;
+        await userProvider.reserveUsername(username, userId, _emailController.text.trim());
+        
+        if (!mounted) return;
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Welcome to Petform, $username!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        
+        // Navigate to main app
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      } else {
+        throw Exception('Signup failed - no user returned');
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

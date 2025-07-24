@@ -1,15 +1,7 @@
-import 'package:hive/hive.dart';
-part 'post.g.dart';
-
-@HiveType(typeId: 7)
-class Comment extends HiveObject {
-  @HiveField(0)
-  final int? id;
-  @HiveField(1)
+class Comment {
+  final String? id;
   final String content;
-  @HiveField(2)
   final String author;
-  @HiveField(3)
   final DateTime createdAt;
 
   Comment({
@@ -21,7 +13,7 @@ class Comment extends HiveObject {
 
   factory Comment.fromJson(Map<String, dynamic> json) {
     return Comment(
-      id: json['id'] as int?,
+      id: json['id']?.toString(),
       content: json['content'] as String,
       author: json['author'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
@@ -38,33 +30,19 @@ class Comment extends HiveObject {
   }
 }
 
-@HiveType(typeId: 6)
-class Post extends HiveObject {
-  @HiveField(0)
+class Post {
   final String? id;
-  @HiveField(1)
   final String title;
-  @HiveField(2)
   final String content;
-  @HiveField(3)
   final String author;
-  @HiveField(4)
   final String petType;
-  @HiveField(5)
   final String? imageUrl;
-  @HiveField(6)
   final int? upvotes;
-  @HiveField(7)
   final DateTime createdAt;
-  @HiveField(8)
   final DateTime? editedAt;
-  @HiveField(9)
   final String postType;
-  @HiveField(10)
   final String? redditUrl;
-  @HiveField(11)
   final List<Comment> comments;
-  @HiveField(13)
   final bool isSaved;
 
   Post({

@@ -149,9 +149,10 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Refresh saved posts when this screen becomes visible
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final appState = Provider.of<AppStateProvider>(context, listen: false);
-      appState.refreshSavedPosts();
+      // Refresh saved posts by reloading posts
+      await appState.initialize();
     });
   }
   
@@ -191,7 +192,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
               onRefresh: () async {
                 await Future.wait([
                   feedProvider.fetchPosts(context),
-                  appState.refresh(),
+                  appState.initialize(),
                 ]);
               },
               child: Column(
