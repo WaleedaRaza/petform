@@ -23,7 +23,77 @@ class AppStateProvider with ChangeNotifier {
   List<Post> get posts => _posts;
   List<ShoppingItem> get shoppingItems => _shoppingItems;
   List<TrackingMetric> get trackingMetrics => _trackingMetrics;
-  List<Post> get savedPosts => _posts.where((post) => post.isSaved).toList();
+  // Check if a Reddit post is saved
+  bool isRedditPostSaved(String redditUrl) {
+    // Check if this Reddit URL exists in our saved posts from database
+    // For now, we'll track saved Reddit posts in memory
+    return _savedRedditUrls.contains(redditUrl);
+  }
+  
+  // Track saved Reddit URLs in memory
+  Set<String> _savedRedditUrls = {};
+  
+  // Get saved posts (both community and Reddit posts)
+  List<Post> get savedPosts {
+    final savedCommunityPosts = _posts.where((post) => post.isSaved).toList();
+    
+    if (kDebugMode) {
+      print('AppStateProvider.savedPosts: Found ${savedCommunityPosts.length} saved community posts');
+      print('AppStateProvider.savedPosts: Found ${_savedRedditUrls.length} saved Reddit URLs');
+    }
+    
+    // Convert saved Reddit URLs to Post objects with actual titles
+    final savedRedditPosts = _savedRedditUrls.map((url) {
+      // Try to find the original post title from the database
+      final savedPost = _posts.firstWhere(
+        (post) => post.content == url,
+        orElse: () => Post(
+          title: 'Saved Reddit Post',
+          content: url,
+          author: 'Reddit',
+          petType: 'All',
+          postType: 'reddit', // Ensure this is set to reddit
+          redditUrl: url,
+          isSaved: true,
+          createdAt: DateTime.now(),
+        ),
+      );
+      
+      if (kDebugMode) {
+        print('AppStateProvider.savedPosts: Processing saved post - title: ${savedPost.title}, postType: ${savedPost.postType}, content: ${savedPost.content}');
+      }
+      
+      // Ensure the post type is set to reddit for saved Reddit posts
+      if (savedPost.content.startsWith('http')) {
+        final redditPost = savedPost.copyWith(
+          postType: 'reddit',
+          redditUrl: savedPost.content,
+        );
+        
+        if (kDebugMode) {
+          print('AppStateProvider.savedPosts: Converted to reddit post - title: ${redditPost.title}, postType: ${redditPost.postType}');
+        }
+        
+        return redditPost;
+      }
+      
+      return savedPost;
+    }).toList();
+    
+    if (kDebugMode) {
+      print('AppStateProvider.savedPosts: Returning ${savedCommunityPosts.length} community posts + ${savedRedditPosts.length} reddit posts');
+    }
+    
+    return [...savedCommunityPosts, ...savedRedditPosts];
+  }
+  
+  // Get count of saved posts
+  int get savedPostsCount {
+    final savedCommunityCount = _posts.where((post) => post.isSaved).length;
+    final savedRedditCount = _savedRedditUrls.length;
+    return savedCommunityCount + savedRedditCount;
+  }
+  
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   
@@ -31,28 +101,25 @@ class AppStateProvider with ChangeNotifier {
   int get petsCount => pets.length;
   int get shoppingItemsCount => shoppingItems.length;
   int get trackingMetricsCount => trackingMetrics.length;
-  int get savedPostsCount => savedPosts.length;
   
   // Initialize app state
   Future<void> initialize() async {
-    if (_isLoading) return; // Prevent multiple simultaneous initializations
-    
-    _setLoading(true);
     try {
       await Future.wait([
         _loadPets(),
         _loadPosts(),
         _loadShoppingItems(),
         _loadTrackingMetrics(),
+        _loadSavedRedditUrls(), // Load saved Reddit URLs
       ]);
-      _setError(null);
-    } catch (e) {
-      _setError('Failed to initialize app: $e');
+      
       if (kDebugMode) {
-        print('AppStateProvider: Error initializing: $e');
+        print('AppStateProvider: Initialization complete');
       }
-    } finally {
-      _setLoading(false);
+    } catch (e) {
+      if (kDebugMode) {
+        print('AppStateProvider: Error during initialization: $e');
+      }
     }
   }
   
@@ -75,10 +142,12 @@ class AppStateProvider with ChangeNotifier {
   
   Future<void> addPet(Pet pet) async {
     try {
-      await SupabaseService.createPet(pet.toJson());
+      final createdPet = await SupabaseService.createPet(pet.toJson());
       await _loadPets(); // Reload pets from database
-      // Add default tracking metrics for the new pet
-      await addDefaultMetricsForPet(pet.id!);
+      // Add default tracking metrics for the new pet using the created pet's ID
+      if (createdPet != null && createdPet['id'] != null) {
+        await addDefaultMetricsForPet(createdPet['id']);
+      }
       notifyListeners();
     } catch (e) {
       _setError('Failed to add pet: $e');
@@ -159,26 +228,176 @@ class AppStateProvider with ChangeNotifier {
   }
   
   // Saved posts management
-  Future<void> savePost(String postId) async {
+  Future<void> savePost(Post post) async {
     try {
-      await SupabaseService.updatePost(postId, {'is_saved': true});
-      await _loadPosts(); // Reload posts from database
+      if (kDebugMode) {
+        print('AppStateProvider.savePost: Saving post: ${post.title} (ID: ${post.id})');
+        print('AppStateProvider.savePost: Post type: ${post.postType}');
+        print('AppStateProvider.savePost: Reddit URL: ${post.redditUrl}');
+      }
+      
+      if (post.postType == 'reddit') {
+        // For Reddit posts, save the Reddit URL to user's saved posts
+        if (post.redditUrl != null) {
+          // Check if already saved to prevent duplicates
+          if (isRedditPostSaved(post.redditUrl!)) {
+            if (kDebugMode) {
+              print('AppStateProvider.savePost: Reddit post already saved, skipping');
+            }
+            return;
+          }
+          
+          await _saveRedditPost(post.redditUrl!, post.title, post.petType);
+          if (kDebugMode) {
+            print('AppStateProvider.savePost: Saved Reddit post URL: ${post.redditUrl}');
+          }
+          
+          // Don't add saved Reddit posts to the main feed
+          // They should only appear in the saved posts section
+          
+          // Update UI immediately
+          notifyListeners();
+        } else {
+          if (kDebugMode) {
+            print('AppStateProvider.savePost: Reddit post has no URL, cannot save');
+          }
+          return;
+        }
+      } else {
+        // For community posts, save the actual post data
+        if (post.id != null && _isValidUUID(post.id!)) {
+          await SupabaseService.updatePost(post.id!, {'is_saved': true});
+          if (kDebugMode) {
+            print('AppStateProvider.savePost: Saved community post with ID: ${post.id}');
+          }
+        } else {
+          if (kDebugMode) {
+            print('AppStateProvider.savePost: Invalid UUID for community post: ${post.id}');
+          }
+          return;
+        }
+      }
+      
       notifyListeners();
     } catch (e) {
-      _setError('Failed to save post: $e');
+      if (kDebugMode) {
+        print('AppStateProvider.savePost: Error saving post: $e');
+      }
+      return;
+    }
+  }
+  
+  Future<void> unsavePost(Post post) async {
+    try {
+      if (kDebugMode) {
+        print('AppStateProvider.unsavePost: Unsaving post: ${post.title} (ID: ${post.id})');
+      }
+      
+      if (post.postType == 'reddit') {
+        // For Reddit posts, remove the Reddit URL from user's saved posts
+        if (post.redditUrl != null) {
+          await _unsaveRedditPost(post.redditUrl!);
+          if (kDebugMode) {
+            print('AppStateProvider.unsavePost: Unsaved Reddit post URL: ${post.redditUrl}');
+          }
+          
+          // Remove saved Reddit URL from memory
+          _savedRedditUrls.remove(post.redditUrl!);
+          if (kDebugMode) {
+            print('AppStateProvider.unsavePost: Removed from saved Reddit URLs: ${post.redditUrl}');
+          }
+          
+          // Update UI immediately
+          notifyListeners();
+        }
+      } else {
+        // For community posts, unsave the actual post data
+        if (post.id != null && _isValidUUID(post.id!)) {
+          await SupabaseService.updatePost(post.id!, {'is_saved': false});
+          if (kDebugMode) {
+            print('AppStateProvider.unsavePost: Unsaved community post with ID: ${post.id}');
+          }
+        } else {
+          if (kDebugMode) {
+            print('AppStateProvider.unsavePost: Invalid UUID for community post: ${post.id}');
+          }
+          return;
+        }
+      }
+      
+      notifyListeners();
+    } catch (e) {
+      if (kDebugMode) {
+        print('AppStateProvider.unsavePost: Error unsaving post: $e');
+      }
+      return;
+    }
+  }
+  
+  // Helper method to save Reddit post URL
+  Future<void> _saveRedditPost(String redditUrl, String title, String petType) async {
+    try {
+      await SupabaseService.saveRedditPost(redditUrl, title, petType);
+      
+      // Add to in-memory tracking for immediate UI update
+      _savedRedditUrls.add(redditUrl);
+      notifyListeners();
+      
+      if (kDebugMode) {
+        print('AppStateProvider._saveRedditPost: Saved Reddit URL: $redditUrl');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('AppStateProvider._saveRedditPost: Error: $e');
+      }
       rethrow;
     }
   }
   
-  Future<void> unsavePost(String postId) async {
+  // Helper method to unsave Reddit post URL
+  Future<void> _unsaveRedditPost(String redditUrl) async {
     try {
-      await SupabaseService.updatePost(postId, {'is_saved': false});
-      await _loadPosts(); // Reload posts from database
+      await SupabaseService.unsaveRedditPost(redditUrl);
+      
+      // Remove from in-memory tracking for immediate UI update
+      _savedRedditUrls.remove(redditUrl);
       notifyListeners();
+      
+      if (kDebugMode) {
+        print('AppStateProvider._unsaveRedditPost: Unsaved Reddit URL: $redditUrl');
+      }
     } catch (e) {
-      _setError('Failed to unsave post: $e');
+      if (kDebugMode) {
+        print('AppStateProvider._unsaveRedditPost: Error: $e');
+      }
       rethrow;
     }
+  }
+  
+  Future<void> _loadSavedRedditUrls() async {
+    try {
+      final savedPosts = await SupabaseService.getSavedRedditPosts();
+      _savedRedditUrls = savedPosts
+          .map((post) => post['content'] as String) // Get URL from content field
+          .toSet();
+      notifyListeners();
+      
+      if (kDebugMode) {
+        print('AppStateProvider: Loaded ${savedPosts.length} saved Reddit posts');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('AppStateProvider: Error loading saved Reddit posts: $e');
+      }
+    }
+  }
+  
+  // Helper method to validate UUID format
+  bool _isValidUUID(String? uuid) {
+    if (uuid == null) return false;
+    // UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    final uuidRegex = RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', caseSensitive: false);
+    return uuidRegex.hasMatch(uuid);
   }
   
   // Shopping items management
@@ -337,7 +556,7 @@ class AppStateProvider with ChangeNotifier {
     } catch (e) {
       if (kDebugMode) {
         print('AppStateProvider: Error refreshing shopping items: $e');
-      }
+  }
       rethrow;
     }
   }
@@ -361,7 +580,7 @@ class AppStateProvider with ChangeNotifier {
       if (index != -1) {
         _shoppingItems[index] = item;
         notifyListeners();
-      }
+    }
     } catch (e) {
       if (kDebugMode) {
         print('AppStateProvider: Error updating shopping item: $e');

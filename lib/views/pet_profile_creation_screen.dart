@@ -6,6 +6,7 @@ import '../widgets/rounded_button.dart';
 import '../widgets/video_background.dart';
 import '../models/pet_types.dart';
 import 'home_screen.dart';
+import 'package:flutter/foundation.dart';
 
 class PetProfileCreationScreen extends StatefulWidget {
   const PetProfileCreationScreen({super.key});
@@ -58,6 +59,15 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
 
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
+      try {
+        if (kDebugMode) {
+          print('PetProfileCreation: Starting pet creation...');
+          print('PetProfileCreation: Name: ${_nameController.text}');
+          print('PetProfileCreation: Species: $_selectedPetType');
+          print('PetProfileCreation: Age: ${_ageController.text}');
+          print('PetProfileCreation: Breed: ${_breedController.text}');
+        }
+        
       final additionalFields = <String, String>{};
       for (var field in petFields[_selectedPetType] ?? []) {
         additionalFields[field] = _additionalFieldControllers['$_selectedPetType-$field']?.text ?? '';
@@ -69,47 +79,61 @@ class _PetProfileCreationScreenState extends State<PetProfileCreationScreen> {
         }
       }
 
+        if (kDebugMode) {
+          print('PetProfileCreation: Creating Pet object...');
+        }
+
       final pet = Pet(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: _nameController.text,
         species: _selectedPetType,
         breed: _breedController.text.isNotEmpty ? _breedController.text : null,
-        age: int.tryParse(_ageController.text), // This will be stored in customFields instead
+        age: int.tryParse(_ageController.text),
         personality: _personalityController.text.isNotEmpty ? _personalityController.text : null,
         foodSource: _foodSourceController.text.isNotEmpty ? _foodSourceController.text : null,
-        // Store all pet-specific fields in customFields since they don't exist in the database table
-        favoritePark: null,
-        leashSource: null,
-        litterType: null,
-        waterProducts: null,
-        tankSize: null,
-        cageSize: null,
-        favoriteToy: null,
-        photoUrl: null, // Remove photo functionality
-        customFields: {
-          ...customFields,
-          'age': _ageController.text.isNotEmpty ? _ageController.text : null,
-          'favoritePark': additionalFields['Favorite Park'],
-          'leashSource': additionalFields['Leash Source'],
-          'litterType': additionalFields['Litter Type'],
-          'waterProducts': additionalFields['Water Products'],
-          'tankSize': additionalFields['Tank Size'],
-          'cageSize': additionalFields['Cage Size'],
-          'favoriteToy': additionalFields['Favorite Toy'],
-        },
+        favoritePark: additionalFields['Favorite Park'],
+        leashSource: additionalFields['Leash Source'],
+        litterType: additionalFields['Litter Type'],
+        waterProducts: additionalFields['Water Products'],
+        tankSize: additionalFields['Tank Size'],
+        cageSize: additionalFields['Cage Size'],
+        favoriteToy: additionalFields['Favorite Toy'],
+          photoUrl: null,
+        customFields: customFields,
         shoppingList: [],
       );
 
+        if (kDebugMode) {
+          print('PetProfileCreation: Pet object created successfully');
+        }
+
       try {
         final appState = Provider.of<AppStateProvider>(context, listen: false);
+          if (kDebugMode) {
+            print('PetProfileCreation: Adding pet to AppState...');
+          }
         await appState.addPet(pet);
         if (!mounted) return;
+          if (kDebugMode) {
+            print('PetProfileCreation: Pet added successfully, navigating to home...');
+          }
         // Navigate to home screen instead of going back
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       } catch (e) {
+          if (kDebugMode) {
+            print('PetProfileCreation: Error adding pet to AppState: $e');
+          }
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to create pet: $e')),
+          );
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('PetProfileCreation: Error in _submitForm: $e');
+        }
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to create pet: $e')),

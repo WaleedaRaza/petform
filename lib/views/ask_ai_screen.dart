@@ -522,8 +522,21 @@ class MessageBubble extends StatelessWidget {
   }
 }
 
-class AskAiScreen extends StatelessWidget {
+class AskAiScreen extends StatefulWidget {
   const AskAiScreen({super.key});
+
+  @override
+  State<AskAiScreen> createState() => _AskAiScreenState();
+}
+
+class _AskAiScreenState extends State<AskAiScreen> {
+  final TextEditingController _textController = TextEditingController();
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -531,7 +544,6 @@ class AskAiScreen extends StatelessWidget {
       create: (context) => AiProvider(),
       builder: (context, child) {
         final aiProvider = Provider.of<AiProvider>(context);
-        final textController = TextEditingController();
         return VideoBackground(
           videoPath: 'lib/assets/animation2.mp4',
           child: Scaffold(
@@ -600,7 +612,7 @@ class AskAiScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: TextField(
-                        controller: textController,
+                        controller: _textController,
                         decoration: InputDecoration(
                           hintText: _getHintText(aiProvider.selectedQueryType),
                           border: OutlineInputBorder(
@@ -610,7 +622,7 @@ class AskAiScreen extends StatelessWidget {
                         ),
                         onSubmitted: (value) async {
                           await aiProvider.sendMessage(value, context);
-                          textController.clear();
+                          _textController.clear();
                         },
                       ),
                     ),
@@ -620,8 +632,8 @@ class AskAiScreen extends StatelessWidget {
                         : IconButton(
                             icon: const Icon(Icons.send),
                             onPressed: () async {
-                              await aiProvider.sendMessage(textController.text, context);
-                              textController.clear();
+                              await aiProvider.sendMessage(_textController.text, context);
+                              _textController.clear();
                             },
                           ),
                   ],

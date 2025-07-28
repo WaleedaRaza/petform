@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/app_state_provider.dart';
 import '../models/post.dart';
 import '../views/post_detail_screen.dart';
@@ -7,6 +8,7 @@ import '../views/comment_screen.dart';
 import '../services/supabase_service.dart';
 import '../services/supabase_auth_service.dart';
 import 'package:flutter/foundation.dart';
+import '../providers/feed_provider.dart';
 
 class EnhancedPostCard extends StatelessWidget {
   final Post post;
@@ -20,9 +22,17 @@ class EnhancedPostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppStateProvider>(
-      builder: (context, appState, child) {
-        final isSaved = post.isSaved;
+    return Consumer2<AppStateProvider, FeedProvider>(
+      builder: (context, appState, feedProvider, child) {
+        // Check if this post is saved
+        bool isSaved;
+        if (post.postType == 'reddit' && post.redditUrl != null) {
+          // For Reddit posts, check if the URL is saved using FeedProvider
+          isSaved = feedProvider.isRedditPostSaved(context, post.redditUrl!);
+        } else {
+          // For community posts, use the post's isSaved property
+          isSaved = post.isSaved;
+        }
         
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -58,7 +68,48 @@ class EnhancedPostCard extends StatelessWidget {
                   ),
                 ),
                 
-
+                // Image preview (if available)
+                if (post.imageUrl != null && post.imageUrl!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: GestureDetector(
+                          onTap: () => _showImageDialog(context, post.imageUrl!),
+                          child: CachedNetworkImage(
+                            imageUrl: post.imageUrl!,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[800],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[800],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.broken_image,
+                                  color: Colors.grey,
+                                  size: 48,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 
                 // Content
                 Padding(
@@ -199,16 +250,19 @@ class EnhancedPostCard extends StatelessWidget {
           
           // Save button
           IconButton(
-            onPressed: () {
+            onPressed: () async {
               if (kDebugMode) {
                 print('EnhancedPostCard: Save button pressed for post ${post.id}');
                 print('EnhancedPostCard: Current saved state: $isSaved');
               }
               if (isSaved) {
-                appState.unsavePost(post.id!);
+                await appState.unsavePost(post);
               } else {
-                appState.savePost(post.id!);
+                await appState.savePost(post);
               }
+              
+              // Update FeedProvider to reflect the new saved state
+              Provider.of<FeedProvider>(context, listen: false).updateRedditPostsSavedState(context);
             },
             icon: Icon(
               isSaved ? Icons.bookmark : Icons.bookmark_border,
@@ -375,5 +429,19 @@ class EnhancedPostCard extends StatelessWidget {
         );
       }
     }
+  }
+
+  void _showImageDialog(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: InteractiveViewer(
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.contain,
+          ),
+        ),
+      ),
+    );
   }
 } 

@@ -12,18 +12,24 @@ class RedditPost extends Post {
     String? url,
     required this.thumbnail,
     String? content,
+    String? petType, // Add petType parameter
   }) : super(
           id: id ?? '',
           title: title ?? '',
           content: content ?? '',
           author: author ?? '',
-          petType: 'Reddit',
+          petType: petType ?? 'All', // Use provided petType or default to 'All'
           postType: 'reddit',
           redditUrl: url,
           imageUrl: thumbnail.isNotEmpty ? thumbnail : null,
           upvotes: 0,
           createdAt: DateTime.now(),
         );
+
+  // Add setter for petType
+  set petType(String value) {
+    super.petType = value;
+  }
 
   factory RedditPost.fromJson(Map<String, dynamic> json) {
     return RedditPost(
@@ -34,6 +40,7 @@ class RedditPost extends Post {
       url: json['url'] as String? ?? '',
       thumbnail: json['thumbnail'] as String? ?? '',
       content: json['content'] as String? ?? '',
+      petType: json['petType'] as String? ?? 'All',
     );
   }
 
@@ -46,6 +53,7 @@ class RedditPost extends Post {
       'url': redditUrl,
       'thumbnail': thumbnail,
       'content': content,
+      'petType': petType,
     };
   }
 }

@@ -4,6 +4,7 @@ import '../providers/app_state_provider.dart';
 import '../models/post.dart';
 import '../widgets/video_background.dart';
 import 'post_detail_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SavedPostsScreen extends StatefulWidget {
   const SavedPostsScreen({super.key});
@@ -15,6 +16,21 @@ class SavedPostsScreen extends StatefulWidget {
 class _SavedPostsScreenState extends State<SavedPostsScreen> {
   String _searchQuery = '';
   String _selectedFilter = 'All';
+
+  String _formatTimeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+    
+    if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,80 +119,96 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
             }).toList();
           }
 
-          if (filteredPosts.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.search_off,
-                    size: 80,
-                    color: Colors.grey[400],
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: filteredPosts.length,
+            itemBuilder: (context, index) {
+              final post = filteredPosts[index];
+              
+              // For Reddit posts, show as simple links
+              if (post.postType == 'reddit' && post.redditUrl != null) {
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ListTile(
+                    leading: const Icon(Icons.link, color: Colors.orange),
+                    title: Text(
+                      post.title,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      'Reddit Link',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.bookmark, color: Colors.orange),
+                      onPressed: () => appState.unsavePost(post),
+                    ),
+                    onTap: () async {
+                      final url = Uri.parse(post.redditUrl!);
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(url);
+                      }
+                    },
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No Posts Found',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.bold,
+                );
+              }
+              
+              // For community posts, show as regular posts
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.blue[100],
+                    child: Text(
+                      post.author.isNotEmpty ? post.author[0].toUpperCase() : 'U',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Try adjusting your search or filter criteria',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[500],
-                    ),
-                    textAlign: TextAlign.center,
+                  title: Text(
+                    post.title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                ],
-              ),
-            );
-          }
-
-          return Column(
-            children: [
-              // Filter summary
-              if (_searchQuery.isNotEmpty || _selectedFilter != 'All')
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.filter_list, size: 16, color: Colors.grey[600]),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Showing ${filteredPosts.length} of ${savedPosts.length} posts',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
-                      ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _searchQuery = '';
-                            _selectedFilter = 'All';
-                          });
-                        },
-                        child: const Text('Clear Filters'),
+                      Text(post.content),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            '${post.postType} • ${_formatTimeAgo(post.createdAt)}',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            'by ${post.author}',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ),
-              
-              // Posts list
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filteredPosts.length,
-                  itemBuilder: (context, index) {
-                    final post = filteredPosts[index];
-                    return _buildSavedPostCard(context, post, appState);
+                  trailing: IconButton(
+                    icon: const Icon(Icons.bookmark, color: Colors.orange),
+                    onPressed: () => appState.unsavePost(post),
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PostDetailScreen(post: post),
+                      ),
+                    );
                   },
                 ),
-              ),
-            ],
+              );
+            },
           );
         },
         ),
@@ -291,7 +323,7 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
                           
                           if (confirm == true) {
                             try {
-                              await appState.unsavePost(post.id!);
+                              await appState.unsavePost(post);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Unsaved "${post.title}"')),
                               );
@@ -337,12 +369,36 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
   }
 
   void _viewPost(BuildContext context, Post post) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PostDetailScreen(post: post),
-      ),
-    );
+    if (post.postType == 'reddit' && post.redditUrl != null) {
+      // For Reddit posts, open the URL in browser
+      _launchRedditUrl(post.redditUrl!);
+    } else {
+      // For community posts, navigate to detail screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PostDetailScreen(post: post),
+        ),
+      );
+    }
+  }
+  
+  void _launchRedditUrl(String url) async {
+    try {
+      // Use url_launcher to open Reddit URL in browser
+      final Uri uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Could not launch $url';
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to open Reddit link: $e')),
+        );
+      }
+    }
   }
 
   void _showSearchDialog(BuildContext context) {

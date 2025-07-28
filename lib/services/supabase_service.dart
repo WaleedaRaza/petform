@@ -198,20 +198,29 @@ class SupabaseService {
     }
   }
   
-  static Future<void> createPet(Map<String, dynamic> petData) async {
+  static Future<Map<String, dynamic>?> createPet(Map<String, dynamic> petData) async {
     try {
       final user = client.auth.currentUser;
       if (user == null) throw Exception('No user logged in');
       
       petData['user_id'] = user.id;
-      await client.from('pets').insert(petData);
+      
+      if (kDebugMode) {
+        print('SupabaseService: Creating pet with data: $petData');
+      }
+      
+      final response = await client.from('pets').insert(petData).select();
       
       if (kDebugMode) {
         print('SupabaseService: Pet created successfully');
+        print('SupabaseService: Created pet data: $response');
       }
+      
+      return response.isNotEmpty ? response.first : null;
     } catch (e) {
       if (kDebugMode) {
         print('SupabaseService: Error creating pet: $e');
+        print('SupabaseService: Pet data that failed: $petData');
       }
       rethrow;
     }
@@ -259,7 +268,7 @@ class SupabaseService {
     try {
       final response = await client
           .from('posts')
-          .select('*, profiles(username, display_name)')
+          .select('*')
           .order('created_at', ascending: false);
       return response;
     } catch (e) {
@@ -331,7 +340,7 @@ class SupabaseService {
     try {
       final response = await client
           .from('comments')
-          .select('*, profiles(username, display_name)')
+          .select('*')
           .eq('post_id', postId)
           .order('created_at', ascending: true);
       return response;
@@ -671,6 +680,79 @@ class SupabaseService {
     } catch (e) {
       if (kDebugMode) {
         print('SupabaseService: Error clearing shopping list: $e');
+      }
+      rethrow;
+    }
+  }
+
+  // ===== SAVED REDDIT POSTS METHODS =====
+  
+  static Future<void> saveRedditPost(String redditUrl, String title, String petType) async {
+    try {
+      final user = client.auth.currentUser;
+      if (user == null) throw Exception('No user logged in');
+      
+      // Use only the most basic columns that definitely exist
+      await client.from('posts').upsert({
+        'user_id': user.id,
+        'title': title,
+        'content': redditUrl, // Store URL in content
+      });
+      
+      if (kDebugMode) {
+        print('SupabaseService: Saved Reddit post: $redditUrl');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error saving Reddit post: $e');
+      }
+      rethrow;
+    }
+  }
+  
+  static Future<void> unsaveRedditPost(String redditUrl) async {
+    try {
+      final user = client.auth.currentUser;
+      if (user == null) throw Exception('No user logged in');
+      
+      // Delete by content (which contains the URL)
+      await client.from('posts')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('content', redditUrl);
+      
+      if (kDebugMode) {
+        print('SupabaseService: Unsaved Reddit post: $redditUrl');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error unsaving Reddit post: $e');
+      }
+      rethrow;
+    }
+  }
+  
+  static Future<List<Map<String, dynamic>>> getSavedRedditPosts() async {
+    try {
+      final user = client.auth.currentUser;
+      if (user == null) throw Exception('No user logged in');
+      
+      // Get posts where content starts with http (Reddit URLs)
+      final response = await client
+          .from('posts')
+          .select()
+          .eq('user_id', user.id)
+          .like('content', 'http%')
+          .order('created_at', ascending: false);
+      
+      if (kDebugMode) {
+        print('SupabaseService: Loaded ${response.length} saved Reddit posts');
+      }
+      
+      return response;
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error getting saved Reddit posts: $e');
       }
       rethrow;
     }

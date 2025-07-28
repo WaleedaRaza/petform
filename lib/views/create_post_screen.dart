@@ -8,6 +8,7 @@ import '../widgets/video_background.dart';
 import '../models/pet_types.dart';
 import '../models/post.dart';
 import '../services/supabase_auth_service.dart';
+import '../services/supabase_service.dart';
 
 class CreatePostScreen extends StatefulWidget {
   final Post? postToEdit; // For editing existing posts
@@ -49,31 +50,31 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        final feedProvider = Provider.of<FeedProvider>(context, listen: false);
-        
         final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
 
         if (widget.postToEdit != null) {
           // Edit existing post - for now, we'll just create a new post
           // since editing requires more complex logic
-          await Provider.of<ApiService>(context, listen: false).createPost(
-            title: _titleController.text,
-            content: _contentController.text,
-            petType: _selectedPetType,
-            author: userEmail,
-          );
+          await SupabaseService.createPost({
+            'title': _titleController.text,
+            'content': _contentController.text,
+            'petType': _selectedPetType,
+            'author': userEmail,
+            'postType': 'community',
+          });
         } else {
           // Create new post
-        await Provider.of<ApiService>(context, listen: false).createPost(
-          title: _titleController.text,
-          content: _contentController.text,
-          petType: _selectedPetType,
-          author: userEmail,
-        );
+          await SupabaseService.createPost({
+            'title': _titleController.text,
+            'content': _contentController.text,
+            'petType': _selectedPetType,
+            'author': userEmail,
+            'postType': 'community',
+          });
         }
         
         // Refresh the feed to show the new post
+        final feedProvider = Provider.of<FeedProvider>(context, listen: false);
         await feedProvider.fetchPosts(context);
         
         if (!mounted) return;

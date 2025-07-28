@@ -712,66 +712,361 @@ class ApiService {
   Future<List<RedditPost>> fetchRedditPosts({String subreddit = 'pets', int limit = 10}) async {
     try {
       // Use proper User-Agent and add delay to respect rate limits
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 300)); // Reduced delay for faster fetching
       
-      final url = Uri.https('www.reddit.com', '/r/$subreddit/hot.json', {
-        'limit': '$limit',
+      // Try multiple endpoints to get more posts
+      List<RedditPost> allPosts = [];
+      
+      // Try hot posts first with timeout
+      final hotUrl = Uri.https('www.reddit.com', '/r/$subreddit/hot.json', {
+        'limit': '${limit * 2}', // Request more to account for filtering
         'raw_json': '1',
       });
       
-      final response = await http.get(
-        url, 
+      final hotResponse = await http.get(
+        hotUrl, 
         headers: {
           'User-Agent': 'PetformApp/1.0 (by /u/petform_dev)',
           'Accept': 'application/json',
         },
-      );
+      ).timeout(const Duration(seconds: 10)); // Add 10-second timeout
       
-      if (response.statusCode != 200) {
-        if (kDebugMode) {
-          print('Reddit API error: ${response.statusCode} - ${response.body}');
+      if (hotResponse.statusCode == 200) {
+        final hotData = jsonDecode(hotResponse.body);
+        if (hotData != null && hotData['data'] != null && hotData['data']['children'] != null) {
+          final hotPosts = _parseRedditPosts(hotData['data']['children'], subreddit);
+          allPosts.addAll(hotPosts);
         }
-        throw Exception('Reddit API returned status ${response.statusCode}');
       }
       
-      final data = jsonDecode(response.body);
-      
-      // Check if we got valid Reddit data
-      if (data == null || data['data'] == null || data['data']['children'] == null) {
-        throw Exception('Invalid Reddit API response format');
+      // If we don't have enough posts, try new posts
+      if (allPosts.length < limit) {
+        await Future.delayed(const Duration(milliseconds: 200));
+        
+        final newUrl = Uri.https('www.reddit.com', '/r/$subreddit/new.json', {
+          'limit': '${limit * 2}',
+          'raw_json': '1',
+        });
+        
+        final newResponse = await http.get(
+          newUrl, 
+          headers: {
+            'User-Agent': 'PetformApp/1.0 (by /u/petform_dev)',
+            'Accept': 'application/json',
+          },
+        ).timeout(const Duration(seconds: 10)); // Add 10-second timeout
+        
+        if (newResponse.statusCode == 200) {
+          final newData = jsonDecode(newResponse.body);
+          if (newData != null && newData['data'] != null && newData['data']['children'] != null) {
+            final newPosts = _parseRedditPosts(newData['data']['children'], subreddit);
+            // Add only posts we don't already have
+            for (final post in newPosts) {
+              if (!allPosts.any((existing) => existing.id == post.id)) {
+                allPosts.add(post);
+              }
+            }
+          }
+        }
       }
       
-      final List posts = data['data']['children'];
-      
-      if (posts.isEmpty) {
-        if (kDebugMode) {
-          print('No Reddit posts found for subreddit: $subreddit');
+      // If we still don't have enough, try top posts
+      if (allPosts.length < limit) {
+        await Future.delayed(const Duration(milliseconds: 200));
+        
+        final topUrl = Uri.https('www.reddit.com', '/r/$subreddit/top.json', {
+          'limit': '${limit * 2}',
+          't': 'week', // Top posts from this week
+          'raw_json': '1',
+        });
+        
+        final topResponse = await http.get(
+          topUrl, 
+          headers: {
+            'User-Agent': 'PetformApp/1.0 (by /u/petform_dev)',
+            'Accept': 'application/json',
+          },
+        ).timeout(const Duration(seconds: 10)); // Add 10-second timeout
+        
+        if (topResponse.statusCode == 200) {
+          final topData = jsonDecode(topResponse.body);
+          if (topData != null && topData['data'] != null && topData['data']['children'] != null) {
+            final topPosts = _parseRedditPosts(topData['data']['children'], subreddit);
+            // Add only posts we don't already have
+            for (final post in topPosts) {
+              if (!allPosts.any((existing) => existing.id == post.id)) {
+                allPosts.add(post);
+              }
+            }
+          }
         }
+      }
+      
+      // Limit to requested amount and shuffle for variety
+      if (allPosts.length > limit) {
+        allPosts.shuffle();
+        allPosts = allPosts.take(limit).toList();
+      }
+      
+        if (kDebugMode) {
+        print('Fetched ${allPosts.length} valid Reddit posts from r/$subreddit');
+      }
+      
+      return allPosts;
+      
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error fetching Reddit posts from r/$subreddit: $e');
+      }
+      // Return empty list instead of throwing to prevent app crashes
         return [];
+    }
+  }
+
+  List<RedditPost> _parseRedditPosts(List posts, String subreddit) {
+    // Map subreddits to pet types
+    String getPetTypeFromSubreddit(String subreddit) {
+      final subredditLower = subreddit.toLowerCase();
+      
+      // Dog-related subreddits
+      if (subredditLower.contains('dog') || subredditLower.contains('puppy')) {
+        return 'Dog';
+      }
+      // Cat-related subreddits
+      if (subredditLower.contains('cat') || subredditLower.contains('kitten')) {
+        return 'Cat';
+      }
+      // Hamster-related subreddits
+      if (subredditLower.contains('hamster')) {
+        return 'Hamster';
+      }
+      // Bird-related subreddits
+      if (subredditLower.contains('bird') || subredditLower.contains('parrot') || subredditLower.contains('canary')) {
+        return 'Bird';
+      }
+      // Fish-related subreddits
+      if (subredditLower.contains('fish') || subredditLower.contains('aquarium') || subredditLower.contains('betta') || subredditLower.contains('goldfish') || subredditLower.contains('tropical')) {
+        return 'Fish';
+      }
+      // Turtle-related subreddits
+      if (subredditLower.contains('turtle')) {
+        return 'Turtle';
+      }
+      // Rabbit-related subreddits
+      if (subredditLower.contains('rabbit') || subredditLower.contains('bunny')) {
+        return 'Rabbit';
+      }
+      // Guinea Pig-related subreddits
+      if (subredditLower.contains('guineapig')) {
+        return 'Guinea Pig';
+      }
+      // Snake-related subreddits
+      if (subredditLower.contains('snake')) {
+        return 'Snake';
+      }
+      // Lizard-related subreddits
+      if (subredditLower.contains('lizard')) {
+        return 'Lizard';
+      }
+      // Hedgehog-related subreddits
+      if (subredditLower.contains('hedgehog')) {
+        return 'Hedgehog';
+      }
+      // Ferret-related subreddits
+      if (subredditLower.contains('ferret')) {
+        return 'Ferret';
+      }
+      // Chinchilla-related subreddits
+      if (subredditLower.contains('chinchilla')) {
+        return 'Chinchilla';
+      }
+      // Frog-related subreddits
+      if (subredditLower.contains('frog') || subredditLower.contains('amphibian')) {
+        return 'Frog';
+      }
+      // Tarantula-related subreddits
+      if (subredditLower.contains('tarantula') || subredditLower.contains('spider')) {
+        return 'Tarantula';
+      }
+      // Axolotl-related subreddits
+      if (subredditLower.contains('axolotl')) {
+        return 'Axolotl';
+      }
+      // Mouse-related subreddits
+      if (subredditLower.contains('mouse')) {
+        return 'Mouse';
+      }
+      // Goat-related subreddits
+      if (subredditLower.contains('goat')) {
+        return 'Goat';
+      }
+      // Reptile-related subreddits (general)
+      if (subredditLower.contains('reptile')) {
+        return 'Snake'; // Default to Snake for general reptile subreddits
       }
       
-      final redditPosts = posts.map((item) {
+      // Default to 'All' for general pet subreddits
+      return 'All';
+    }
+    
+    // Enhanced scoring algorithm - balance quality with viral/entertaining content
+    int scorePost(Map<String, dynamic> postData) {
+      int score = 0;
+      
+      // High score for posts with substantial text content
+      final selftext = postData['selftext']?.toString() ?? '';
+      if (selftext.length > 800) score += 30; // Very substantial content
+      else if (selftext.length > 500) score += 25; // Substantial content
+      else if (selftext.length > 300) score += 20; // Good content
+      else if (selftext.length > 150) score += 12; // Some content
+      
+      // High score for posts with helpful keywords
+      final title = postData['title']?.toString().toLowerCase() ?? '';
+      final content = selftext.toLowerCase();
+      final combinedText = '$title $content';
+      
+      // INFORMATIONAL CONTENT INDICATORS - Educational content
+      if (combinedText.contains('advice') || combinedText.contains('help') || combinedText.contains('question')) score += 25;
+      if (combinedText.contains('care') || combinedText.contains('health') || combinedText.contains('feeding')) score += 22;
+      if (combinedText.contains('training') || combinedText.contains('behavior') || combinedText.contains('tips')) score += 22;
+      if (combinedText.contains('setup') || combinedText.contains('enclosure') || combinedText.contains('habitat')) score += 20;
+      if (combinedText.contains('food') || combinedText.contains('diet') || combinedText.contains('nutrition')) score += 20;
+      if (combinedText.contains('vet') || combinedText.contains('medical') || combinedText.contains('sick')) score += 25;
+      if (combinedText.contains('guide') || combinedText.contains('tutorial') || combinedText.contains('how to')) score += 22;
+      if (combinedText.contains('recommendation') || combinedText.contains('suggestion') || combinedText.contains('best')) score += 18;
+      if (combinedText.contains('problem') || combinedText.contains('issue') || combinedText.contains('concern')) score += 20;
+      if (combinedText.contains('treatment') || combinedText.contains('therapy') || combinedText.contains('recovery')) score += 22;
+      if (combinedText.contains('breed') || combinedText.contains('species') || combinedText.contains('type')) score += 15;
+      if (combinedText.contains('equipment') || combinedText.contains('supplies') || combinedText.contains('products')) score += 18;
+      if (combinedText.contains('fact') || combinedText.contains('information') || combinedText.contains('learn')) score += 15;
+      if (combinedText.contains('research') || combinedText.contains('study') || combinedText.contains('evidence')) score += 20;
+      if (combinedText.contains('professional') || combinedText.contains('expert') || combinedText.contains('veterinary')) score += 18;
+      if (combinedText.contains('safety') || combinedText.contains('danger') || combinedText.contains('warning')) score += 20;
+      if (combinedText.contains('cost') || combinedText.contains('price') || combinedText.contains('budget')) score += 12;
+      if (combinedText.contains('schedule') || combinedText.contains('routine') || combinedText.contains('daily')) score += 15;
+      
+      // VIRAL/ENTERTAINING CONTENT INDICATORS - High-quality viral content
+      if (combinedText.contains('viral') || combinedText.contains('trending') || combinedText.contains('popular')) score += 8;
+      if (combinedText.contains('amazing') || combinedText.contains('incredible') || combinedText.contains('unbelievable')) score += 5;
+      if (combinedText.contains('first time') || combinedText.contains('never seen') || combinedText.contains('rare')) score += 6;
+      if (combinedText.contains('talent') || combinedText.contains('skill') || combinedText.contains('trick')) score += 8;
+      if (combinedText.contains('reaction') || combinedText.contains('response') || combinedText.contains('surprise')) score += 6;
+      if (combinedText.contains('bonding') || combinedText.contains('friendship') || combinedText.contains('relationship')) score += 7;
+      if (combinedText.contains('rescue') || combinedText.contains('adoption') || combinedText.contains('save')) score += 10;
+      if (combinedText.contains('recovery') || combinedText.contains('healing') || combinedText.contains('transformation')) score += 8;
+      if (combinedText.contains('milestone') || combinedText.contains('achievement') || combinedText.contains('success')) score += 6;
+      if (combinedText.contains('funny') || combinedText.contains('humor') || combinedText.contains('comedy')) score += 5;
+      if (combinedText.contains('cute') && selftext.length > 50) score += 3; // Cute with context
+      if (combinedText.contains('adorable') && selftext.length > 50) score += 3; // Adorable with context
+      
+      // MEME/ENTERTAINMENT CONTENT - Quality memes and viral moments
+      if (title.contains('meme') || title.contains('funny') || title.contains('humor')) score += 4;
+      if (title.contains('viral') || title.contains('trending') || title.contains('popular')) score += 5;
+      if (title.contains('moment') || title.contains('reaction') || title.contains('response')) score += 4;
+      if (title.contains('talent') || title.contains('skill') || title.contains('trick')) score += 6;
+      if (title.contains('first time') || title.contains('never seen')) score += 5;
+      if (title.contains('amazing') || title.contains('incredible')) score += 3;
+      if (title.contains('bonding') || title.contains('friendship')) score += 4;
+      if (title.contains('rescue') || title.contains('adoption')) score += 7;
+      if (title.contains('recovery') || title.contains('transformation')) score += 6;
+      if (title.contains('milestone') || title.contains('achievement')) score += 5;
+      
+      // Bonus for high engagement (upvotes) - viral content
+      final upvotes = postData['ups'] ?? 0;
+      if (upvotes > 1000) score += 20; // Very viral
+      else if (upvotes > 500) score += 15; // Viral
+      else if (upvotes > 200) score += 10; // Popular
+      else if (upvotes > 100) score += 6; // Good engagement
+      else if (upvotes > 50) score += 3; // Some engagement
+      
+      // Bonus for posts with images/videos (viral content often has media)
+      if (postData['thumbnail'] != null && postData['thumbnail'].toString().startsWith('http')) score += 3;
+      if (postData['preview'] != null && postData['preview']['images'] != null) score += 3;
+      if (postData['is_video'] == true) score += 5; // Video content
+      if (postData['media'] != null) score += 4; // Media content
+      
+      // REDUCED PENALTIES FOR ENTERTAINING CONTENT - Allow some viral content
+      if (title.contains('my') && title.length < 35 && selftext.isEmpty) score -= 8; // Reduced penalty
+      if (title.contains('cute') && selftext.isEmpty) score -= 6; // Reduced penalty
+      if (title.contains('look') && selftext.isEmpty) score -= 6; // Reduced penalty
+      if (title.contains('picture') && selftext.isEmpty) score -= 5; // Reduced penalty
+      if (title.contains('photo') && selftext.isEmpty) score -= 5; // Reduced penalty
+      if (title.contains('check out') && selftext.isEmpty) score -= 6; // Reduced penalty
+      if (title.contains('what do you think') && selftext.isEmpty) score -= 5; // Reduced penalty
+      if (title.contains('hates') || title.contains('loves')) score -= 4; // Reduced penalty
+      if (title.contains('supposed to') || title.contains('dunno')) score -= 3; // Reduced penalty
+      if (title.contains('might') || title.contains('maybe')) score -= 2; // Reduced penalty
+      if (title.contains('❤️') || title.contains('💕') || title.contains('<3')) score -= 5; // Reduced penalty
+      if (title.contains('baby') && selftext.isEmpty) score -= 6; // Reduced penalty
+      if (title.contains('enjoying') && selftext.isEmpty) score -= 4; // Reduced penalty
+      if (title.contains('sped up') || title.contains('speed up')) score -= 3; // Reduced penalty
+      if (title.contains('super') && title.length < 25) score -= 3; // Reduced penalty
+      if (title.contains('aggressive') && selftext.length < 50) score -= 2; // Reduced penalty
+      if (title.contains('debating') && selftext.length < 100) score -= 1; // Reduced penalty
+      if (title.contains('need advice') && selftext.length < 80) score -= 1; // Reduced penalty
+      if (title.contains('made') && selftext.isEmpty) score -= 4; // Reduced penalty
+      if (title.contains('tried') && selftext.isEmpty) score -= 3; // Reduced penalty
+      if (title.contains('kept') && selftext.isEmpty) score -= 3; // Reduced penalty
+      if (title.contains('finding') && selftext.isEmpty) score -= 4; // Reduced penalty
+      if (title.contains('big') && title.length < 20) score -= 2; // Reduced penalty
+      if (title.contains('ideas') && selftext.length < 50) score -= 1; // Reduced penalty
+      if (title.contains('company') && selftext.isEmpty) score -= 3; // Reduced penalty
+      if (title.contains('first time') && selftext.isEmpty) score -= 3; // Reduced penalty
+      if (title.contains('question') && selftext.isEmpty) score -= 4; // Reduced penalty
+      if (title.contains('voice') && selftext.length < 50) score -= 3; // Reduced penalty
+      if (title.contains('certain') && selftext.length < 50) score -= 2; // Reduced penalty
+      if (title.contains('female') && title.length < 30) score -= 2; // Reduced penalty
+      if (title.contains('male') && title.length < 30) score -= 2; // Reduced penalty
+      if (title.contains('!!!') || title.contains('???')) score -= 4; // Reduced penalty
+      if (title.contains('!!') || title.contains('??')) score -= 3; // Reduced penalty
+      if (title.contains('?') && title.length < 20) score -= 2; // Reduced penalty
+      if (title.contains('!') && title.length < 20) score -= 2; // Reduced penalty
+      
+      // Reduced penalty for very short or generic titles
+      if (title.length < 25) score -= 3; // Reduced penalty
+      if (title.contains('this') && title.length < 30) score -= 4; // Reduced penalty
+      if (title.contains('borb') || title.contains('birb')) score -= 2; // Reduced penalty
+      
+      return score;
+    }
+    
+    List<Map<String, dynamic>> scoredPosts = [];
+    
+    for (final item in posts) {
         final postData = item['data'];
         
         // Validate required fields
         if (postData['title'] == null || postData['title'].toString().isEmpty) {
-          return null; // Skip posts without titles
+        continue; // Skip posts without titles
         }
         
         // Skip stickied posts and announcements
         if (postData['stickied'] == true || postData['distinguished'] != null) {
-          return null;
-        }
-        
-        // Skip posts with no content and no external links
-        final hasContent = postData['selftext'] != null && postData['selftext'].toString().isNotEmpty;
-        final hasExternalLink = postData['url'] != null && 
-                               postData['url'].toString().startsWith('http') &&
-                               !postData['url'].toString().contains('reddit.com');
-        
-        if (!hasContent && !hasExternalLink) {
-          return null; // Skip low-effort posts
-        }
+        continue;
+      }
+      
+      // Skip NSFW content
+      if (postData['over_18'] == true) {
+        continue;
+      }
+      
+      // Score the post
+      final score = scorePost(postData);
+      
+      // Only include posts with good positive scores (quality content)
+      if (score >= 10) {
+        scoredPosts.add({
+          'data': postData,
+          'score': score,
+        });
+      }
+    }
+    
+    // Sort by score (highest first) and take the best posts
+    scoredPosts.sort((a, b) => b['score'].compareTo(a['score']));
+    
+    return scoredPosts.take(10).map((scoredItem) {
+      final postData = scoredItem['data'];
         
         // Extract the best available image URL
         String imageUrl = '';
@@ -802,6 +1097,9 @@ class ApiService {
             _isImageUrl(postData['url'].toString())) {
           imageUrl = postData['url'].toString();
         }
+      
+      // Determine pet type from subreddit
+      final petType = getPetTypeFromSubreddit(subreddit);
         
         return RedditPost(
           id: postData['id'] ?? '',
@@ -811,22 +1109,9 @@ class ApiService {
           url: 'https://www.reddit.com${postData['permalink']}',
           thumbnail: imageUrl,
           content: postData['selftext'] ?? '',
-        );
-      }).where((post) => post != null).cast<RedditPost>().toList();
-      
-      if (kDebugMode) {
-        print('Fetched ${redditPosts.length} valid Reddit posts from r/$subreddit');
-      }
-      
-      return redditPosts;
-      
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error fetching Reddit posts from r/$subreddit: $e');
-      }
-      // Return empty list instead of throwing to prevent app crashes
-      return [];
-    }
+        petType: petType, // Pass the correct pet type
+      );
+    }).toList();
   }
 
   bool _isImageUrl(String url) {

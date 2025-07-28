@@ -4,6 +4,7 @@ import 'providers/user_provider.dart';
 import 'providers/app_state_provider.dart';
 import 'providers/feed_provider.dart';
 import 'services/api_service.dart';
+import 'services/supabase_service.dart';
 import 'views/welcome_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
@@ -11,14 +12,15 @@ import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 void main() async {
+  print('Petform: App starting...'); // Simple debug print
   try {
-    WidgetsFlutterBinding.ensureInitialized();
-    
-    if (kDebugMode) {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  if (kDebugMode) {
       print('Main: Flutter binding initialized');
       print('Main: Starting Supabase initialization...');
-    }
-    
+  }
+  
     // Initialize Supabase with error handling
     try {
       await Supabase.initialize(
@@ -29,33 +31,34 @@ void main() async {
         ),
       );
       
-      if (kDebugMode) {
+    if (kDebugMode) {
         print('Main: Supabase initialized successfully');
         print('Main: Supabase URL: ${SupabaseConfig.url}');
         print('Main: Redirect URL: petform://login-callback');
-      }
-    } catch (e) {
-      if (kDebugMode) {
+        print('Main: Current user: ${SupabaseService.currentUser?.email ?? 'None'}');
+    }
+  } catch (e) {
+  if (kDebugMode) {
         print('Main: Error initializing Supabase: $e');
-      }
+  }
       // Continue without Supabase for now
     }
     
     if (kDebugMode) {
       print('Main: Starting app...');
     }
-    
-    runApp(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (context) => UserProvider()),
-          Provider(create: (context) => ApiService()),
-          ChangeNotifierProvider(create: (context) => AppStateProvider()),
-          ChangeNotifierProvider(create: (context) => FeedProvider()),
-        ],
-        child: const PetformApp(),
-      ),
-    );
+  
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => UserProvider()),
+        Provider(create: (context) => ApiService()),
+        ChangeNotifierProvider(create: (context) => AppStateProvider()),
+        ChangeNotifierProvider(create: (context) => FeedProvider()),
+      ],
+      child: const PetformApp(),
+    ),
+  );
     
     if (kDebugMode) {
       print('Main: App started successfully');

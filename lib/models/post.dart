@@ -35,7 +35,7 @@ class Post {
   final String title;
   final String content;
   final String author;
-  final String petType;
+  String petType; // Remove final to allow assignment
   final String? imageUrl;
   final int? upvotes;
   final DateTime createdAt;
@@ -61,23 +61,32 @@ class Post {
     this.isSaved = false,
   });
 
+  // Add setter for petType
+  set setPetType(String value) {
+    petType = value;
+  }
+
   factory Post.fromJson(Map<String, dynamic> json) {
     return Post(
       id: json['id']?.toString(),
-      title: json['title'] as String,
-      content: json['content'] as String,
-      author: json['author'] as String,
-      petType: json['petType'] as String,
+      title: json['title'] as String? ?? 'Unknown Title',
+      content: json['content'] as String? ?? '',
+      author: json['author'] as String? ?? 'Unknown Author',
+      petType: json['pet_type'] as String? ?? json['petType'] as String? ?? 'All',
       imageUrl: json['imageUrl'] as String?,
       upvotes: json['upvotes'] as int?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at'] as String)
+          : json['createdAt'] != null 
+              ? DateTime.parse(json['createdAt'] as String)
+              : DateTime.now(),
       editedAt: json['editedAt'] != null ? DateTime.parse(json['editedAt'] as String) : null,
-      postType: json['postType'] as String,
-      redditUrl: json['redditUrl'] as String?,
+      postType: json['post_type'] as String? ?? json['postType'] as String? ?? 'community',
+      redditUrl: json['reddit_url'] as String? ?? json['redditUrl'] as String?,
       comments: (json['comments'] as List<dynamic>?)
           ?.map((c) => Comment.fromJson(c as Map<String, dynamic>))
           .toList() ?? [],
-      isSaved: json['isSaved'] as bool? ?? false,
+      isSaved: json['is_saved'] as bool? ?? json['isSaved'] as bool? ?? false,
     );
   }
 

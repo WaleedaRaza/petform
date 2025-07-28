@@ -126,17 +126,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print('HomeScreen: Building home screen'); // Simple debug print
     final isLoggedIn = SupabaseAuthService().currentUser != null;
     if (!isLoggedIn) {
+      print('HomeScreen: User not logged in, showing WelcomeScreen');
       return const WelcomeScreen();
     }
     if (!_isInitialized) {
+      print('HomeScreen: Not initialized, showing loading');
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
         ),
       );
     }
+    print('HomeScreen: Building main home screen with index: $_selectedIndex');
     return Scaffold(
       backgroundColor: Colors.transparent,
       extendBody: true,
@@ -164,7 +168,10 @@ class _HomeScreenState extends State<HomeScreen> {
         currentIndex: _selectedIndex,
         selectedItemColor: Theme.of(context).colorScheme.secondary,
         unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
+        onTap: (index) {
+          print('HomeScreen: Navigation tapped, changing to index: $index');
+          _onItemTapped(index);
+        },
         type: BottomNavigationBarType.fixed,
       ),
     );

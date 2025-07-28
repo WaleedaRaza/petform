@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart'; // Added for kDebugMode
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/pet.dart';
 import '../models/post.dart';
@@ -886,7 +887,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           
                           if (confirm == true) {
                             try {
-                              await appState.unsavePost(post.id!);
+                              await appState.unsavePost(post);
                               setState(() {}); // Refresh the list
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Unsaved "${post.title}"')),
@@ -933,12 +934,23 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   }
 
   void _viewPost(BuildContext context, Post post) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PostDetailScreen(post: post),
-      ),
-    );
+    if (post.postType == 'reddit') {
+      final url = post.content;
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        launchUrl(Uri.parse(url));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Invalid URL: $url')),
+        );
+      }
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PostDetailScreen(post: post),
+        ),
+      );
+    }
   }
 
   void _showAllSavedPosts(BuildContext context) {
