@@ -16,7 +16,7 @@ class Comment {
       id: json['id']?.toString(),
       content: json['content'] as String,
       author: json['author'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
 
@@ -96,15 +96,15 @@ class Post {
       'title': title,
       'content': content,
       'author': author,
-      'petType': petType,
-      'imageUrl': imageUrl,
+      'pet_type': petType,
+      'image_url': imageUrl,
       'upvotes': upvotes,
-      'createdAt': createdAt.toIso8601String(),
-      'editedAt': editedAt?.toIso8601String(),
-      'postType': postType,
-      'redditUrl': redditUrl,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': editedAt?.toIso8601String(),
+      'post_type': postType,
+      'reddit_url': redditUrl,
       'comments': comments.map((c) => c.toJson()).toList(),
-      'isSaved': isSaved,
+      'is_saved': isSaved,
     };
   }
 

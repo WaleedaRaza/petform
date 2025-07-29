@@ -60,8 +60,12 @@ class _CommentScreenState extends State<CommentScreen> {
       print('CommentScreen._deleteComment: Supabase Auth email:  [32m [1m${SupabaseAuthService().currentUser?.email} [0m');
     }
     
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+    final currentUsername = userProvider.currentUsername ?? userEmail.split('@')[0];
+    
     // Only allow deletion if the user is the author of the comment
-    if (comment.author != currentUser) {
+    if (comment.author != currentUsername) {
       if (kDebugMode) {
         print('CommentScreen._deleteComment: Authorization failed - user cannot delete this comment');
       }
@@ -140,12 +144,14 @@ class _CommentScreenState extends State<CommentScreen> {
                     itemCount: post.comments.length,
                     itemBuilder: (context, index) {
                       final comment = post.comments[index];
-                      final currentUser = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
-                      final isAuthor = comment.author == currentUser;
+                      final userProvider = Provider.of<UserProvider>(context, listen: false);
+                      final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+                      final currentUsername = userProvider.currentUsername ?? userEmail.split('@')[0];
+                      final isAuthor = comment.author == currentUsername;
                       
                       if (kDebugMode) {
                         print('CommentScreen: Comment author: ${comment.author}');
-                        print('CommentScreen: Current user: $currentUser');
+                        print('CommentScreen: Current user: $currentUsername');
                         print('CommentScreen: Is author: $isAuthor');
                         print('CommentScreen: Supabase Auth email: ${SupabaseAuthService().currentUser?.email}');
                       }

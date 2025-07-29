@@ -19,6 +19,7 @@ import '../widgets/rounded_button.dart';
 import 'post_detail_screen.dart';
 import 'saved_posts_screen.dart';
 import '../services/supabase_auth_service.dart';
+import 'clerk_test_screen.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -151,7 +152,20 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         title: const Text('Edit Display Name'),
                         subtitle: Text(userEmail),
                         onTap: () => _showEditDisplayNameDialog(context),
-                  ),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.security),
+                        title: const Text('Test Clerk Auth'),
+                        subtitle: const Text('Test Clerk integration'),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ClerkTestScreen(),
+                            ),
+                          );
+                        },
+                      ),
 
                 ],
               ),

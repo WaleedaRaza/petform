@@ -5,7 +5,11 @@ import 'providers/app_state_provider.dart';
 import 'providers/feed_provider.dart';
 import 'services/api_service.dart';
 import 'services/supabase_service.dart';
+import 'services/auth0_service.dart';
 import 'views/welcome_screen.dart';
+import 'views/auth0_test_screen.dart';
+import 'views/auth0_signup_screen.dart';
+import 'views/auth0_signin_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
 import 'package:flutter/foundation.dart';
@@ -146,6 +150,22 @@ class PetformApp extends StatelessWidget {
       onGenerateRoute: (settings) {
         if (kDebugMode) {
           print('Main: Deep link received: ${settings.name}');
+        }
+        
+        // Handle Auth0 routes
+        switch (settings.name) {
+          case '/auth0-test':
+            return MaterialPageRoute(
+              builder: (context) => const Auth0TestScreen(),
+            );
+          case '/auth0-signup':
+            return MaterialPageRoute(
+              builder: (context) => const Auth0SignupScreen(),
+            );
+          case '/auth0-signin':
+            return MaterialPageRoute(
+              builder: (context) => const Auth0SigninScreen(),
+            );
         }
         
         // Handle email confirmation links

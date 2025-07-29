@@ -107,7 +107,7 @@ class AppStateProvider with ChangeNotifier {
     try {
       await Future.wait([
         _loadPets(),
-        _loadPosts(),
+        loadPosts(),
         _loadShoppingItems(),
         _loadTrackingMetrics(),
         _loadSavedRedditUrls(), // Load saved Reddit URLs
@@ -178,13 +178,13 @@ class AppStateProvider with ChangeNotifier {
   }
   
   // Post management
-  Future<void> _loadPosts() async {
+  Future<void> loadPosts() async {
     try {
       final posts = await SupabaseService.getPosts();
       _posts = posts.map((p) => Post.fromJson(p)).toList();
       
       if (kDebugMode) {
-        print('AppStateProvider._loadPosts: Loaded ${_posts.length} posts from Supabase');
+        print('AppStateProvider.loadPosts: Loaded ${_posts.length} posts from Supabase');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -197,7 +197,7 @@ class AppStateProvider with ChangeNotifier {
   Future<void> addPost(Post post) async {
     try {
       await SupabaseService.createPost(post.toJson());
-      await _loadPosts(); // Reload posts from database
+      await loadPosts(); // Reload posts from database
       notifyListeners();
     } catch (e) {
       _setError('Failed to add post: $e');
@@ -208,7 +208,7 @@ class AppStateProvider with ChangeNotifier {
   Future<void> updatePost(String id, Post post) async {
     try {
       await SupabaseService.updatePost(id, post.toJson());
-      await _loadPosts(); // Reload posts from database
+      await loadPosts(); // Reload posts from database
         notifyListeners();
     } catch (e) {
       _setError('Failed to update post: $e');
@@ -219,7 +219,7 @@ class AppStateProvider with ChangeNotifier {
   Future<void> removePost(String id) async {
     try {
       await SupabaseService.deletePost(id);
-      await _loadPosts(); // Reload posts from database
+      await loadPosts(); // Reload posts from database
         notifyListeners();
     } catch (e) {
       _setError('Failed to remove post: $e');
@@ -267,6 +267,13 @@ class AppStateProvider with ChangeNotifier {
         // For community posts, save the actual post data
         if (post.id != null && _isValidUUID(post.id!)) {
           await SupabaseService.updatePost(post.id!, {'is_saved': true});
+          
+          // Update the local post in the posts list
+          final postIndex = _posts.indexWhere((p) => p.id == post.id);
+          if (postIndex != -1) {
+            _posts[postIndex] = _posts[postIndex].copyWith(isSaved: true);
+          }
+          
           if (kDebugMode) {
             print('AppStateProvider.savePost: Saved community post with ID: ${post.id}');
           }
@@ -314,6 +321,13 @@ class AppStateProvider with ChangeNotifier {
         // For community posts, unsave the actual post data
         if (post.id != null && _isValidUUID(post.id!)) {
           await SupabaseService.updatePost(post.id!, {'is_saved': false});
+          
+          // Update the local post in the posts list
+          final postIndex = _posts.indexWhere((p) => p.id == post.id);
+          if (postIndex != -1) {
+            _posts[postIndex] = _posts[postIndex].copyWith(isSaved: false);
+          }
+          
           if (kDebugMode) {
             print('AppStateProvider.unsavePost: Unsaved community post with ID: ${post.id}');
           }
@@ -341,9 +355,9 @@ class AppStateProvider with ChangeNotifier {
       
       // Add to in-memory tracking for immediate UI update
       _savedRedditUrls.add(redditUrl);
-      notifyListeners();
-      
-      if (kDebugMode) {
+    notifyListeners();
+  
+    if (kDebugMode) {
         print('AppStateProvider._saveRedditPost: Saved Reddit URL: $redditUrl');
       }
     } catch (e) {
@@ -363,7 +377,7 @@ class AppStateProvider with ChangeNotifier {
       _savedRedditUrls.remove(redditUrl);
       notifyListeners();
       
-      if (kDebugMode) {
+    if (kDebugMode) {
         print('AppStateProvider._unsaveRedditPost: Unsaved Reddit URL: $redditUrl');
       }
     } catch (e) {
@@ -405,7 +419,7 @@ class AppStateProvider with ChangeNotifier {
     try {
       // Load user's saved shopping items from Supabase
       final items = await SupabaseService.getShoppingItems();
-      _shoppingItems = items.map((item) => ShoppingItem.fromJson(item)).toList();
+      _shoppingItems = items;
       
       if (kDebugMode) {
         print('AppStateProvider._loadShoppingItems: Loaded ${_shoppingItems.length} user shopping items');
@@ -563,7 +577,7 @@ class AppStateProvider with ChangeNotifier {
 
   Future<void> addShoppingItem(ShoppingItem item) async {
     try {
-      await SupabaseService.addShoppingItem(item.toJson());
+      await SupabaseService.addShoppingItem(item);
       await _loadShoppingItems(); // Reload from database
       notifyListeners();
     } catch (e) {
@@ -576,11 +590,9 @@ class AppStateProvider with ChangeNotifier {
 
   Future<void> updateShoppingItem(String id, ShoppingItem item) async {
     try {
-      final index = _shoppingItems.indexWhere((item) => item.id == id);
-      if (index != -1) {
-        _shoppingItems[index] = item;
-        notifyListeners();
-    }
+      await SupabaseService.updateShoppingItem(item);
+      await _loadShoppingItems(); // Reload from database
+      notifyListeners();
     } catch (e) {
       if (kDebugMode) {
         print('AppStateProvider: Error updating shopping item: $e');

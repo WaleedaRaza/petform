@@ -40,19 +40,31 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final feedProvider = Provider.of<FeedProvider>(context, listen: false);
       
-      // Use API service directly for adding comments to global posts
-      await Provider.of<ApiService>(context, listen: false).addComment(
-        postId: widget.post.id!,
-        content: _commentController.text,
-        author: SupabaseAuthService().currentUser?.email ?? 'Anonymous',
+      // Use SupabaseService for adding comments
+      final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+      final username = userProvider.currentUsername ?? userEmail.split('@')[0];
+      
+      await SupabaseService.createComment(
+        widget.post.id!,
+        _commentController.text,
+        username,
       );
       
-      // Refresh feed provider to update the post in the feed
+      // Refresh both providers to get updated post with comments
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
+      await appState.loadPosts();
       await feedProvider.fetchPosts(context);
       
       if (!mounted) return;
       _commentController.clear();
+      
+      // Refresh the UI to show the new comment
       setState(() {});
+      
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Comment added successfully!')),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -64,10 +76,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   Future<void> _deleteComment(Comment comment) async {
-    final currentUser = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+    final currentUsername = userProvider.currentUsername ?? userEmail.split('@')[0];
     
     // Only allow deletion if the user is the author of the comment
-    if (comment.author != currentUser) {
+    if (comment.author != currentUsername) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('You can only delete your own comments')),
       );
@@ -188,10 +202,15 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final feedProvider = Provider.of<FeedProvider>(context);
-    // Get the updated post from feed provider, fallback to widget.post
+    final appState = Provider.of<AppStateProvider>(context);
+    
+    // Get the updated post from both providers, fallback to widget.post
     final post = feedProvider.posts.firstWhere(
       (p) => p.id == widget.post.id,
-      orElse: () => widget.post,
+      orElse: () => appState.posts.firstWhere(
+        (p) => p.id == widget.post.id,
+        orElse: () => widget.post,
+      ),
     );
     final isReddit = post.postType == 'reddit';
     final redditPost = isReddit && post is RedditPost ? post as RedditPost : null;
@@ -362,8 +381,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     )
                   else
                     ...post.comments.map((comment) {
-                      final currentUser = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
-                      final isAuthor = comment.author == currentUser;
+                      final userProvider = Provider.of<UserProvider>(context, listen: false);
+                      final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+                      final currentUsername = userProvider.currentUsername ?? userEmail.split('@')[0];
+                      final isAuthor = comment.author == currentUsername;
                       
                       return Card(
                         margin: const EdgeInsets.symmetric(vertical: 4),
@@ -391,7 +412,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          comment.author.contains('@') ? comment.author.split('@')[0] : comment.author,
+                                          comment.author,
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 14,

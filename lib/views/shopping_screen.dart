@@ -260,22 +260,30 @@ class _ShoppingScreenState extends State<ShoppingScreen>
           '${item.brand ?? ''} • \$${item.estimatedCost.toStringAsFixed(2)}',
           style: TextStyle(color: Colors.grey[600]),
                                   ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-                            children: [
-            Checkbox(
-              value: item.isCompleted,
-              onChanged: (value) {
-                final updatedItem = item.copyWith(isCompleted: value ?? false);
-                appState.updateShoppingItem(updatedItem.id!, updatedItem);
-              },
-            ),
-            IconButton(
-                              onPressed: () => appState.removeShoppingItem(item.id!),
-              icon: const Icon(Icons.delete, color: Colors.red),
-            ),
-          ],
-          ),
+        trailing: IconButton(
+          onPressed: () => appState.removeShoppingItem(item.id),
+          icon: const Icon(Icons.delete, color: Colors.red),
+        ),
+        onTap: () async {
+          // Open web link if available
+          String urlString;
+          if (item.chewyUrl != null && item.chewyUrl!.isNotEmpty && !item.chewyUrl!.endsWith('/dp/')) {
+            urlString = item.chewyUrl!;
+          } else {
+            // If URL is incomplete or missing, search for the product on Chewy
+            final searchQuery = Uri.encodeComponent(item.name);
+            urlString = 'https://www.chewy.com/s?query=$searchQuery';
+          }
+          
+          final url = Uri.parse(urlString);
+          if (await canLaunchUrl(url)) {
+            await launchUrl(url, mode: LaunchMode.externalApplication);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Could not open link')),
+            );
+          }
+        },
       ),
     );
   }
@@ -357,7 +365,11 @@ class _ShoppingScreenState extends State<ShoppingScreen>
   }
 
   Widget _buildSuggestionCard(ShoppingItem item, AppStateProvider appState) {
-    final isInList = appState.shoppingItems.any((i) => i.id == item.id);
+    // Check if item is in list by comparing name, brand, and store (since ID changes when saved to DB)
+    final isInList = appState.shoppingItems.any((i) => 
+        i.name == item.name && 
+        i.brand == item.brand && 
+        i.store == item.store);
     
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -559,7 +571,12 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                         child: ElevatedButton.icon(
                           onPressed: () {
                             if (isInList) {
-                              appState.removeShoppingItem(item.id!);
+                              // Find the item in the shopping list by name, brand, and store
+                              final itemToRemove = appState.shoppingItems.firstWhere(
+                                (i) => i.name == item.name && i.brand == item.brand && i.store == item.store,
+                                orElse: () => item,
+                              );
+                              appState.removeShoppingItem(itemToRemove.id);
                             } else {
                               appState.addShoppingItem(item);
                             }
@@ -599,7 +616,11 @@ class _ShoppingScreenState extends State<ShoppingScreen>
   }
 
   Widget _buildItemDetailsSheet(ShoppingItem item, AppStateProvider appState) {
-    final isInList = appState.shoppingItems.any((i) => i.id == item.id);
+    // Check if item is in list by comparing name, brand, and store (since ID changes when saved to DB)
+    final isInList = appState.shoppingItems.any((i) => 
+        i.name == item.name && 
+        i.brand == item.brand && 
+        i.store == item.store);
     
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
@@ -744,7 +765,12 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                   child: ElevatedButton.icon(
                     onPressed: () {
                       if (isInList) {
-                        appState.removeShoppingItem(item.id!);
+                        // Find the item in the shopping list by name, brand, and store
+                        final itemToRemove = appState.shoppingItems.firstWhere(
+                          (i) => i.name == item.name && i.brand == item.brand && i.store == item.store,
+                          orElse: () => item,
+                        );
+                        appState.removeShoppingItem(itemToRemove.id);
                       } else {
                         appState.addShoppingItem(item);
                       }
@@ -888,7 +914,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
             onPressed: () {
               // Clear all items
               for (final item in appState.shoppingItems) {
-                appState.removeShoppingItem(item.id!);
+                appState.removeShoppingItem(item.id);
               }
               Navigator.pop(context);
             },

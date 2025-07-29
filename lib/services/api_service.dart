@@ -909,123 +909,122 @@ class ApiService {
       return 'All';
     }
     
-    // Enhanced scoring algorithm - balance quality with viral/entertaining content
+    // Professional scoring algorithm - prioritize education and diverse pet content
     int scorePost(Map<String, dynamic> postData) {
       int score = 0;
       
       // High score for posts with substantial text content
       final selftext = postData['selftext']?.toString() ?? '';
-      if (selftext.length > 800) score += 30; // Very substantial content
-      else if (selftext.length > 500) score += 25; // Substantial content
-      else if (selftext.length > 300) score += 20; // Good content
-      else if (selftext.length > 150) score += 12; // Some content
+      if (selftext.length > 800) score += 35; // Very substantial content
+      else if (selftext.length > 500) score += 30; // Substantial content
+      else if (selftext.length > 300) score += 25; // Good content
+      else if (selftext.length > 150) score += 15; // Some content
       
       // High score for posts with helpful keywords
       final title = postData['title']?.toString().toLowerCase() ?? '';
       final content = selftext.toLowerCase();
       final combinedText = '$title $content';
       
-      // INFORMATIONAL CONTENT INDICATORS - Educational content
-      if (combinedText.contains('advice') || combinedText.contains('help') || combinedText.contains('question')) score += 25;
-      if (combinedText.contains('care') || combinedText.contains('health') || combinedText.contains('feeding')) score += 22;
-      if (combinedText.contains('training') || combinedText.contains('behavior') || combinedText.contains('tips')) score += 22;
-      if (combinedText.contains('setup') || combinedText.contains('enclosure') || combinedText.contains('habitat')) score += 20;
-      if (combinedText.contains('food') || combinedText.contains('diet') || combinedText.contains('nutrition')) score += 20;
-      if (combinedText.contains('vet') || combinedText.contains('medical') || combinedText.contains('sick')) score += 25;
-      if (combinedText.contains('guide') || combinedText.contains('tutorial') || combinedText.contains('how to')) score += 22;
-      if (combinedText.contains('recommendation') || combinedText.contains('suggestion') || combinedText.contains('best')) score += 18;
-      if (combinedText.contains('problem') || combinedText.contains('issue') || combinedText.contains('concern')) score += 20;
-      if (combinedText.contains('treatment') || combinedText.contains('therapy') || combinedText.contains('recovery')) score += 22;
-      if (combinedText.contains('breed') || combinedText.contains('species') || combinedText.contains('type')) score += 15;
-      if (combinedText.contains('equipment') || combinedText.contains('supplies') || combinedText.contains('products')) score += 18;
-      if (combinedText.contains('fact') || combinedText.contains('information') || combinedText.contains('learn')) score += 15;
-      if (combinedText.contains('research') || combinedText.contains('study') || combinedText.contains('evidence')) score += 20;
-      if (combinedText.contains('professional') || combinedText.contains('expert') || combinedText.contains('veterinary')) score += 18;
-      if (combinedText.contains('safety') || combinedText.contains('danger') || combinedText.contains('warning')) score += 20;
-      if (combinedText.contains('cost') || combinedText.contains('price') || combinedText.contains('budget')) score += 12;
-      if (combinedText.contains('schedule') || combinedText.contains('routine') || combinedText.contains('daily')) score += 15;
+      // EDUCATIONAL CONTENT INDICATORS - Prioritize learning
+      if (combinedText.contains('advice') || combinedText.contains('help') || combinedText.contains('question')) score += 30;
+      if (combinedText.contains('care') || combinedText.contains('health') || combinedText.contains('feeding')) score += 28;
+      if (combinedText.contains('training') || combinedText.contains('behavior') || combinedText.contains('tips')) score += 28;
+      if (combinedText.contains('setup') || combinedText.contains('enclosure') || combinedText.contains('habitat')) score += 25;
+      if (combinedText.contains('food') || combinedText.contains('diet') || combinedText.contains('nutrition')) score += 25;
+      if (combinedText.contains('vet') || combinedText.contains('medical') || combinedText.contains('sick')) score += 30;
+      if (combinedText.contains('guide') || combinedText.contains('tutorial') || combinedText.contains('how to')) score += 28;
+      if (combinedText.contains('recommendation') || combinedText.contains('suggestion') || combinedText.contains('best')) score += 22;
+      if (combinedText.contains('problem') || combinedText.contains('issue') || combinedText.contains('concern')) score += 25;
+      if (combinedText.contains('treatment') || combinedText.contains('therapy') || combinedText.contains('recovery')) score += 28;
+      if (combinedText.contains('breed') || combinedText.contains('species') || combinedText.contains('type')) score += 20;
+      if (combinedText.contains('equipment') || combinedText.contains('supplies') || combinedText.contains('products')) score += 22;
+      if (combinedText.contains('fact') || combinedText.contains('information') || combinedText.contains('learn')) score += 20;
+      if (combinedText.contains('research') || combinedText.contains('study') || combinedText.contains('evidence')) score += 25;
+      if (combinedText.contains('professional') || combinedText.contains('expert') || combinedText.contains('veterinary')) score += 25;
+      if (combinedText.contains('safety') || combinedText.contains('danger') || combinedText.contains('warning')) score += 25;
+      if (combinedText.contains('cost') || combinedText.contains('price') || combinedText.contains('budget')) score += 18;
+      if (combinedText.contains('schedule') || combinedText.contains('routine') || combinedText.contains('daily')) score += 20;
       
-      // VIRAL/ENTERTAINING CONTENT INDICATORS - High-quality viral content
-      if (combinedText.contains('viral') || combinedText.contains('trending') || combinedText.contains('popular')) score += 8;
-      if (combinedText.contains('amazing') || combinedText.contains('incredible') || combinedText.contains('unbelievable')) score += 5;
-      if (combinedText.contains('first time') || combinedText.contains('never seen') || combinedText.contains('rare')) score += 6;
-      if (combinedText.contains('talent') || combinedText.contains('skill') || combinedText.contains('trick')) score += 8;
-      if (combinedText.contains('reaction') || combinedText.contains('response') || combinedText.contains('surprise')) score += 6;
-      if (combinedText.contains('bonding') || combinedText.contains('friendship') || combinedText.contains('relationship')) score += 7;
-      if (combinedText.contains('rescue') || combinedText.contains('adoption') || combinedText.contains('save')) score += 10;
-      if (combinedText.contains('recovery') || combinedText.contains('healing') || combinedText.contains('transformation')) score += 8;
-      if (combinedText.contains('milestone') || combinedText.contains('achievement') || combinedText.contains('success')) score += 6;
-      if (combinedText.contains('funny') || combinedText.contains('humor') || combinedText.contains('comedy')) score += 5;
-      if (combinedText.contains('cute') && selftext.length > 50) score += 3; // Cute with context
-      if (combinedText.contains('adorable') && selftext.length > 50) score += 3; // Adorable with context
+      // DIVERSE PET TYPE INDICATORS - Reward variety
+      if (combinedText.contains('hamster') || combinedText.contains('gerbil') || combinedText.contains('mouse')) score += 8;
+      if (combinedText.contains('bird') || combinedText.contains('parrot') || combinedText.contains('canary')) score += 8;
+      if (combinedText.contains('fish') || combinedText.contains('aquarium') || combinedText.contains('betta')) score += 8;
+      if (combinedText.contains('turtle') || combinedText.contains('tortoise') || combinedText.contains('reptile')) score += 8;
+      if (combinedText.contains('rabbit') || combinedText.contains('bunny') || combinedText.contains('hare')) score += 8;
+      if (combinedText.contains('guinea pig') || combinedText.contains('cavy')) score += 8;
+      if (combinedText.contains('snake') || combinedText.contains('python') || combinedText.contains('boa')) score += 8;
+      if (combinedText.contains('lizard') || combinedText.contains('gecko') || combinedText.contains('bearded dragon')) score += 8;
+      if (combinedText.contains('hedgehog') || combinedText.contains('hedgehog')) score += 8;
+      if (combinedText.contains('ferret') || combinedText.contains('weasel')) score += 8;
+      if (combinedText.contains('chinchilla') || combinedText.contains('chinchilla')) score += 8;
+      if (combinedText.contains('frog') || combinedText.contains('toad') || combinedText.contains('amphibian')) score += 8;
+      if (combinedText.contains('tarantula') || combinedText.contains('spider') || combinedText.contains('arachnid')) score += 8;
+      if (combinedText.contains('axolotl') || combinedText.contains('salamander')) score += 8;
+      if (combinedText.contains('goat') || combinedText.contains('sheep') || combinedText.contains('farm')) score += 8;
       
-      // MEME/ENTERTAINMENT CONTENT - Quality memes and viral moments
-      if (title.contains('meme') || title.contains('funny') || title.contains('humor')) score += 4;
-      if (title.contains('viral') || title.contains('trending') || title.contains('popular')) score += 5;
-      if (title.contains('moment') || title.contains('reaction') || title.contains('response')) score += 4;
-      if (title.contains('talent') || title.contains('skill') || title.contains('trick')) score += 6;
-      if (title.contains('first time') || title.contains('never seen')) score += 5;
-      if (title.contains('amazing') || title.contains('incredible')) score += 3;
-      if (title.contains('bonding') || title.contains('friendship')) score += 4;
-      if (title.contains('rescue') || title.contains('adoption')) score += 7;
-      if (title.contains('recovery') || title.contains('transformation')) score += 6;
-      if (title.contains('milestone') || title.contains('achievement')) score += 5;
+      // QUALITY CONTENT INDICATORS - Professional and helpful
+      if (combinedText.contains('rescue') || combinedText.contains('adoption') || combinedText.contains('save')) score += 12;
+      if (combinedText.contains('recovery') || combinedText.contains('healing') || combinedText.contains('transformation')) score += 10;
+      if (combinedText.contains('bonding') || combinedText.contains('friendship') || combinedText.contains('relationship')) score += 8;
+      if (combinedText.contains('milestone') || combinedText.contains('achievement') || combinedText.contains('success')) score += 8;
+      if (combinedText.contains('first time') || combinedText.contains('new owner') || combinedText.contains('beginner')) score += 10;
+      if (combinedText.contains('experience') || combinedText.contains('story') || combinedText.contains('journey')) score += 6;
       
-      // Bonus for high engagement (upvotes) - viral content
+      // Bonus for high engagement (upvotes) - but not as heavily weighted
       final upvotes = postData['ups'] ?? 0;
-      if (upvotes > 1000) score += 20; // Very viral
-      else if (upvotes > 500) score += 15; // Viral
-      else if (upvotes > 200) score += 10; // Popular
-      else if (upvotes > 100) score += 6; // Good engagement
-      else if (upvotes > 50) score += 3; // Some engagement
+      if (upvotes > 1000) score += 12; // Very popular
+      else if (upvotes > 500) score += 8; // Popular
+      else if (upvotes > 200) score += 5; // Good engagement
+      else if (upvotes > 100) score += 3; // Some engagement
+      else if (upvotes > 50) score += 1; // Minimal engagement
       
-      // Bonus for posts with images/videos (viral content often has media)
-      if (postData['thumbnail'] != null && postData['thumbnail'].toString().startsWith('http')) score += 3;
-      if (postData['preview'] != null && postData['preview']['images'] != null) score += 3;
-      if (postData['is_video'] == true) score += 5; // Video content
-      if (postData['media'] != null) score += 4; // Media content
+      // Reduced bonus for media content - prioritize text content
+      if (postData['thumbnail'] != null && postData['thumbnail'].toString().startsWith('http')) score += 2;
+      if (postData['preview'] != null && postData['preview']['images'] != null) score += 2;
+      if (postData['is_video'] == true) score += 3; // Video content
+      if (postData['media'] != null) score += 2; // Media content
       
-      // REDUCED PENALTIES FOR ENTERTAINING CONTENT - Allow some viral content
-      if (title.contains('my') && title.length < 35 && selftext.isEmpty) score -= 8; // Reduced penalty
-      if (title.contains('cute') && selftext.isEmpty) score -= 6; // Reduced penalty
-      if (title.contains('look') && selftext.isEmpty) score -= 6; // Reduced penalty
-      if (title.contains('picture') && selftext.isEmpty) score -= 5; // Reduced penalty
-      if (title.contains('photo') && selftext.isEmpty) score -= 5; // Reduced penalty
-      if (title.contains('check out') && selftext.isEmpty) score -= 6; // Reduced penalty
-      if (title.contains('what do you think') && selftext.isEmpty) score -= 5; // Reduced penalty
-      if (title.contains('hates') || title.contains('loves')) score -= 4; // Reduced penalty
-      if (title.contains('supposed to') || title.contains('dunno')) score -= 3; // Reduced penalty
-      if (title.contains('might') || title.contains('maybe')) score -= 2; // Reduced penalty
-      if (title.contains('❤️') || title.contains('💕') || title.contains('<3')) score -= 5; // Reduced penalty
-      if (title.contains('baby') && selftext.isEmpty) score -= 6; // Reduced penalty
-      if (title.contains('enjoying') && selftext.isEmpty) score -= 4; // Reduced penalty
-      if (title.contains('sped up') || title.contains('speed up')) score -= 3; // Reduced penalty
-      if (title.contains('super') && title.length < 25) score -= 3; // Reduced penalty
-      if (title.contains('aggressive') && selftext.length < 50) score -= 2; // Reduced penalty
-      if (title.contains('debating') && selftext.length < 100) score -= 1; // Reduced penalty
-      if (title.contains('need advice') && selftext.length < 80) score -= 1; // Reduced penalty
-      if (title.contains('made') && selftext.isEmpty) score -= 4; // Reduced penalty
-      if (title.contains('tried') && selftext.isEmpty) score -= 3; // Reduced penalty
-      if (title.contains('kept') && selftext.isEmpty) score -= 3; // Reduced penalty
-      if (title.contains('finding') && selftext.isEmpty) score -= 4; // Reduced penalty
-      if (title.contains('big') && title.length < 20) score -= 2; // Reduced penalty
-      if (title.contains('ideas') && selftext.length < 50) score -= 1; // Reduced penalty
-      if (title.contains('company') && selftext.isEmpty) score -= 3; // Reduced penalty
-      if (title.contains('first time') && selftext.isEmpty) score -= 3; // Reduced penalty
-      if (title.contains('question') && selftext.isEmpty) score -= 4; // Reduced penalty
-      if (title.contains('voice') && selftext.length < 50) score -= 3; // Reduced penalty
-      if (title.contains('certain') && selftext.length < 50) score -= 2; // Reduced penalty
-      if (title.contains('female') && title.length < 30) score -= 2; // Reduced penalty
-      if (title.contains('male') && title.length < 30) score -= 2; // Reduced penalty
-      if (title.contains('!!!') || title.contains('???')) score -= 4; // Reduced penalty
-      if (title.contains('!!') || title.contains('??')) score -= 3; // Reduced penalty
-      if (title.contains('?') && title.length < 20) score -= 2; // Reduced penalty
-      if (title.contains('!') && title.length < 20) score -= 2; // Reduced penalty
+      // STRONG PENALTIES FOR LOW-QUALITY CONTENT
+      if (title.contains('my') && title.length < 35 && selftext.isEmpty) score -= 20; // Just "my pet" posts
+      if (title.contains('cute') && selftext.isEmpty) score -= 18; // Just "cute" posts
+      if (title.contains('look') && selftext.isEmpty) score -= 18; // Just "look at my pet" posts
+      if (title.contains('picture') && selftext.isEmpty) score -= 15; // Just picture posts
+      if (title.contains('photo') && selftext.isEmpty) score -= 15; // Just photo posts
+      if (title.contains('check out') && selftext.isEmpty) score -= 18; // Just "check out" posts
+      if (title.contains('what do you think') && selftext.isEmpty) score -= 15; // Just "what do you think" posts
+      if (title.contains('hates') || title.contains('loves')) score -= 10; // Emotional posts
+      if (title.contains('supposed to') || title.contains('dunno')) score -= 8; // Uncertain posts
+      if (title.contains('might') || title.contains('maybe')) score -= 6; // Uncertain posts
+      if (title.contains('❤️') || title.contains('💕') || title.contains('<3')) score -= 15; // Emoji-heavy posts
+      if (title.contains('baby') && selftext.isEmpty) score -= 18; // Just "baby" posts
+      if (title.contains('enjoying') && selftext.isEmpty) score -= 12; // Just "enjoying" posts
+      if (title.contains('sped up') || title.contains('speed up')) score -= 10; // Video posts
+      if (title.contains('super') && title.length < 25) score -= 10; // "Super" posts
+      if (title.contains('aggressive') && selftext.length < 50) score -= 8; // Just "aggressive" posts
+      if (title.contains('debating') && selftext.length < 100) score -= 6; // Just "debating" posts
+      if (title.contains('need advice') && selftext.length < 80) score -= 5; // Vague advice requests
+      if (title.contains('made') && selftext.isEmpty) score -= 12; // Just "made" posts
+      if (title.contains('tried') && selftext.isEmpty) score -= 10; // Just "tried" posts
+      if (title.contains('kept') && selftext.isEmpty) score -= 10; // Just "kept" posts
+      if (title.contains('finding') && selftext.isEmpty) score -= 12; // Just "finding" posts
+      if (title.contains('big') && title.length < 20) score -= 8; // Just "big" posts
+      if (title.contains('ideas') && selftext.length < 50) score -= 6; // Vague "ideas" posts
+      if (title.contains('company') && selftext.isEmpty) score -= 10; // Just "company" posts
+      if (title.contains('first time') && selftext.isEmpty) score -= 10; // Just "first time" posts
+      if (title.contains('question') && selftext.isEmpty) score -= 12; // Just "question" posts
+      if (title.contains('voice') && selftext.length < 50) score -= 10; // Just "voice" posts
+      if (title.contains('certain') && selftext.length < 50) score -= 8; // Just "certain" posts
+      if (title.contains('female') && title.length < 30) score -= 8; // Just "female" posts
+      if (title.contains('male') && title.length < 30) score -= 8; // Just "male" posts
+      if (title.contains('!!!') || title.contains('???')) score -= 12; // Excessive punctuation
+      if (title.contains('!!') || title.contains('??')) score -= 10; // Multiple punctuation
+      if (title.contains('?') && title.length < 20) score -= 8; // Short question posts
+      if (title.contains('!') && title.length < 20) score -= 8; // Short exclamation posts
       
-      // Reduced penalty for very short or generic titles
-      if (title.length < 25) score -= 3; // Reduced penalty
-      if (title.contains('this') && title.length < 30) score -= 4; // Reduced penalty
-      if (title.contains('borb') || title.contains('birb')) score -= 2; // Reduced penalty
+      // Penalty for very short or generic titles
+      if (title.length < 25) score -= 10;
+      if (title.contains('this') && title.length < 30) score -= 12;
+      if (title.contains('borb') || title.contains('birb')) score -= 8; // Cute slang
       
       return score;
     }

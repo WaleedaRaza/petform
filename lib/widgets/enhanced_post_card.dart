@@ -30,8 +30,8 @@ class EnhancedPostCard extends StatelessWidget {
           // For Reddit posts, check if the URL is saved using FeedProvider
           isSaved = feedProvider.isRedditPostSaved(context, post.redditUrl!);
         } else {
-          // For community posts, use the post's isSaved property
-          isSaved = post.isSaved;
+          // For community posts, check if it's in the saved posts list
+          isSaved = appState.savedPosts.any((savedPost) => savedPost.id == post.id);
         }
         
         return Card(
@@ -187,7 +187,7 @@ class EnhancedPostCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  post.author.contains('@') ? post.author.split('@')[0] : post.author, // Show username part of email or full username
+                  post.author,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -266,7 +266,8 @@ class EnhancedPostCard extends StatelessWidget {
             },
             icon: Icon(
               isSaved ? Icons.bookmark : Icons.bookmark_border,
-              color: isSaved ? Colors.orange : Colors.grey[600],
+              color: isSaved ? Colors.orange : Colors.grey[400],
+              size: 24,
             ),
           ),
           

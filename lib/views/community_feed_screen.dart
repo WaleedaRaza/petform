@@ -104,7 +104,7 @@ class FeedFilter extends StatelessWidget {
                         underline: const SizedBox.shrink(),
                         dropdownColor: Colors.grey[800],
                         style: const TextStyle(color: Colors.white, fontSize: 13),
-                        menuMaxHeight: 200,
+                        menuMaxHeight: 120,
                         items: postTypes.map((type) {
                           return DropdownMenuItem(value: type, child: Text(type));
                         }).toList(),
@@ -185,74 +185,14 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
         
         return Scaffold(
           backgroundColor: Colors.transparent,
-          body: VideoBackground(
-            videoPath: 'lib/assets/animation2.mp4',
-            child: Column(
-              children: [
-                // Add Post button at the top without padding
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: ElevatedButton.icon(
-                    onPressed: feedProvider.isLoading ? null : () async {
-                      if (kDebugMode) {
-                        print('CommunityFeedScreen: Add Post button pressed - starting navigation');
-                      }
-                      
-                      // Temporary test to see if button is clickable
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Button pressed!'),
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
-                      
-                      try {
-                        if (kDebugMode) {
-                          print('CommunityFeedScreen: Navigating to CreatePostScreen');
-                        }
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const CreatePostScreen()),
-                        );
-                        if (kDebugMode) {
-                          print('CommunityFeedScreen: Returned from CreatePostScreen with result: $result');
-                        }
-                        // If a post was created, refresh the feed
-                        if (result == true) {
-                          await feedProvider.fetchPosts(context, forceRefresh: false); // Use cache after creating post
-                          if (kDebugMode) {
-                            print('Post created, refreshed feed. Posts count: ${feedProvider.posts.length}');
-                          }
-                        }
-                      } catch (e) {
-                        if (kDebugMode) {
-                          print('CommunityFeedScreen: Error creating post: $e');
-                        }
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: feedProvider.isLoading 
-                          ? Colors.grey[600] 
-                          : Theme.of(context).colorScheme.secondary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: Text(
-                      feedProvider.isLoading ? 'Loading...' : 'Add Post',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-                // Feed content
-                Expanded(
+          body: Stack(
+            children: [
+              VideoBackground(
+                videoPath: 'lib/assets/animation2.mp4',
+                child: Column(
+                  children: [
+                    // Feed content
+                    Expanded(
                   child: RefreshIndicator(
                     onRefresh: () async {
                       try {
@@ -336,42 +276,82 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                 ),
               ],
             ),
-          ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: feedProvider.isLoading ? null : () async {
-              if (kDebugMode) {
-                print('CommunityFeedScreen: Add Post button pressed from FAB');
-              }
-              try {
-                final result = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CreatePostScreen()),
-                );
-                // If a post was created, refresh the feed
-                if (result == true) {
-                  await feedProvider.fetchPosts(context);
-                  if (kDebugMode) {
-                    print('Post created, refreshed feed. Posts count: ${feedProvider.posts.length}');
-                  }
-                }
-              } catch (e) {
-                if (kDebugMode) {
-                  print('CommunityFeedScreen: Error creating post: $e');
-                }
-              }
-            },
-            backgroundColor: feedProvider.isLoading 
-                ? Colors.grey[600] 
-                : Theme.of(context).colorScheme.secondary,
-            foregroundColor: Colors.white,
-            icon: const Icon(Icons.add),
-            label: Text(
-              feedProvider.isLoading ? 'Loading...' : 'Add Post',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
               ),
-            ),
+
+              // Floating Action Button positioned above bottom navigation
+              Positioned(
+                bottom: 120, // Position above the bottom navigation bar
+                right: 16,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Container(
+                    width: 120,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(28),
+                        onTap: () async {
+                          if (kDebugMode) {
+                            print('CommunityFeedScreen: Custom Add Post button pressed - starting navigation');
+                          }
+                          
+                          try {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const CreatePostScreen()),
+                            );
+                            if (result == true) {
+                              await feedProvider.fetchPosts(context, forceRefresh: false);
+                            }
+                          } catch (e) {
+                            if (kDebugMode) {
+                              print('CommunityFeedScreen: Error creating post: $e');
+                            }
+                          }
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.add, color: Colors.white, size: 24),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Add Post',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         );
         },

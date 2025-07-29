@@ -50,7 +50,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
         final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+        final username = userProvider.currentUsername ?? userEmail.split('@')[0];
 
         if (widget.postToEdit != null) {
           // Edit existing post - for now, we'll just create a new post
@@ -58,18 +60,18 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           await SupabaseService.createPost({
             'title': _titleController.text,
             'content': _contentController.text,
-            'petType': _selectedPetType,
-            'author': userEmail,
-            'postType': 'community',
+            'pet_type': _selectedPetType,
+            'author': username,
+            'post_type': 'community',
           });
         } else {
           // Create new post
           await SupabaseService.createPost({
             'title': _titleController.text,
             'content': _contentController.text,
-            'petType': _selectedPetType,
-            'author': userEmail,
-            'postType': 'community',
+            'pet_type': _selectedPetType,
+            'author': username,
+            'post_type': 'community',
           });
         }
         

@@ -121,13 +121,13 @@ class FeedProvider with ChangeNotifier {
                 print('FeedProvider: Fetching 30 general pet posts for "All" category');
               }
               
-              // Enhanced general pet subreddits for startup feed - more variety and viral content
+              // Professional general pet subreddits for startup feed - focus on education and diversity
               List<String> generalPetSubreddits = [
                 'pets', 'petcare', 'petadvice', 'pethealth', 'petfood',
-                'petbehavior', 'petnews', 'petcommunity', 'aww', 'eyebleach',
-                'funny', 'memes', 'videos', 'gifs', 'pics', 'cute',
-                'animals', 'animalvideos', 'petvideos', 'cuteanimals',
-                'doggos', 'kittens', 'puppies', 'cats', 'dogs'
+                'petbehavior', 'petnews', 'petcommunity', 'veterinary',
+                'dogtraining', 'catcare', 'hamstercare', 'birdcare',
+                'aquariums', 'reptiles', 'rabbitcare', 'guineapigcare',
+                'parrots', 'snakes', 'lizards', 'hedgehogs', 'ferrets'
               ];
               
               // Shuffle subreddits for variety
@@ -136,7 +136,7 @@ class FeedProvider with ChangeNotifier {
               // Fetch 30 posts from general pet subreddits
               int postsPerSubreddit = (30 / generalPetSubreddits.length).ceil();
               
-              for (String subreddit in generalPetSubreddits.take(6)) { // Use first 6 subreddits for more variety
+              for (String subreddit in generalPetSubreddits.take(8)) { // Use first 8 subreddits for better diversity
                 try {
                   final posts = await apiService.fetchRedditPosts(
                     subreddit: subreddit,

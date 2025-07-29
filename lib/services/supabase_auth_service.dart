@@ -162,11 +162,22 @@ class SupabaseAuthService {
   // Update display name
   Future<void> updateDisplayName(String displayName) async {
     try {
+      final user = client.auth.currentUser;
+      if (user == null) throw Exception('No user logged in');
+      
+      // Update auth user metadata
       await client.auth.updateUser(
         UserAttributes(
           data: {'display_name': displayName},
         ),
       );
+      
+      // Update profile in database
+      await client.from('profiles').update({
+        'display_name': displayName,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', user.id);
+      
       if (kDebugMode) {
         print('SupabaseAuthService: Display name updated to: $displayName');
       }
@@ -638,6 +649,27 @@ class SupabaseAuthService {
         print('SupabaseAuthService: Token hash verification error: $e');
       }
       return {'error': e.toString()};
+    }
+  }
+  
+  // Get user profile data
+  Future<Map<String, dynamic>?> getUserProfile() async {
+    try {
+      final user = client.auth.currentUser;
+      if (user == null) return null;
+      
+      final response = await client
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+      
+      return response;
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseAuthService: Error getting user profile: $e');
+      }
+      return null;
     }
   }
 } 

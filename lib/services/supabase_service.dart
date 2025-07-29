@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
 import '../models/post.dart';
+import '../models/shopping_item.dart';
 
 class SupabaseService {
   static SupabaseClient get client => Supabase.instance.client;
@@ -268,7 +269,7 @@ class SupabaseService {
     try {
       final response = await client
           .from('posts')
-          .select('*')
+          .select('*, comments(*)')
           .order('created_at', ascending: false);
       return response;
     } catch (e) {
@@ -352,7 +353,7 @@ class SupabaseService {
     }
   }
   
-  static Future<void> createComment(String postId, String content) async {
+  static Future<void> createComment(String postId, String content, String author) async {
     try {
       final user = client.auth.currentUser;
       if (user == null) throw Exception('No user logged in');
@@ -361,6 +362,7 @@ class SupabaseService {
         'post_id': postId,
         'user_id': user.id,
         'content': content,
+        'author': author,
       });
       
       if (kDebugMode) {
@@ -604,7 +606,71 @@ class SupabaseService {
 
   // ===== SHOPPING METHODS =====
   
-  static Future<List<Map<String, dynamic>>> getShoppingItems() async {
+  // Helper function to convert ShoppingItem model to database format (camelCase to snake_case)
+  static Map<String, dynamic> _shoppingItemToDb(ShoppingItem item, {bool includeId = false}) {
+    final data = {
+      'name': item.name,
+      'category': item.category,
+      'priority': item.priority,
+      'estimated_cost': item.estimatedCost,
+      'pet_id': item.petId,
+      'description': item.description,
+      'brand': item.brand,
+      'store': item.store,
+      'is_completed': item.isCompleted,
+      'created_at': item.createdAt.toIso8601String(),
+      'completed_at': item.completedAt?.toIso8601String(),
+      'tags': item.tags,
+      'image_url': item.imageUrl,
+      'quantity': item.quantity,
+      'notes': item.notes,
+      'chewy_url': item.chewyUrl,
+      'rating': item.rating,
+      'review_count': item.reviewCount,
+      'in_stock': item.inStock,
+      'auto_ship': item.autoShip,
+      'free_shipping': item.freeShipping,
+    };
+    
+    // Only include ID if explicitly requested (for updates)
+    if (includeId) {
+      data['id'] = item.id;
+    }
+    
+    return data;
+  }
+
+  // Helper function to convert database format to ShoppingItem model (snake_case to camelCase)
+  static ShoppingItem _dbToShoppingItem(Map<String, dynamic> dbData) {
+    return ShoppingItem(
+      id: dbData['id'] as String,
+      name: dbData['name'] as String,
+      category: dbData['category'] as String,
+      priority: dbData['priority'] as String,
+      estimatedCost: (dbData['estimated_cost'] as num).toDouble(),
+      petId: dbData['pet_id'] as String?,
+      description: dbData['description'] as String?,
+      brand: dbData['brand'] as String?,
+      store: dbData['store'] as String?,
+      isCompleted: dbData['is_completed'] as bool? ?? false,
+      createdAt: DateTime.parse(dbData['created_at'] as String),
+      completedAt: dbData['completed_at'] != null 
+          ? DateTime.parse(dbData['completed_at'] as String) 
+          : null,
+      tags: (dbData['tags'] as List<dynamic>?)?.cast<String>() ?? [],
+      imageUrl: dbData['image_url'] as String?,
+      quantity: dbData['quantity'] as int? ?? 1,
+      notes: dbData['notes'] as String?,
+      chewyUrl: dbData['chewy_url'] as String?,
+      rating: dbData['rating'] as double?,
+      reviewCount: dbData['review_count'] as int?,
+      inStock: dbData['in_stock'] as bool?,
+      autoShip: dbData['auto_ship'] as bool?,
+      freeShipping: dbData['free_shipping'] as bool?,
+    );
+  }
+
+  static Future<List<ShoppingItem>> getShoppingItems() async {
     try {
       final user = client.auth.currentUser;
       if (user == null) throw Exception('No user logged in');
@@ -614,7 +680,8 @@ class SupabaseService {
           .select()
           .eq('user_id', user.id)
           .order('created_at', ascending: false);
-      return response;
+      
+      return (response as List).map((item) => _dbToShoppingItem(item)).toList();
     } catch (e) {
       if (kDebugMode) {
         print('SupabaseService: Error getting shopping items: $e');
@@ -623,13 +690,14 @@ class SupabaseService {
     }
   }
   
-  static Future<void> addShoppingItem(Map<String, dynamic> itemData) async {
+  static Future<void> addShoppingItem(ShoppingItem item) async {
     try {
       final user = client.auth.currentUser;
       if (user == null) throw Exception('No user logged in');
       
-      itemData['user_id'] = user.id;
-      await client.from('shopping_items').insert(itemData);
+      final dbData = _shoppingItemToDb(item, includeId: false);
+      dbData['user_id'] = user.id;
+      await client.from('shopping_items').insert(dbData);
       
       if (kDebugMode) {
         print('SupabaseService: Shopping item added successfully');
@@ -637,6 +705,29 @@ class SupabaseService {
     } catch (e) {
       if (kDebugMode) {
         print('SupabaseService: Error adding shopping item: $e');
+      }
+      rethrow;
+    }
+  }
+  
+  static Future<void> updateShoppingItem(ShoppingItem item) async {
+    try {
+      final user = client.auth.currentUser;
+      if (user == null) throw Exception('No user logged in');
+      
+      final dbData = _shoppingItemToDb(item, includeId: true);
+      await client
+          .from('shopping_items')
+          .update(dbData)
+          .eq('id', item.id)
+          .eq('user_id', user.id);
+      
+      if (kDebugMode) {
+        print('SupabaseService: Shopping item updated successfully');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error updating shopping item: $e');
       }
       rethrow;
     }
