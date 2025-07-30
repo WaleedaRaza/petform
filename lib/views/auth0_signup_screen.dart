@@ -77,16 +77,10 @@ class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
 
       if (!mounted) return;
 
-      if (result.isSuccess) {
-        if (kDebugMode) {
-          print('Auth0 Google signin successful');
-        }
-        Navigator.of(context).pushReplacementNamed('/home');
-      } else {
-        setState(() {
-          _errorMessage = result.error?.message ?? 'Google signin failed';
-        });
+      if (kDebugMode) {
+        print('Auth0 Google signin successful');
       }
+      Navigator.of(context).pushReplacementNamed('/home');
     } catch (e) {
       if (!mounted) return;
       setState(() {
