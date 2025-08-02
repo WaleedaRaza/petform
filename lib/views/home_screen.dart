@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/app_state_provider.dart';
-import '../services/supabase_auth_service.dart';
+import '../services/auth0_service.dart';
 import '../widgets/status_bar.dart';
 import '../widgets/video_background.dart';
 import 'community_feed_screen.dart';
@@ -124,10 +125,41 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  Future<void> _signOut() async {
+    try {
+      // Sign out from Auth0
+      if (kDebugMode) {
+        print('HomeScreen: Signing out from Auth0...');
+      }
+      await Auth0Service.instance.signOut();
+
+      // Clear user provider
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      userProvider.clearCurrentUser();
+
+      if (!mounted) return;
+      
+      // Navigate to welcome screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sign out failed: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     print('HomeScreen: Building home screen'); // Simple debug print
-    final isLoggedIn = SupabaseAuthService().currentUser != null;
+    
+    // Check only Auth0 authentication
+    final auth0User = Auth0Service.instance.currentUser;
+    final isLoggedIn = auth0User != null;
+    
     if (!isLoggedIn) {
       print('HomeScreen: User not logged in, showing WelcomeScreen');
       return const WelcomeScreen();
@@ -173,6 +205,32 @@ class _HomeScreenState extends State<HomeScreen> {
           _onItemTapped(index);
         },
         type: BottomNavigationBarType.fixed,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Sign Out'),
+              content: const Text('Are you sure you want to sign out?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _signOut();
+                  },
+                  child: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            ),
+          );
+        },
+        backgroundColor: Colors.red,
+        child: const Icon(Icons.logout, color: Colors.white),
       ),
     );
   }

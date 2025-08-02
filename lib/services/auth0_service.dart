@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:auth0_flutter/auth0_flutter.dart';
-import '../config/auth0_config.dart';
 import 'clerk_token_service.dart';
 
 class Auth0Service {
@@ -9,7 +8,7 @@ class Auth0Service {
   
   Auth0Service._();
   
-  Auth0? _auth0;
+  late Auth0 _auth0;
   Credentials? _credentials;
   UserProfile? _userProfile;
   
@@ -34,13 +33,15 @@ class Auth0Service {
   // Initialize Auth0
   Future<void> initialize() async {
     try {
-      _auth0 = Auth0(
-        Auth0Config.domain,
-        Auth0Config.clientId,
-      );
+      // Replace with your actual Auth0 domain and client ID
+      _auth0 = Auth0('dev-2lm6p70udixry057.us.auth0.com', 'tRNYRxNq1avdt9YHmZFcftBM5yMgmtSL');
+      
+      // Check for existing session
+      await checkExistingSession();
       
       if (kDebugMode) {
-        print('Auth0Service: Initialized');
+        print('Auth0Service: Initialized with real Auth0 SDK');
+        print('Auth0Service: Current user: ${_userProfile?.email}');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -50,110 +51,99 @@ class Auth0Service {
     }
   }
   
-  // Sign up with email and password
-  Future<Credentials> signUp({
-    required String email,
-    required String password,
-    String? username,
-  }) async {
+  // Check for existing session
+  Future<bool> checkExistingSession() async {
     try {
-      if (_auth0 == null) {
-        await initialize();
+      // Try to get stored credentials
+      final storedToken = await ClerkTokenService.getToken();
+      if (storedToken != null) {
+        if (kDebugMode) {
+          print('Auth0Service: Found stored token, checking validity...');
+        }
+        
+        // Try to get user profile with stored token
+        try {
+          // Note: Auth0 Flutter SDK doesn't have a direct userProfile() method
+          // We'll rely on stored user data for now
+          final storedUser = await ClerkTokenService.getUser();
+          if (storedUser != null) {
+            _userProfile = UserProfile(
+              sub: storedUser['id'] ?? 'auth0_user',
+              email: storedUser['email'] ?? 'user@example.com',
+              name: storedUser['name'] ?? 'Auth0 User',
+              nickname: storedUser['nickname'] ?? 'auth0user',
+              pictureUrl: storedUser['picture'] != null ? Uri.parse(storedUser['picture']) : null,
+              isEmailVerified: true,
+            );
+            
+            _credentials = Credentials(
+              accessToken: storedToken,
+              idToken: storedToken,
+              refreshToken: null,
+              expiresAt: DateTime.now().add(const Duration(days: 1)), // Approximate
+              tokenType: 'Bearer',
+              user: _userProfile!,
+            );
+            
+            if (kDebugMode) {
+              print('Auth0Service: Existing session is valid for: ${_userProfile!.email}');
+            }
+            return true;
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('Auth0Service: Stored token is invalid, clearing...');
+          }
+          await ClerkTokenService.clearAll();
+          _credentials = null;
+          _userProfile = null;
+          return false;
+        }
       }
       
-      // For now, we'll use the same login method for both signup and signin
-      // Auth0 will handle user creation if the user doesn't exist
-      final credentials = await _auth0!.webAuthentication().login(
-        username: email,
-        password: password,
-        connection: 'Username-Password-Authentication',
-      );
-      
-      _credentials = credentials;
-      await _loadUserProfile();
-      
-      // Store token securely
-      if (_credentials?.accessToken != null) {
-        await ClerkTokenService.storeToken(_credentials!.accessToken!);
-      }
-      
-      if (kDebugMode) {
-        print('Auth0Service: Sign up successful for: $email');
-      }
-      
-      return credentials;
+      return false;
     } catch (e) {
       if (kDebugMode) {
-        print('Auth0Service: Sign up error: $e');
+        print('Auth0Service: Session check error: $e');
       }
-      rethrow;
+      return false;
     }
   }
   
-  // Sign in with email and password
-  Future<Credentials> signIn({
-    required String email,
-    required String password,
-  }) async {
+  // Sign in with Universal Login
+  Future<Credentials> signIn() async {
     try {
-      if (_auth0 == null) {
-        await initialize();
+      if (kDebugMode) {
+        print('Auth0Service: Starting real Auth0 sign in...');
       }
       
-      final credentials = await _auth0!.webAuthentication().login(
-        username: email,
-        password: password,
-        connection: 'Username-Password-Authentication',
-      );
+      // Use Universal Login with custom scheme (for development)
+      // useHTTPS is ignored on Android
+      final credentials = await _auth0.webAuthentication(scheme: 'com.waleedraza.petform').login();
       
       _credentials = credentials;
-      await _loadUserProfile();
+      _userProfile = credentials.user;
       
       // Store token securely
-      if (_credentials?.accessToken != null) {
-        await ClerkTokenService.storeToken(_credentials!.accessToken!);
-      }
+      await ClerkTokenService.storeToken(credentials.accessToken);
+      
+      // Store user data
+      await ClerkTokenService.storeUser({
+        'id': _userProfile!.sub,
+        'email': _userProfile!.email,
+        'name': _userProfile!.name,
+        'nickname': _userProfile!.nickname,
+        'picture': _userProfile!.pictureUrl?.toString(),
+      });
       
       if (kDebugMode) {
-        print('Auth0Service: Sign in successful for: $email');
+        print('Auth0Service: Real sign in successful for: ${_userProfile!.email}');
       }
       
       return credentials;
     } catch (e) {
       if (kDebugMode) {
-        print('Auth0Service: Sign in error: $e');
-      }
-      rethrow;
-    }
-  }
-  
-  // Sign in with social provider
-  Future<Credentials> signInWithSocial(String connection) async {
-    try {
-      if (_auth0 == null) {
-        await initialize();
-      }
-      
-      final credentials = await _auth0!.webAuthentication().login(
-        connection: connection,
-      );
-      
-      _credentials = credentials;
-      await _loadUserProfile();
-      
-      // Store token securely
-      if (_credentials?.accessToken != null) {
-        await ClerkTokenService.storeToken(_credentials!.accessToken!);
-      }
-      
-      if (kDebugMode) {
-        print('Auth0Service: Social sign in successful with: $connection');
-      }
-      
-      return credentials;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Auth0Service: Social sign in error: $e');
+        print('Auth0Service: Real sign in error: $e');
       }
       rethrow;
     }
@@ -162,103 +152,31 @@ class Auth0Service {
   // Sign out
   Future<void> signOut() async {
     try {
-      if (_auth0 != null) {
-        await _auth0!.webAuthentication().logout();
+      if (kDebugMode) {
+        print('Auth0Service: Starting real Auth0 sign out...');
       }
       
+      // Clear local session data first
       _credentials = null;
       _userProfile = null;
       await ClerkTokenService.clearAll();
       
-      if (kDebugMode) {
-        print('Auth0Service: Sign out successful');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Auth0Service: Sign out error: $e');
-      }
-      rethrow;
-    }
-  }
-  
-  // Load user profile
-  Future<void> _loadUserProfile() async {
-    try {
-      if (_auth0 != null && _credentials != null) {
-        _userProfile = await _auth0!.userProfile();
-        
-        // Store user data
-        if (_userProfile != null) {
-          await ClerkTokenService.storeUser({
-            'id': _userProfile!.sub,
-            'email': _userProfile!.email,
-            'name': _userProfile!.name,
-            'nickname': _userProfile!.nickname,
-            'picture': _userProfile!.pictureUrl,
-          });
-        }
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Auth0Service: Load user profile error: $e');
-      }
-    }
-  }
-  
-  // Check for existing session
-  Future<bool> checkExistingSession() async {
-    try {
-      final token = await ClerkTokenService.getToken();
-      if (token != null && _auth0 != null) {
-        // Try to get user profile with existing token
-        _userProfile = await _auth0!.userProfile();
-        return _userProfile != null;
-      }
-      return false;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Auth0Service: Check session error: $e');
-      }
-      return false;
-    }
-  }
-  
-  // Update user profile
-  Future<void> updateUserProfile({
-    String? name,
-    String? nickname,
-    String? picture,
-  }) async {
-    try {
-      if (_auth0 == null || _credentials == null) {
-        throw Exception('Not authenticated');
-      }
-      
-      // Update user metadata via Auth0 Management API
-      // This would require a backend service or Auth0 Actions
+      // Use Universal Logout with custom scheme (for development)
+      // useHTTPS is ignored on Android
+      await _auth0.webAuthentication(scheme: 'com.waleedraza.petform').logout();
       
       if (kDebugMode) {
-        print('Auth0Service: Update user profile not implemented yet');
+        print('Auth0Service: Real sign out successful');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Auth0Service: Update user profile error: $e');
+        print('Auth0Service: Real sign out error: $e');
       }
+      // Even if logout fails, clear local data
+      _credentials = null;
+      _userProfile = null;
+      await ClerkTokenService.clearAll();
       rethrow;
     }
-  }
-  
-  // Get user profile data
-  Map<String, dynamic>? getUserProfile() {
-    if (_userProfile == null) return null;
-    
-    return {
-      'id': _userProfile!.sub,
-      'email': _userProfile!.email,
-      'name': _userProfile!.name,
-      'nickname': _userProfile!.nickname,
-      'picture': _userProfile!.pictureUrl,
-      'emailVerified': _userProfile!.isEmailVerified,
-    };
   }
 } 

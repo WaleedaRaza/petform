@@ -18,7 +18,7 @@ import 'edit_pet_screen.dart';
 import '../widgets/rounded_button.dart';
 import 'post_detail_screen.dart';
 import 'saved_posts_screen.dart';
-import '../services/supabase_auth_service.dart';
+import '../services/auth0_service.dart';
 import 'clerk_test_screen.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
@@ -29,7 +29,8 @@ class ProfileSettingsScreen extends StatefulWidget {
 }
 
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
-  final SupabaseAuthService _authService = SupabaseAuthService();
+  final Auth0Service _auth0Service = Auth0Service.instance;
+  bool _isLoading = false;
 
   Future<List<Post>> _loadUserPosts(String email) async {
     final prefs = await SharedPreferences.getInstance();
@@ -480,8 +481,23 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       text: 'Sign Out',
                       onPressed: () async {
                         try {
-                              await _authService.signOut();
+                          setState(() {
+                            _isLoading = true;
+                          });
+
+                          // Sign out from Auth0
+                          if (kDebugMode) {
+                            print('ProfileSettingsScreen: Signing out from Auth0...');
+                          }
+                          await Auth0Service.instance.signOut();
+
+                          // Clear user provider
+                          final userProvider = Provider.of<UserProvider>(context, listen: false);
+                          userProvider.clearCurrentUser();
+
                           if (!mounted) return;
+                          
+                          // Navigate to welcome screen
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(builder: (context) => const WelcomeScreen()),
@@ -491,10 +507,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Sign out failed: $e')),
                           );
-                            }
-                          },
-                        ),
-                      ),
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              _isLoading = false;
+                            });
+                          }
+                        }
+                      },
+                    ),
+                  ),
                           const SizedBox(height: 12),
                           SizedBox(
                             width: double.infinity,

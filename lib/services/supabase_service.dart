@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
 import '../models/post.dart';
 import '../models/shopping_item.dart';
+import 'auth0_service.dart';
 
 class SupabaseService {
   static SupabaseClient get client => Supabase.instance.client;
@@ -79,6 +80,64 @@ class SupabaseService {
   }
   
   static User? get currentUser => client.auth.currentUser;
+  
+  // Get current user from either Supabase or Auth0
+  static dynamic getCurrentUser() {
+    final supabaseUser = client.auth.currentUser;
+    final auth0User = Auth0Service.instance.currentUser;
+    
+    if (supabaseUser != null) {
+      return supabaseUser;
+    } else if (auth0User != null) {
+      return auth0User;
+    }
+    
+    return null;
+  }
+  
+  // Get user ID from either Supabase or Auth0 (PRODUCTION-READY)
+  static Future<String?> getCurrentUserId() async {
+    final supabaseUser = client.auth.currentUser;
+    final auth0User = Auth0Service.instance.currentUser;
+    
+    if (supabaseUser != null) {
+      return supabaseUser.id;
+    } else if (auth0User != null) {
+      try {
+        // Get mapped Supabase user ID from Auth0 user ID
+        final response = await client.rpc('get_supabase_user_id_from_auth0', params: {
+          'p_auth0_user_id': auth0User.sub,
+        });
+        
+        if (response != null) {
+          return response.toString();
+        }
+        
+        // If no mapping exists, create one
+        final newUserId = await client.rpc('get_or_create_supabase_user_for_auth0', params: {
+          'p_auth0_user_id': auth0User.sub,
+          'p_auth0_email': auth0User.email,
+          'p_auth0_name': auth0User.name,
+          'p_auth0_nickname': auth0User.nickname,
+          'p_auth0_picture': auth0User.pictureUrl?.toString(),
+        });
+        
+        return newUserId.toString();
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error getting mapped user ID: $e');
+        }
+        return null;
+      }
+    }
+    
+    return null;
+  }
+  
+  // Legacy method for backward compatibility
+  static Future<String?> getAuth0UserUUID() async {
+    return await getCurrentUserId();
+  }
   
   static Stream<AuthState> get authStateChanges => client.auth.onAuthStateChange;
   
@@ -185,10 +244,22 @@ class SupabaseService {
   
   static Future<List<Map<String, dynamic>>> getPets() async {
     try {
+      final supabaseUser = client.auth.currentUser;
+      String? userId;
+      
+      if (supabaseUser != null) {
+        userId = supabaseUser.id;
+      } else {
+        // For Auth0 users, get the UUID mapping
+        userId = await getAuth0UserUUID();
+      }
+      
+      if (userId == null) throw Exception('No user logged in');
+      
       final response = await client
           .from('pets')
           .select()
-          .eq('user_id', client.auth.currentUser!.id)
+          .eq('user_id', userId)
           .order('created_at', ascending: false);
       return response;
     } catch (e) {
@@ -201,10 +272,19 @@ class SupabaseService {
   
   static Future<Map<String, dynamic>?> createPet(Map<String, dynamic> petData) async {
     try {
-      final user = client.auth.currentUser;
-      if (user == null) throw Exception('No user logged in');
+      final supabaseUser = client.auth.currentUser;
+      String? userId;
       
-      petData['user_id'] = user.id;
+      if (supabaseUser != null) {
+        userId = supabaseUser.id;
+      } else {
+        // For Auth0 users, get the UUID mapping
+        userId = await getAuth0UserUUID();
+      }
+      
+      if (userId == null) throw Exception('No user logged in');
+      
+      petData['user_id'] = userId;
       
       if (kDebugMode) {
         print('SupabaseService: Creating pet with data: $petData');
@@ -282,10 +362,19 @@ class SupabaseService {
   
   static Future<void> createPost(Map<String, dynamic> postData) async {
     try {
-      final user = client.auth.currentUser;
-      if (user == null) throw Exception('No user logged in');
+      final supabaseUser = client.auth.currentUser;
+      String? userId;
       
-      postData['user_id'] = user.id;
+      if (supabaseUser != null) {
+        userId = supabaseUser.id;
+      } else {
+        // For Auth0 users, get the UUID mapping
+        userId = await getAuth0UserUUID();
+      }
+      
+      if (userId == null) throw Exception('No user logged in');
+      
+      postData['user_id'] = userId;
       await client.from('posts').insert(postData);
       
       if (kDebugMode) {
@@ -672,13 +761,22 @@ class SupabaseService {
 
   static Future<List<ShoppingItem>> getShoppingItems() async {
     try {
-      final user = client.auth.currentUser;
-      if (user == null) throw Exception('No user logged in');
+      final supabaseUser = client.auth.currentUser;
+      String? userId;
+      
+      if (supabaseUser != null) {
+        userId = supabaseUser.id;
+      } else {
+        // For Auth0 users, get the UUID mapping
+        userId = await getAuth0UserUUID();
+      }
+      
+      if (userId == null) throw Exception('No user logged in');
       
       final response = await client
           .from('shopping_items')
           .select()
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .order('created_at', ascending: false);
       
       return (response as List).map((item) => _dbToShoppingItem(item)).toList();
@@ -692,11 +790,20 @@ class SupabaseService {
   
   static Future<void> addShoppingItem(ShoppingItem item) async {
     try {
-      final user = client.auth.currentUser;
-      if (user == null) throw Exception('No user logged in');
+      final supabaseUser = client.auth.currentUser;
+      String? userId;
+      
+      if (supabaseUser != null) {
+        userId = supabaseUser.id;
+      } else {
+        // For Auth0 users, get the UUID mapping
+        userId = await getAuth0UserUUID();
+      }
+      
+      if (userId == null) throw Exception('No user logged in');
       
       final dbData = _shoppingItemToDb(item, includeId: false);
-      dbData['user_id'] = user.id;
+      dbData['user_id'] = userId;
       await client.from('shopping_items').insert(dbData);
       
       if (kDebugMode) {
@@ -712,15 +819,24 @@ class SupabaseService {
   
   static Future<void> updateShoppingItem(ShoppingItem item) async {
     try {
-      final user = client.auth.currentUser;
-      if (user == null) throw Exception('No user logged in');
+      final supabaseUser = client.auth.currentUser;
+      String? userId;
+      
+      if (supabaseUser != null) {
+        userId = supabaseUser.id;
+      } else {
+        // For Auth0 users, get the UUID mapping
+        userId = await getAuth0UserUUID();
+      }
+      
+      if (userId == null) throw Exception('No user logged in');
       
       final dbData = _shoppingItemToDb(item, includeId: true);
       await client
           .from('shopping_items')
           .update(dbData)
           .eq('id', item.id)
-          .eq('user_id', user.id);
+          .eq('user_id', userId);
       
       if (kDebugMode) {
         print('SupabaseService: Shopping item updated successfully');
@@ -735,14 +851,23 @@ class SupabaseService {
   
   static Future<void> removeShoppingItem(String itemId) async {
     try {
-      final user = client.auth.currentUser;
-      if (user == null) throw Exception('No user logged in');
+      final supabaseUser = client.auth.currentUser;
+      String? userId;
+      
+      if (supabaseUser != null) {
+        userId = supabaseUser.id;
+      } else {
+        // For Auth0 users, get the UUID mapping
+        userId = await getAuth0UserUUID();
+      }
+      
+      if (userId == null) throw Exception('No user logged in');
       
       await client
           .from('shopping_items')
           .delete()
           .eq('id', itemId)
-          .eq('user_id', user.id);
+          .eq('user_id', userId);
       
       if (kDebugMode) {
         print('SupabaseService: Shopping item removed successfully');
@@ -757,13 +882,22 @@ class SupabaseService {
   
   static Future<void> clearShoppingList() async {
     try {
-      final user = client.auth.currentUser;
-      if (user == null) throw Exception('No user logged in');
+      final supabaseUser = client.auth.currentUser;
+      String? userId;
+      
+      if (supabaseUser != null) {
+        userId = supabaseUser.id;
+      } else {
+        // For Auth0 users, get the UUID mapping
+        userId = await getAuth0UserUUID();
+      }
+      
+      if (userId == null) throw Exception('No user logged in');
       
       await client
           .from('shopping_items')
           .delete()
-          .eq('user_id', user.id);
+          .eq('user_id', userId);
       
       if (kDebugMode) {
         print('SupabaseService: Shopping list cleared successfully');

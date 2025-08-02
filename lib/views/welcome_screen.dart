@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'signup_screen.dart';
-import 'login_screen.dart';
+import 'auth0_signup_screen.dart';
 import '../widgets/rounded_button.dart';
 import '../widgets/video_background.dart';
-import '../services/supabase_auth_service.dart';
+import '../services/auth0_service.dart';
 import 'package:app_links/app_links.dart';
 import 'dart:async';
 
@@ -17,15 +15,18 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
-  final _authService = SupabaseAuthService();
   late AppLinks _appLinks;
   StreamSubscription? _linkSubscription;
+  bool _hasCheckedAuth = false;
 
   @override
   void initState() {
     super.initState();
-    _checkAuthState();
     _initDeepLinks();
+    // Check auth state after the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAuthState();
+    });
   }
 
   @override
@@ -43,30 +44,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         print('WelcomeScreen: Deep link received: $uri');
         print('WelcomeScreen: URI query parameters: ${uri?.queryParameters}');
       }
-      
-      if (uri != null) {
-        // Check for token_hash parameter
-        final tokenHash = uri.queryParameters['token_hash'];
-        if (tokenHash != null) {
-          if (kDebugMode) {
-            print('WelcomeScreen: Found token_hash: $tokenHash');
-          }
-          _handleEmailConfirmation(uri.toString());
-        } else {
-          // Try to extract token from the URL path or other parameters
-          if (kDebugMode) {
-            print('WelcomeScreen: No token_hash found, checking other parameters...');
-          }
-          
-          // Check if this is a Supabase confirmation link
-          if (uri.toString().contains('token_hash=') || uri.toString().contains('type=')) {
-            if (kDebugMode) {
-              print('WelcomeScreen: This looks like a Supabase confirmation link');
-            }
-            _handleEmailConfirmation(uri.toString());
-          }
-        }
-      }
     }, onError: (err) {
       if (kDebugMode) {
         print('WelcomeScreen: Deep link error: $err');
@@ -75,79 +52,30 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Future<void> _checkAuthState() async {
+    if (_hasCheckedAuth) return; // Prevent multiple checks
+    _hasCheckedAuth = true;
+    
     try {
-      // Check if user is authenticated
-      final user = Supabase.instance.client.auth.currentUser;
+      // Check if user is authenticated with Auth0
+      final auth0User = Auth0Service.instance.currentUser;
       
       if (kDebugMode) {
-        print('WelcomeScreen: Current user: ${user?.email}');
-        print('WelcomeScreen: Email confirmed: ${user?.emailConfirmedAt}');
+        print('WelcomeScreen: Auth0 user: ${auth0User?.email}');
       }
       
-      // If user is authenticated and email is confirmed, navigate to main app
-      if (user != null && user.emailConfirmedAt != null) {
+      // If user is authenticated with Auth0, navigate to main app
+      if (auth0User != null) {
         if (kDebugMode) {
-          print('WelcomeScreen: User is authenticated and email confirmed, navigating to main app');
+          print('WelcomeScreen: Auth0 user is authenticated, navigating to main app');
         }
-        // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainScreen()));
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
       }
     } catch (e) {
       if (kDebugMode) {
         print('WelcomeScreen: Auth state check error: $e');
       }
-    }
-  }
-
-  // Handle email confirmation from deep link
-  Future<void> _handleEmailConfirmation(String url) async {
-    try {
-      if (kDebugMode) {
-        print('WelcomeScreen: Handling email confirmation from URL: $url');
-      }
-      
-      final result = await _authService.handleEmailConfirmation(url);
-      
-      if (result['verification_success'] == true) {
-        if (kDebugMode) {
-          print('WelcomeScreen: Email confirmation successful');
-        }
-        
-        if (!mounted) return;
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Email confirmed successfully! Welcome ${result['email']}'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainScreen()));
-      } else {
-        if (kDebugMode) {
-          print('WelcomeScreen: Email confirmation failed: ${result['error']}');
-        }
-        
-        if (!mounted) return;
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Email confirmation failed: ${result['error']}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('WelcomeScreen: Email confirmation error: $e');
-      }
-      
-      if (!mounted) return;
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Email confirmation error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 
@@ -165,32 +93,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               children: [
                 const Spacer(),
                 const Spacer(),
+                // Only Auth0 authentication
                 RoundedButton(
-                  text: 'Sign Up',
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SignupScreen())),
-                ),
-                const SizedBox(height: 16),
-                RoundedButton(
-                  text: 'Log In',
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen())),
-                ),
-                const SizedBox(height: 16),
-                RoundedButton(
-                  text: 'Auth0 Sign Up',
-                  onPressed: () => Navigator.pushNamed(context, '/auth0-signup'),
-                  backgroundColor: const Color(0xFF10B981),
-                ),
-                const SizedBox(height: 16),
-                RoundedButton(
-                  text: 'Auth0 Sign In',
-                  onPressed: () => Navigator.pushNamed(context, '/auth0-signin'),
-                  backgroundColor: const Color(0xFF8B5CF6),
-                ),
-                const SizedBox(height: 16),
-                RoundedButton(
-                  text: 'Auth0 Test',
-                  onPressed: () => Navigator.pushNamed(context, '/auth0-test'),
-                  backgroundColor: const Color(0xFFF59E0B),
+                  text: 'Continue with Auth0',
+                  onPressed: () => Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (context) => const Auth0SignupScreen())
+                  ),
+                  backgroundColor: const Color(0xFF3B82F6),
                 ),
                 const SizedBox(height: 40),
               ],

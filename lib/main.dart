@@ -7,9 +7,11 @@ import 'services/api_service.dart';
 import 'services/supabase_service.dart';
 import 'services/auth0_service.dart';
 import 'views/welcome_screen.dart';
-import 'views/auth0_test_screen.dart';
+import 'views/auth0_login_screen.dart';
 import 'views/auth0_signup_screen.dart';
-import 'views/auth0_signin_screen.dart';
+import 'views/auth0_profile_view.dart';
+import 'views/main_screen.dart';
+import 'views/home_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
 import 'package:flutter/foundation.dart';
@@ -46,6 +48,19 @@ void main() async {
         print('Main: Error initializing Supabase: $e');
   }
       // Continue without Supabase for now
+    }
+    
+    // Initialize Auth0
+    try {
+      await Auth0Service.instance.initialize();
+      if (kDebugMode) {
+        print('Main: Auth0 initialized successfully');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Main: Error initializing Auth0: $e');
+      }
+      // Continue without Auth0 for now
     }
     
     if (kDebugMode) {
@@ -152,19 +167,19 @@ class PetformApp extends StatelessWidget {
           print('Main: Deep link received: ${settings.name}');
         }
         
-        // Handle Auth0 routes
+        // Handle routes
         switch (settings.name) {
-          case '/auth0-test':
+          case '/auth0-login':
             return MaterialPageRoute(
-              builder: (context) => const Auth0TestScreen(),
+              builder: (context) => const Auth0LoginScreen(),
             );
           case '/auth0-signup':
             return MaterialPageRoute(
               builder: (context) => const Auth0SignupScreen(),
             );
-          case '/auth0-signin':
+          case '/home':
             return MaterialPageRoute(
-              builder: (context) => const Auth0SigninScreen(),
+              builder: (context) => const BackdropWrapper(child: HomeScreen()),
             );
         }
         

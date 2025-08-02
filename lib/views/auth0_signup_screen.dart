@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import '../services/auth0_mock_service.dart';
-import 'auth0_signin_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:auth0_flutter/auth0_flutter.dart';
+import '../providers/user_provider.dart';
+import '../services/auth0_service.dart';
+import '../widgets/rounded_button.dart';
+import '../widgets/video_background.dart';
+import 'auth0_profile_view.dart';
 
 class Auth0SignupScreen extends StatefulWidget {
   const Auth0SignupScreen({Key? key}) : super(key: key);
@@ -11,80 +16,82 @@ class Auth0SignupScreen extends StatefulWidget {
 }
 
 class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _usernameController = TextEditingController();
-  
   bool _isLoading = false;
-  bool _obscurePassword = true;
   String? _errorMessage;
+  Credentials? _credentials;
+  bool _hasNavigated = false;
 
   @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _usernameController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _initializeAuth0();
   }
 
-  Future<void> _signUp() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
+  Future<void> _initializeAuth0() async {
     try {
-      final result = await Auth0MockService.instance.signUp(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        username: _usernameController.text.trim().isEmpty 
-            ? null 
-            : _usernameController.text.trim(),
-      );
-
-      if (!mounted) return;
-
+      await Auth0Service.instance.initialize();
       if (kDebugMode) {
-        print('Auth0 signup successful');
+        print('Auth0SignupScreen: Auth0 initialized successfully');
       }
-      // Navigate to main app
-      Navigator.of(context).pushReplacementNamed('/home');
     } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = 'An unexpected error occurred: $e';
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+      if (kDebugMode) {
+        print('Auth0SignupScreen: Initialization error: $e');
       }
     }
   }
 
-  Future<void> _signInWithGoogle() async {
+  Future<void> _signUpWithAuth0() async {
+    if (_isLoading) return; // Prevent multiple calls
+    
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final result = await Auth0MockService.instance.signInWithSocial('google-oauth2');
+      final result = await Auth0Service.instance.signIn(); // Auth0 Universal Login handles both signup and login
 
-      if (!mounted) return;
+      if (!mounted || _hasNavigated) return;
+
+      setState(() {
+        _credentials = result;
+      });
+
+      // Update UserProvider with the authenticated user
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      userProvider.setCurrentUser(
+        result.user.sub,
+        result.user.nickname ?? result.user.name ?? result.user.email?.split('@')[0] ?? 'user',
+        result.user.email ?? '',
+      );
 
       if (kDebugMode) {
-        print('Auth0 Google signin successful');
+        print('Auth0 signup/login successful');
+        print('Auth0 user: ${result.user.email}');
+        print('Auth0 user ID: ${result.user.sub}');
       }
-      Navigator.of(context).pushReplacementNamed('/home');
+
+      // Show profile view first, then navigate to main app
+      if (!mounted || _hasNavigated) return;
+      
+      _hasNavigated = true;
+      
+      // Navigate to profile view
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Auth0ProfileView(user: result.user),
+        ),
+      );
+      
+      // Navigate to main app after profile view is dismissed
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'An unexpected error occurred: $e';
+        _errorMessage = 'Signup/Login failed: $e';
       });
     } finally {
       if (mounted) {
@@ -97,244 +104,71 @@ class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1E3A8A),
-              Color(0xFF3B82F6),
-              Color(0xFF60A5FA),
-            ],
-          ),
+    return VideoBackground(
+      videoPath: 'lib/assets/animation.mp4',
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Sign Up with Auth0'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
         ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Card(
-                elevation: 8,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Spacer(),
+                const Text(
+                  'Welcome to Petform!',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Logo/Title
-                        const Icon(
-                          Icons.pets,
-                          size: 64,
-                          color: Color(0xFF3B82F6),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Join PetForm',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1F2937),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Create your account to get started',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFF6B7280),
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Error message
-                        if (_errorMessage != null)
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(12),
-                            margin: const EdgeInsets.only(bottom: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.red.shade200),
-                            ),
-                            child: Text(
-                              _errorMessage!,
-                              style: TextStyle(
-                                color: Colors.red.shade700,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-
-                        // Email field
-                        TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            prefixIcon: Icon(Icons.email),
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your email';
-                            }
-                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                .hasMatch(value)) {
-                              return 'Please enter a valid email';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Username field (optional)
-                        TextFormField(
-                          controller: _usernameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Username (optional)',
-                            prefixIcon: Icon(Icons.person),
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Password field
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: const Icon(Icons.lock),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword 
-                                    ? Icons.visibility 
-                                    : Icons.visibility_off,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
-                            border: const OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a password';
-                            }
-                            if (value.length < 8) {
-                              return 'Password must be at least 8 characters';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Sign up button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _signUp,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF3B82F6),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
-                                      ),
-                                    ),
-                                  )
-                                : const Text(
-                                    'Sign Up',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Divider
-                        const Row(
-                          children: [
-                            Expanded(child: Divider()),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16),
-                              child: Text('OR'),
-                            ),
-                            Expanded(child: Divider()),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Google sign in button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: OutlinedButton.icon(
-                            onPressed: _isLoading ? null : _signInWithGoogle,
-                            icon: const Icon(Icons.login),
-                            label: const Text('Sign in with Google'),
-                            style: OutlinedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Sign in link
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              'Already have an account? ',
-                              style: TextStyle(color: Color(0xFF6B7280)),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const Auth0SigninScreen(),
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                'Sign In',
-                                style: TextStyle(
-                                  color: Color(0xFF3B82F6),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                const SizedBox(height: 16),
+                const Text(
+                  'Sign up or log in with your preferred method',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white70,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 40),
+                if (_errorMessage != null)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red),
+                    ),
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
                     ),
                   ),
+                RoundedButton(
+                  text: _isLoading ? 'Signing up...' : 'Continue with Auth0',
+                  onPressed: _isLoading ? null : _signUpWithAuth0,
+                  backgroundColor: const Color(0xFF3B82F6),
                 ),
-              ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    'Back to Welcome',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ),
+                const Spacer(),
+              ],
             ),
           ),
         ),

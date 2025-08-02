@@ -4,12 +4,14 @@ class RoundedButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
   final bool isLoading;
+  final Color? backgroundColor;
 
   const RoundedButton({
     super.key, 
     required this.text, 
     this.onPressed,
     this.isLoading = false,
+    this.backgroundColor,
   });
 
   @override
@@ -19,10 +21,10 @@ class RoundedButton extends StatelessWidget {
       height: 55,
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.transparent,
+        color: backgroundColor ?? Colors.transparent,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: Colors.white,
+          color: backgroundColor != null ? backgroundColor! : Colors.white,
           width: 2,
         ),
       ),
@@ -47,8 +49,8 @@ class RoundedButton extends StatelessWidget {
                     )
                   : Text(
                       text,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: backgroundColor != null ? Colors.white : Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.5,
