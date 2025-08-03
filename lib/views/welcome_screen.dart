@@ -118,6 +118,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   },
                   backgroundColor: Colors.orange,
                 ),
+                const SizedBox(height: 16),
+                // Clear Auth0 cache (for testing)
+                RoundedButton(
+                  text: 'Clear Auth0 Cache',
+                  onPressed: () async {
+                    await Auth0Service.instance.clearAuth0Cache();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Auth0 cache cleared!'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  },
+                  backgroundColor: Colors.red,
+                ),
                 const SizedBox(height: 40),
               ],
             ),
