@@ -53,9 +53,6 @@ class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
         print('Auth0SignupScreen: Starting Auth0 Universal Login...');
       }
 
-      // Force clear any existing session to ensure fresh login
-      await Auth0Service.instance.forceClearSession();
-
       final result = await Auth0Service.instance.signIn(); // Auth0 Universal Login handles both signup and login
 
       if (!mounted || _hasNavigated) return;

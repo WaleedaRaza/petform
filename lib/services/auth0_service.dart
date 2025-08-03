@@ -117,9 +117,18 @@ class Auth0Service {
         print('Auth0Service: Starting real Auth0 sign in...');
       }
       
-      // Use Universal Login with custom scheme (for development)
+      // Force clear any existing session first
+      await forceClearSession();
+      
+      // Use Universal Login with custom scheme and force login prompt
       // useHTTPS is ignored on Android
-      final credentials = await _auth0.webAuthentication(scheme: 'com.waleedraza.petform').login();
+      final credentials = await _auth0.webAuthentication(
+        scheme: 'com.waleedraza.petform',
+        parameters: {
+          'prompt': 'login', // Force login screen, don't auto-sign in
+          'screen_hint': 'signup', // Hint to show signup screen
+        },
+      ).login();
       
       _credentials = credentials;
       _userProfile = credentials.user;

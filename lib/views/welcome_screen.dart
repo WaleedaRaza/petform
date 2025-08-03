@@ -111,14 +111,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 RoundedButton(
                   text: 'Create New Account',
                   onPressed: () async {
-                    // Force clear Auth0 session first
-                    await Auth0Service.instance.forceClearSession();
-                    if (mounted) {
-                      Navigator.push(
-                        context, 
-                        MaterialPageRoute(builder: (context) => const Auth0SignupScreen())
-                      );
-                    }
+                    Navigator.push(
+                      context, 
+                      MaterialPageRoute(builder: (context) => const Auth0SignupScreen())
+                    );
                   },
                   backgroundColor: Colors.orange,
                 ),
