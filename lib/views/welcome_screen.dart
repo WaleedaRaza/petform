@@ -97,7 +97,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               children: [
                 const Spacer(),
                 const Spacer(),
-                // Only Auth0 authentication
+                // Continue with existing Auth0 session
                 RoundedButton(
                   text: 'Continue with Auth0',
                   onPressed: () => Navigator.push(
@@ -105,6 +105,22 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     MaterialPageRoute(builder: (context) => const Auth0SignupScreen())
                   ),
                   backgroundColor: const Color(0xFF3B82F6),
+                ),
+                const SizedBox(height: 16),
+                // Create new account (force clear session)
+                RoundedButton(
+                  text: 'Create New Account',
+                  onPressed: () async {
+                    // Force clear Auth0 session first
+                    await Auth0Service.instance.forceClearSession();
+                    if (mounted) {
+                      Navigator.push(
+                        context, 
+                        MaterialPageRoute(builder: (context) => const Auth0SignupScreen())
+                      );
+                    }
+                  },
+                  backgroundColor: Colors.orange,
                 ),
                 const SizedBox(height: 40),
               ],

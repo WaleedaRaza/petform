@@ -149,6 +149,41 @@ class Auth0Service {
     }
   }
   
+  // Force clear Auth0 session (for testing new account creation)
+  Future<void> forceClearSession() async {
+    try {
+      if (kDebugMode) {
+        print('Auth0Service: Force clearing Auth0 session...');
+      }
+      
+      // Clear local session data
+      _credentials = null;
+      _userProfile = null;
+      await ClerkTokenService.clearAll();
+      
+      // Force logout from Auth0 to clear browser session
+      try {
+        await _auth0.webAuthentication(scheme: 'com.waleedraza.petform').logout();
+      } catch (e) {
+        if (kDebugMode) {
+          print('Auth0Service: Force logout error (expected): $e');
+        }
+      }
+      
+      if (kDebugMode) {
+        print('Auth0Service: Session force cleared successfully');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Auth0Service: Force clear session error: $e');
+      }
+      // Ensure local data is cleared even if there's an error
+      _credentials = null;
+      _userProfile = null;
+      await ClerkTokenService.clearAll();
+    }
+  }
+
   // Sign out
   Future<void> signOut() async {
     try {
