@@ -60,7 +60,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
-    final currentUser = _authService.currentUser;
+    final currentUser = Auth0Service.instance.currentUser;
     final userEmail = currentUser?.email ?? 'N/A';
     final userDisplayName = userEmail; // Supabase doesn't have displayName by default
 
@@ -596,7 +596,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         
                         if (confirm == true) {
                           try {
-                                await _authService.deleteAccount();
+                                // Auth0 account deletion would be handled through Auth0 dashboard
+        if (kDebugMode) {
+          print('ProfileSettingsScreen: Account deletion should be handled through Auth0 dashboard');
+        }
                             if (!mounted) return;
                             Navigator.pushReplacement(
                               context,
@@ -999,7 +1002,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   }
 
   void _showEditDisplayNameDialog(BuildContext context) {
-    final controller = TextEditingController(text: _authService.currentUser?.email ?? '');
+            final controller = TextEditingController(text: Auth0Service.instance.currentUser?.email ?? '');
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1021,7 +1024,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             onPressed: () async {
               if (controller.text.trim().isNotEmpty) {
                 try {
-                  await _authService.updateDisplayName(controller.text.trim());
+                  // Auth0 display name updates would be handled through Auth0 dashboard
+        if (kDebugMode) {
+          print('ProfileSettingsScreen: Display name updates should be handled through Auth0 dashboard');
+        }
                   if (context.mounted) {
                     Navigator.pop(context);
                     setState(() {}); // Refresh UI
