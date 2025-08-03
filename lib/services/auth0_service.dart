@@ -115,6 +115,9 @@ class Auth0Service {
     try {
       if (kDebugMode) {
         print('Auth0Service: Starting real Auth0 sign in...');
+        print('Auth0Service: Domain: dev-2lm6p70udixry057.us.auth0.com');
+        print('Auth0Service: Client ID: tRNYRxNq1avdt9YHmZFcftBM5yMgmtSL');
+        print('Auth0Service: Scheme: com.waleedraza.petform');
       }
       
       // Force clear any existing session first
@@ -147,8 +150,23 @@ class Auth0Service {
     } catch (e) {
       if (kDebugMode) {
         print('Auth0Service: Real sign in error: $e');
+        print('Auth0Service: Error type: ${e.runtimeType}');
+        print('Auth0Service: Error details: $e');
       }
-      rethrow;
+      
+      // Provide more specific error messages
+      String errorMessage = 'Sign in failed';
+      if (e.toString().contains('NETWORK_ERROR')) {
+        errorMessage = 'Network error - please check your internet connection';
+      } else if (e.toString().contains('USER_CANCELLED')) {
+        errorMessage = 'Sign in was cancelled';
+      } else if (e.toString().contains('INVALID_CONFIGURATION')) {
+        errorMessage = 'Auth0 configuration error - please check your Auth0 settings';
+      } else if (e.toString().contains('OTHER')) {
+        errorMessage = 'Auth0 service error - please try again';
+      }
+      
+      throw Exception('$errorMessage: $e');
     }
   }
   
