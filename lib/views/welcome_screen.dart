@@ -71,6 +71,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/home');
         }
+      } else {
+        if (kDebugMode) {
+          print('WelcomeScreen: No Auth0 user found, staying on welcome screen');
+        }
       }
     } catch (e) {
       if (kDebugMode) {

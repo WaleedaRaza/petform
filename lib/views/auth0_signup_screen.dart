@@ -40,7 +40,7 @@ class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
     }
   }
 
-  Future<void> _signUpWithAuth0() async {
+  Future<void> _signInWithAuth0() async {
     if (_isLoading) return; // Prevent multiple calls
     
     setState(() {
@@ -49,6 +49,10 @@ class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
     });
 
     try {
+      if (kDebugMode) {
+        print('Auth0SignupScreen: Starting Auth0 Universal Login...');
+      }
+
       final result = await Auth0Service.instance.signIn(); // Auth0 Universal Login handles both signup and login
 
       if (!mounted || _hasNavigated) return;
@@ -93,6 +97,9 @@ class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
       setState(() {
         _errorMessage = 'Signup/Login failed: $e';
       });
+      if (kDebugMode) {
+        print('Auth0SignupScreen: Error during sign in: $e');
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -109,7 +116,7 @@ class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text('Sign Up with Auth0'),
+          title: const Text('Sign In / Sign Up'),
           backgroundColor: Colors.transparent,
           elevation: 0,
         ),
@@ -131,7 +138,7 @@ class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Sign up or log in with your preferred method',
+                  'Sign in or create an account with Auth0',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.white70,
@@ -155,8 +162,8 @@ class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
                     ),
                   ),
                 RoundedButton(
-                  text: _isLoading ? 'Signing up...' : 'Continue with Auth0',
-                  onPressed: _isLoading ? null : _signUpWithAuth0,
+                  text: _isLoading ? 'Signing in...' : 'Continue with Auth0',
+                  onPressed: _isLoading ? null : _signInWithAuth0,
                   backgroundColor: const Color(0xFF3B82F6),
                 ),
                 const SizedBox(height: 16),

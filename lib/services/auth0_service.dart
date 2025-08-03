@@ -161,6 +161,10 @@ class Auth0Service {
       _userProfile = null;
       await ClerkTokenService.clearAll();
       
+      if (kDebugMode) {
+        print('Auth0Service: Local session data cleared');
+      }
+      
       // Use Universal Logout with custom scheme (for development)
       // useHTTPS is ignored on Android
       await _auth0.webAuthentication(scheme: 'com.waleedraza.petform').logout();
@@ -176,7 +180,10 @@ class Auth0Service {
       _credentials = null;
       _userProfile = null;
       await ClerkTokenService.clearAll();
-      rethrow;
+      if (kDebugMode) {
+        print('Auth0Service: Local data cleared despite logout error');
+      }
+      // Don't rethrow - we want to continue even if Auth0 logout fails
     }
   }
 } 
