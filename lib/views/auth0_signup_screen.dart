@@ -7,6 +7,7 @@ import '../services/auth0_service.dart';
 import '../widgets/rounded_button.dart';
 import '../widgets/video_background.dart';
 import 'auth0_profile_view.dart';
+import 'email_verification_required_screen.dart';
 
 class Auth0SignupScreen extends StatefulWidget {
   final bool forceNewAccount;
@@ -86,6 +87,26 @@ class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
         print('Auth0 signup/login successful');
         print('Auth0 user: ${result.user.email}');
         print('Auth0 user ID: ${result.user.sub}');
+        print('Email verified: ${result.user.isEmailVerified}');
+      }
+
+      // Check if email verification is required and enforced
+      if (Auth0Service.instance.requiresEmailVerification && !(result.user.isEmailVerified ?? false)) {
+        if (kDebugMode) {
+          print('Auth0SignupScreen: Email not verified, showing verification required screen');
+        }
+        
+        if (!mounted || _hasNavigated) return;
+        _hasNavigated = true;
+        
+        // Show email verification required screen
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EmailVerificationRequiredScreen(user: result.user),
+          ),
+        );
+        return;
       }
 
       // Show profile view first, then navigate to main app

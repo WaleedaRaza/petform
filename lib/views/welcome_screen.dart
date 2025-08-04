@@ -6,6 +6,7 @@ import '../widgets/video_background.dart';
 import '../services/auth0_service.dart';
 import 'package:app_links/app_links.dart';
 import 'dart:async';
+import 'email_verification_required_screen.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -63,15 +64,36 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         print('WelcomeScreen: Auth0 user: ${auth0User?.email}');
       }
       
-      // If user is authenticated with Auth0, navigate to main app
+      // If user is authenticated with Auth0, check email verification
       if (auth0User != null) {
         if (kDebugMode) {
-          print('WelcomeScreen: Auth0 user is authenticated, navigating to main app');
+          print('WelcomeScreen: Auth0 user is authenticated, checking email verification');
+        }
+        
+        // Check if email verification is required and user is verified
+        if (Auth0Service.instance.requiresEmailVerification && !Auth0Service.instance.isEmailVerified) {
+          if (kDebugMode) {
+            print('WelcomeScreen: Email not verified, showing verification required screen');
+          }
+          
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => EmailVerificationRequiredScreen(user: auth0User!),
+              ),
+            );
+          }
+          return;
+        }
+        
+        if (kDebugMode) {
+          print('WelcomeScreen: Auth0 user is authenticated and verified, navigating to main app');
         }
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/home');
         }
-      } else {
+      } else { // Added else block
         if (kDebugMode) {
           print('WelcomeScreen: No Auth0 user found, staying on welcome screen');
         }

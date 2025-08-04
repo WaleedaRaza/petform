@@ -37,6 +37,15 @@ class Auth0Service {
   // Check if email is verified
   bool get isEmailVerified => _userProfile?.isEmailVerified ?? false;
   
+  // Check if email verification is required and enforce it
+  bool get requiresEmailVerification => true; // Always require email verification
+  
+  // Check if user can proceed (email must be verified)
+  bool get canUserProceed {
+    if (_userProfile == null) return false;
+    return _userProfile!.isEmailVerified ?? false;
+  }
+  
   // Get verification status message
   String get verificationStatusMessage {
     if (_userProfile == null) return 'Not signed in';
