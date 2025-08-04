@@ -8,7 +8,7 @@ import 'services/supabase_service.dart';
 import 'services/auth0_service.dart';
 import 'views/welcome_screen.dart';
 import 'views/auth0_login_screen.dart';
-import 'views/auth0_signup_screen.dart';
+
 import 'views/auth0_profile_view.dart';
 import 'views/main_screen.dart';
 import 'views/home_screen.dart';
@@ -173,10 +173,7 @@ class PetformApp extends StatelessWidget {
             return MaterialPageRoute(
               builder: (context) => const Auth0LoginScreen(),
             );
-          case '/auth0-signup':
-            return MaterialPageRoute(
-              builder: (context) => const Auth0SignupScreen(),
-            );
+
           case '/home':
             return MaterialPageRoute(
               builder: (context) => const BackdropWrapper(child: HomeScreen()),

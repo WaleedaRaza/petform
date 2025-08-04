@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'auth0_signup_screen.dart';
-import '../widgets/rounded_button.dart';
 import '../widgets/video_background.dart';
 import '../services/auth0_service.dart';
+import '../providers/user_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:app_links/app_links.dart';
 import 'dart:async';
 import 'email_verification_required_screen.dart';
+import 'auth0_profile_view.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -19,6 +20,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   late AppLinks _appLinks;
   StreamSubscription? _linkSubscription;
   bool _hasCheckedAuth = false;
+  bool _isLoading = false;
+  String? _errorMessage;
+  bool _hasNavigated = false;
 
   @override
   void initState() {
@@ -105,6 +109,93 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     }
   }
 
+  // Direct Auth0 login/signup - no second screen needed
+  Future<void> _handleAuth0Login() async {
+    if (_isLoading) return; // Prevent multiple calls
+    
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      if (kDebugMode) {
+        print('WelcomeScreen: Starting Auth0 Universal Login...');
+      }
+
+      // Auth0 Universal Login handles both signup and login automatically
+      final result = await Auth0Service.instance.signIn();
+
+      if (!mounted || _hasNavigated) return;
+
+      // Update UserProvider with the authenticated user
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      userProvider.setCurrentUser(
+        result.user.sub,
+        result.user.nickname ?? result.user.name ?? result.user.email?.split('@')[0] ?? 'user',
+        result.user.email ?? '',
+      );
+
+      if (kDebugMode) {
+        print('Auth0 login/signup successful');
+        print('Auth0 user: ${result.user.email}');
+        print('Auth0 user ID: ${result.user.sub}');
+        print('Email verified: ${result.user.isEmailVerified}');
+      }
+
+      // Check if email verification is required and enforced
+      if (Auth0Service.instance.requiresEmailVerification && !(result.user.isEmailVerified ?? false)) {
+        if (kDebugMode) {
+          print('WelcomeScreen: Email not verified, showing verification required screen');
+        }
+        
+        if (!mounted || _hasNavigated) return;
+        _hasNavigated = true;
+        
+        // Show email verification required screen
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EmailVerificationRequiredScreen(user: result.user),
+          ),
+        );
+        return;
+      }
+
+      // Show profile view first, then navigate to main app
+      if (!mounted || _hasNavigated) return;
+      
+      _hasNavigated = true;
+      
+      // Navigate to profile view
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Auth0ProfileView(user: result.user),
+        ),
+      );
+      
+      // Navigate to main app after profile view is dismissed
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Login/Signup failed: $e';
+      });
+      if (kDebugMode) {
+        print('WelcomeScreen: Error during Auth0 login: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return VideoBackground(
@@ -115,20 +206,71 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40.0),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Spacer(),
-                const Spacer(),
-                // Single Auth0 login/signup button
-                RoundedButton(
-                  text: 'Login / Sign Up',
-                  onPressed: () => Navigator.push(
-                    context, 
-                    MaterialPageRoute(builder: (context) => const Auth0SignupScreen())
+                const Text(
+                  'Welcome to Petform!',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
-                  backgroundColor: const Color(0xFF3B82F6),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Login or create an account with Auth0',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white70,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
+                if (_errorMessage != null)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red),
+                    ),
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                // Transparent button with white border and text
+                Container(
+                  width: double.infinity,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: TextButton(
+                    onPressed: _isLoading ? null : _handleAuth0Login,
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                    ),
+                    child: Text(
+                      _isLoading ? 'Signing in...' : 'Login / Sign Up',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const Spacer(),
               ],
             ),
           ),
