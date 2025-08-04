@@ -9,7 +9,9 @@ import '../widgets/video_background.dart';
 import 'auth0_profile_view.dart';
 
 class Auth0SignupScreen extends StatefulWidget {
-  const Auth0SignupScreen({Key? key}) : super(key: key);
+  final bool forceNewAccount;
+  
+  const Auth0SignupScreen({Key? key, this.forceNewAccount = false}) : super(key: key);
 
   @override
   State<Auth0SignupScreen> createState() => _Auth0SignupScreenState();
@@ -51,9 +53,20 @@ class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
     try {
       if (kDebugMode) {
         print('Auth0SignupScreen: Starting Auth0 Universal Login...');
+        if (widget.forceNewAccount) {
+          print('Auth0SignupScreen: Force new account mode enabled');
+        }
       }
 
-      final result = await Auth0Service.instance.signIn(); // Auth0 Universal Login handles both signup and login
+      Credentials result;
+      
+      if (widget.forceNewAccount) {
+        // Force fresh signup
+        result = await Auth0Service.instance.forceSignUp();
+      } else {
+        // Normal sign in
+        result = await Auth0Service.instance.signIn();
+      }
 
       if (!mounted || _hasNavigated) return;
 

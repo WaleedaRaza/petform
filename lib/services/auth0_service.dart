@@ -115,15 +115,9 @@ class Auth0Service {
     try {
       if (kDebugMode) {
         print('Auth0Service: Starting real Auth0 sign in...');
-        print('Auth0Service: Domain: dev-2lm6p70udixry057.us.auth0.com');
-        print('Auth0Service: Client ID: tRNYRxNq1avdt9YHmZFcftBM5yMgmtSL');
-        print('Auth0Service: Scheme: com.waleedraza.petform');
       }
       
-      // Force clear any existing session first
-      await forceClearSession();
-      
-      // Use Universal Login with custom scheme
+      // Use Universal Login with custom scheme (for development)
       // useHTTPS is ignored on Android
       final credentials = await _auth0.webAuthentication(scheme: 'com.waleedraza.petform').login();
       
@@ -150,91 +144,38 @@ class Auth0Service {
     } catch (e) {
       if (kDebugMode) {
         print('Auth0Service: Real sign in error: $e');
-        print('Auth0Service: Error type: ${e.runtimeType}');
-        print('Auth0Service: Error details: $e');
+      }
+      rethrow;
+    }
+  }
+
+  // Force fresh signup (clears session first)
+  Future<Credentials> forceSignUp() async {
+    try {
+      if (kDebugMode) {
+        print('Auth0Service: Force clearing session for fresh signup...');
       }
       
-      // Provide more specific error messages
-      String errorMessage = 'Sign in failed';
-      if (e.toString().contains('NETWORK_ERROR')) {
-        errorMessage = 'Network error - please check your internet connection';
-      } else if (e.toString().contains('USER_CANCELLED')) {
-        errorMessage = 'Sign in was cancelled';
-      } else if (e.toString().contains('INVALID_CONFIGURATION')) {
-        errorMessage = 'Auth0 configuration error - please check your Auth0 settings';
-      } else if (e.toString().contains('OTHER')) {
-        errorMessage = 'Auth0 service error - please try again';
+      // Clear any existing session first
+      await signOut();
+      
+      // Wait a moment for session to clear
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      if (kDebugMode) {
+        print('Auth0Service: Starting fresh Auth0 signup...');
       }
       
-      throw Exception('$errorMessage: $e');
+      // Now do a fresh sign in
+      return await signIn();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Auth0Service: Force signup error: $e');
+      }
+      rethrow;
     }
   }
   
-  // Aggressive cache clear for Auth0 (prevents auto-sign in)
-  Future<void> clearAuth0Cache() async {
-    try {
-      if (kDebugMode) {
-        print('Auth0Service: Starting aggressive Auth0 cache clear...');
-      }
-      
-      // Clear local session data
-      _credentials = null;
-      _userProfile = null;
-      await ClerkTokenService.clearAll();
-      
-      // Multiple logout attempts to clear all possible session data
-      for (int i = 0; i < 3; i++) {
-        try {
-          await _auth0.webAuthentication(scheme: 'com.waleedraza.petform').logout();
-          await Future.delayed(const Duration(milliseconds: 300));
-        } catch (e) {
-          if (kDebugMode) {
-            print('Auth0Service: Logout attempt ${i + 1} error (expected): $e');
-          }
-        }
-      }
-      
-      // Additional delay to ensure logout completes
-      await Future.delayed(const Duration(seconds: 1));
-      
-      if (kDebugMode) {
-        print('Auth0Service: Aggressive cache clear completed');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Auth0Service: Cache clear error: $e');
-      }
-      // Ensure local data is cleared even if there's an error
-      _credentials = null;
-      _userProfile = null;
-      await ClerkTokenService.clearAll();
-    }
-  }
-
-  // Force clear Auth0 session (for testing new account creation)
-  Future<void> forceClearSession() async {
-    try {
-      if (kDebugMode) {
-        print('Auth0Service: Force clearing Auth0 session...');
-      }
-      
-      // Use aggressive cache clear
-      await clearAuth0Cache();
-      
-      if (kDebugMode) {
-        print('Auth0Service: Session force cleared successfully');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Auth0Service: Force clear session error: $e');
-      }
-      // Ensure local data is cleared even if there's an error
-      _credentials = null;
-      _userProfile = null;
-      await ClerkTokenService.clearAll();
-    }
-  }
-
   // Sign out
   Future<void> signOut() async {
     try {
