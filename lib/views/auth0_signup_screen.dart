@@ -10,9 +10,7 @@ import 'auth0_profile_view.dart';
 import 'email_verification_required_screen.dart';
 
 class Auth0SignupScreen extends StatefulWidget {
-  final bool forceNewAccount;
-  
-  const Auth0SignupScreen({Key? key, this.forceNewAccount = false}) : super(key: key);
+  const Auth0SignupScreen({Key? key}) : super(key: key);
 
   @override
   State<Auth0SignupScreen> createState() => _Auth0SignupScreenState();
@@ -54,20 +52,10 @@ class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
     try {
       if (kDebugMode) {
         print('Auth0SignupScreen: Starting Auth0 Universal Login...');
-        if (widget.forceNewAccount) {
-          print('Auth0SignupScreen: Force new account mode enabled');
-        }
       }
 
-      Credentials result;
-      
-      if (widget.forceNewAccount) {
-        // Force fresh signup
-        result = await Auth0Service.instance.forceSignUp();
-      } else {
-        // Normal sign in
-        result = await Auth0Service.instance.signIn();
-      }
+      // Auth0 Universal Login handles both signup and login automatically
+      final result = await Auth0Service.instance.signIn();
 
       if (!mounted || _hasNavigated) return;
 
@@ -149,11 +137,11 @@ class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
       videoPath: 'lib/assets/animation.mp4',
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('Sign In / Sign Up'),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-        ),
+                            appBar: AppBar(
+                      title: const Text('Login / Sign Up'),
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                    ),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40.0),
@@ -172,7 +160,7 @@ class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Sign in or create an account with Auth0',
+                  'Login or create an account with Auth0',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.white70,
@@ -196,7 +184,7 @@ class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
                     ),
                   ),
                 RoundedButton(
-                  text: _isLoading ? 'Signing in...' : 'Continue with Auth0',
+                  text: _isLoading ? 'Signing in...' : 'Login / Sign Up',
                   onPressed: _isLoading ? null : _signInWithAuth0,
                   backgroundColor: const Color(0xFF3B82F6),
                 ),
