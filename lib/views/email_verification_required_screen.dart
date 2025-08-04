@@ -139,9 +139,9 @@ class _EmailVerificationRequiredScreenState extends State<EmailVerificationRequi
               
               const SizedBox(height: 30),
               
-              // Try again button
+              // I've verified button
               RoundedButton(
-                text: _isLoading ? 'Checking...' : 'Try Again',
+                text: _isLoading ? 'Checking...' : 'I\'ve Verified My Email',
                 onPressed: _isLoading ? null : _checkVerificationStatus,
                 backgroundColor: Colors.orange,
               ),
@@ -170,7 +170,7 @@ class _EmailVerificationRequiredScreenState extends State<EmailVerificationRequi
 
     try {
       if (kDebugMode) {
-        print('EmailVerificationRequiredScreen: Checking verification status...');
+        print('EmailVerificationRequiredScreen: User clicked "I\'ve Verified My Email"');
       }
 
       // Force a fresh sign in to check verification status
@@ -198,7 +198,7 @@ class _EmailVerificationRequiredScreenState extends State<EmailVerificationRequi
         
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Email not verified yet. Please check your inbox and try again.'),
+            content: Text('Email not verified yet. Please check your inbox and click the verification link.'),
             backgroundColor: Colors.orange,
           ),
         );
