@@ -3,11 +3,14 @@ import 'package:auth0_flutter/auth0_flutter.dart';
 import 'clerk_token_service.dart';
 
 class Auth0Service {
-  static Auth0Service? _instance;
-  static Auth0Service get instance => _instance ??= Auth0Service._();
-  
-  Auth0Service._();
-  
+  static final Auth0Service _instance = Auth0Service._internal();
+  factory Auth0Service() => _instance;
+  Auth0Service._internal();
+
+  // Auth0 application credentials
+  static const String _auth0Domain = 'dev-2lm6p70udixry057.us.auth0.com';
+  static const String _auth0ClientId = '1wC0uAnPpxCMC9LRBJRoBVgZJSelm5ky';
+
   late Auth0 _auth0;
   Credentials? _credentials;
   UserProfile? _userProfile;
@@ -33,14 +36,16 @@ class Auth0Service {
   // Initialize Auth0
   Future<void> initialize() async {
     try {
-      // Replace with your actual Auth0 domain and client ID
-      _auth0 = Auth0('dev-2lm6p70udixry057.us.auth0.com', 'tRNYRxNq1avdt9YHmZFcftBM5yMgmtSL');
+      // Initialize with your Auth0 domain and client ID
+      _auth0 = Auth0(_auth0Domain, _auth0ClientId);
       
       // Check for existing session
       await checkExistingSession();
       
       if (kDebugMode) {
         print('Auth0Service: Initialized with real Auth0 SDK');
+        print('Auth0Service: Domain: $_auth0Domain');
+        print('Auth0Service: Client ID: $_auth0ClientId');
         print('Auth0Service: Current user: ${_userProfile?.email}');
       }
     } catch (e) {
