@@ -3,9 +3,10 @@ import 'package:auth0_flutter/auth0_flutter.dart';
 import 'clerk_token_service.dart';
 
 class Auth0Service {
-  static final Auth0Service _instance = Auth0Service._internal();
-  factory Auth0Service() => _instance;
-  Auth0Service._internal();
+  static Auth0Service? _instance;
+  static Auth0Service get instance => _instance ??= Auth0Service._();
+  
+  Auth0Service._();
 
   // Auth0 application credentials
   static const String _auth0Domain = 'dev-2lm6p70udixry057.us.auth0.com';
@@ -32,6 +33,16 @@ class Auth0Service {
   
   // Get display name
   String? get currentDisplayName => _userProfile?.name;
+  
+  // Check if email is verified
+  bool get isEmailVerified => _userProfile?.isEmailVerified ?? false;
+  
+  // Get verification status message
+  String get verificationStatusMessage {
+    if (_userProfile == null) return 'Not signed in';
+    if (isEmailVerified) return 'Email verified';
+    return 'Email not verified - check your inbox';
+  }
   
   // Initialize Auth0
   Future<void> initialize() async {
@@ -176,6 +187,29 @@ class Auth0Service {
     } catch (e) {
       if (kDebugMode) {
         print('Auth0Service: Force signup error: $e');
+      }
+      rethrow;
+    }
+  }
+  
+  // Resend email verification
+  Future<void> resendVerificationEmail() async {
+    try {
+      if (_userProfile?.email == null) {
+        throw Exception('No email available for verification');
+      }
+      
+      if (kDebugMode) {
+        print('Auth0Service: Resending verification email to ${_userProfile!.email}');
+      }
+      
+      // Auth0 Flutter SDK doesn't have a direct resend verification method
+      // You'll need to implement this via Auth0 Management API or use Auth0's hosted pages
+      // For now, we'll show a message to the user
+      throw Exception('Please check your email for verification link. If you didn\'t receive it, try signing up again.');
+    } catch (e) {
+      if (kDebugMode) {
+        print('Auth0Service: Resend verification error: $e');
       }
       rethrow;
     }

@@ -99,6 +99,41 @@ class _Auth0ProfileViewState extends State<Auth0ProfileView> {
                   textAlign: TextAlign.center,
                 ),
               
+              const SizedBox(height: 10),
+              
+              // Email verification status
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: widget.user.isEmailVerified 
+                    ? Colors.green.withOpacity(0.1)
+                    : Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: widget.user.isEmailVerified ? Colors.green : Colors.orange,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      widget.user.isEmailVerified ? Icons.verified : Icons.warning,
+                      color: widget.user.isEmailVerified ? Colors.green : Colors.orange,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      widget.user.isEmailVerified ? 'Email Verified' : 'Email Not Verified',
+                      style: TextStyle(
+                        color: widget.user.isEmailVerified ? Colors.green : Colors.orange,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
               const SizedBox(height: 30),
               
               // Success message
