@@ -183,10 +183,31 @@ class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
                       textAlign: TextAlign.center,
                     ),
                   ),
-                RoundedButton(
-                  text: _isLoading ? 'Signing in...' : 'Login / Sign Up',
-                  onPressed: _isLoading ? null : _signInWithAuth0,
-                  backgroundColor: const Color(0xFF3B82F6),
+                Container(
+                  width: double.infinity,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: TextButton(
+                    onPressed: _isLoading ? null : _signInWithAuth0,
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                    ),
+                    child: Text(
+                      _isLoading ? 'Signing in...' : 'Login / Sign Up',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextButton(
