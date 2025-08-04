@@ -131,6 +131,9 @@ class Auth0Service {
     try {
       if (kDebugMode) {
         print('Auth0Service: Starting real Auth0 sign in...');
+        print('Auth0Service: Using domain: $_auth0Domain');
+        print('Auth0Service: Using client ID: $_auth0ClientId');
+        print('Auth0Service: Using scheme: com.waleedraza.petform');
       }
       
       // Use Universal Login with custom scheme (for development)
@@ -154,12 +157,16 @@ class Auth0Service {
       
       if (kDebugMode) {
         print('Auth0Service: Real sign in successful for: ${_userProfile!.email}');
+        print('Auth0Service: User ID: ${_userProfile!.sub}');
+        print('Auth0Service: Email verified: ${_userProfile!.isEmailVerified}');
       }
       
       return credentials;
     } catch (e) {
       if (kDebugMode) {
         print('Auth0Service: Real sign in error: $e');
+        print('Auth0Service: Error type: ${e.runtimeType}');
+        print('Auth0Service: Error details: $e');
       }
       rethrow;
     }
