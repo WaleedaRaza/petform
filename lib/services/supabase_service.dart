@@ -104,34 +104,116 @@ class SupabaseService {
       return supabaseUser.id;
     } else if (auth0User != null) {
       try {
-        // Get mapped Supabase user ID from Auth0 user ID
-        final response = await client.rpc('get_supabase_user_id_from_auth0', params: {
+        // For Auth0 users, get the mapped Supabase user ID
+        final result = await client.rpc('get_supabase_user_id_from_auth0', params: {
           'p_auth0_user_id': auth0User.sub,
         });
         
-        if (response != null) {
-          return response.toString();
+        if (kDebugMode) {
+          print('SupabaseService: Auth0 user ID mapped to Supabase: $result');
         }
         
-        // If no mapping exists, create one
-        final newUserId = await client.rpc('get_or_create_supabase_user_for_auth0', params: {
-          'p_auth0_user_id': auth0User.sub,
-          'p_auth0_email': auth0User.email,
-          'p_auth0_name': auth0User.name,
-          'p_auth0_nickname': auth0User.nickname,
-          'p_auth0_picture': auth0User.pictureUrl?.toString(),
-        });
-        
-        return newUserId.toString();
+        return result?.toString();
       } catch (e) {
         if (kDebugMode) {
-          print('SupabaseService: Error getting mapped user ID: $e');
+          print('SupabaseService: Error getting Supabase user ID for Auth0 user: $e');
         }
         return null;
       }
     }
     
     return null;
+  }
+  
+  // ===== USERNAME AND DISPLAY NAME MANAGEMENT =====
+  
+  // Get or create username for current user
+  static Future<String?> getOrCreateUsername(String email, String? displayName) async {
+    try {
+      final userId = await getCurrentUserId();
+      if (userId == null) {
+        if (kDebugMode) {
+          print('SupabaseService: No user ID available for username creation');
+        }
+        return null;
+      }
+      
+      final result = await client.rpc('get_or_create_username', params: {
+        'p_user_id': userId,
+        'p_email': email,
+        'p_display_name': displayName,
+      });
+      
+      if (kDebugMode) {
+        print('SupabaseService: Username created/retrieved: $result');
+      }
+      
+      return result?.toString();
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error getting/creating username: $e');
+      }
+      return null;
+    }
+  }
+  
+  // Update display name for current user
+  static Future<String?> updateDisplayName(String newDisplayName) async {
+    try {
+      final userId = await getCurrentUserId();
+      if (userId == null) {
+        if (kDebugMode) {
+          print('SupabaseService: No user ID available for display name update');
+        }
+        return null;
+      }
+      
+      final result = await client.rpc('update_display_name', params: {
+        'p_user_id': userId,
+        'p_new_display_name': newDisplayName,
+      });
+      
+      if (kDebugMode) {
+        print('SupabaseService: Display name updated: $result');
+      }
+      
+      return result?.toString();
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error updating display name: $e');
+      }
+      return null;
+    }
+  }
+  
+  // Get user profile (including username and display name)
+  static Future<Map<String, dynamic>?> getUserProfile() async {
+    try {
+      final userId = await getCurrentUserId();
+      if (userId == null) {
+        if (kDebugMode) {
+          print('SupabaseService: No user ID available for profile retrieval');
+        }
+        return null;
+      }
+      
+      final response = await client
+          .from('profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+      
+      if (kDebugMode) {
+        print('SupabaseService: User profile retrieved: $response');
+      }
+      
+      return response;
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error getting user profile: $e');
+      }
+      return null;
+    }
   }
   
   // Legacy method for backward compatibility

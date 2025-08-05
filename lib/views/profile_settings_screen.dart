@@ -62,7 +62,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final userProvider = Provider.of<UserProvider>(context);
     final currentUser = Auth0Service.instance.currentUser;
     final userEmail = currentUser?.email ?? 'N/A';
-    final userDisplayName = userEmail; // Supabase doesn't have displayName by default
+    final userDisplayName = userProvider.currentUsername ?? userEmail; // Use stored username
 
     return VideoBackground(
       videoPath: 'lib/assets/animation2.mp4',
@@ -1001,8 +1001,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 
-  void _showEditDisplayNameDialog(BuildContext context) {
-            final controller = TextEditingController(text: Auth0Service.instance.currentUser?.email ?? '');
+  void _showEditDisplayNameDialog(BuildContext context) async {
+    // Get current display name from user profile
+    final userProfile = await SupabaseService.getUserProfile();
+    final currentDisplayName = userProfile?['display_name'] ?? 
+                              Auth0Service.instance.currentUser?.nickname ?? 
+                              Auth0Service.instance.currentUser?.name ?? 
+                              'User';
+    
+    final controller = TextEditingController(text: currentDisplayName);
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1024,19 +1032,40 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             onPressed: () async {
               if (controller.text.trim().isNotEmpty) {
                 try {
-                  // Auth0 display name updates would be handled through Auth0 dashboard
-        if (kDebugMode) {
-          print('ProfileSettingsScreen: Display name updates should be handled through Auth0 dashboard');
-        }
+                  setState(() {
+                    _isLoading = true;
+                  });
+                  
+                  // Update display name in database
+                  final updatedDisplayName = await SupabaseService.updateDisplayName(controller.text.trim());
+                  
+                  if (kDebugMode) {
+                    print('ProfileSettingsScreen: Display name updated to: $updatedDisplayName');
+                  }
+                  
                   if (context.mounted) {
                     Navigator.pop(context);
-                    setState(() {}); // Refresh UI
+                    setState(() {
+                      _isLoading = false;
+                    });
+                    
+                    // Update UserProvider with new display name
+                    final userProvider = Provider.of<UserProvider>(context, listen: false);
+                    userProvider.setCurrentUser(
+                      userProvider.currentUserId ?? '',
+                      updatedDisplayName ?? controller.text.trim(),
+                      userProvider.currentUserEmail ?? '',
+                    );
+                    
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Display name updated successfully')),
+                      SnackBar(content: Text('Display name updated to: ${updatedDisplayName ?? controller.text.trim()}')),
                     );
                   }
                 } catch (e) {
                   if (context.mounted) {
+                    setState(() {
+                      _isLoading = false;
+                    });
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Failed to update display name: $e')),
                     );

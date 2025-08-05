@@ -128,11 +128,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
       if (!mounted || _hasNavigated) return;
 
+      // Create or get username for the user
+      final username = await SupabaseService.getOrCreateUsername(
+        result.user.email ?? '',
+        result.user.nickname ?? result.user.name,
+      );
+      
       // Update UserProvider with the authenticated user
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       userProvider.setCurrentUser(
         result.user.sub,
-        result.user.nickname ?? result.user.name ?? result.user.email?.split('@')[0] ?? 'user',
+        username ?? result.user.nickname ?? result.user.name ?? result.user.email?.split('@')[0] ?? 'user',
         result.user.email ?? '',
       );
 
