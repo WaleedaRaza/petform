@@ -169,12 +169,26 @@ class SupabaseService {
       }
       
       // Check if username is already taken by another user
-      final existingUser = await client
-          .from('profiles')
-          .select('user_id')
-          .eq('username', newDisplayName)
-          .neq('user_id', userId)
-          .maybeSingle();
+      Map<String, dynamic>? existingUser;
+      try {
+        existingUser = await client
+            .from('profiles')
+            .select('user_id')
+            .eq('username', newDisplayName)
+            .neq('user_id', userId)
+            .maybeSingle();
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: user_id column not found, trying id column for uniqueness check');
+        }
+        // Try with 'id' column instead
+        existingUser = await client
+            .from('profiles')
+            .select('id')
+            .eq('username', newDisplayName)
+            .neq('id', userId)
+            .maybeSingle();
+      }
       
       if (existingUser != null) {
         if (kDebugMode) {
@@ -212,11 +226,25 @@ class SupabaseService {
         return null;
       }
       
-      final response = await client
-          .from('profiles')
-          .select('*')
-          .eq('user_id', userId)
-          .single();
+      // Try user_id first, then id if that fails
+      Map<String, dynamic>? response;
+      try {
+        response = await client
+            .from('profiles')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: user_id column not found, trying id column');
+        }
+        // Try with 'id' column instead
+        response = await client
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+      }
       
       if (kDebugMode) {
         print('SupabaseService: User profile retrieved: $response');
