@@ -7,7 +7,7 @@ class TrackingService {
       case 'dog':
         return [
           TrackingMetric(
-            id: 'exercise_dog_${DateTime.now().millisecondsSinceEpoch}',
+            id: '', // Let database generate UUID
             name: 'Exercise Time',
             frequency: 'daily',
             petId: '',
@@ -16,7 +16,7 @@ class TrackingService {
             category: 'exercise',
           ),
           TrackingMetric(
-            id: 'feeding_dog_${DateTime.now().millisecondsSinceEpoch}',
+            id: '', // Let database generate UUID
             name: 'Feeding',
             frequency: 'daily',
             petId: '',
@@ -25,7 +25,7 @@ class TrackingService {
             category: 'nutrition',
           ),
           TrackingMetric(
-            id: 'walks_dog_${DateTime.now().millisecondsSinceEpoch}',
+            id: '', // Let database generate UUID
             name: 'Daily Walks',
             frequency: 'daily',
             petId: '',
@@ -38,7 +38,7 @@ class TrackingService {
       case 'cat':
         return [
           TrackingMetric(
-            id: 'litter_cat_${DateTime.now().millisecondsSinceEpoch}',
+            id: '', // Let database generate UUID
             name: 'Litter Box Usage',
             frequency: 'daily',
             petId: '',
@@ -47,7 +47,7 @@ class TrackingService {
             category: 'health',
           ),
           TrackingMetric(
-            id: 'feeding_cat_${DateTime.now().millisecondsSinceEpoch}',
+            id: '', // Let database generate UUID
             name: 'Feeding',
             frequency: 'daily',
             petId: '',
@@ -56,7 +56,7 @@ class TrackingService {
             category: 'nutrition',
           ),
           TrackingMetric(
-            id: 'playtime_cat_${DateTime.now().millisecondsSinceEpoch}',
+            id: '', // Let database generate UUID
             name: 'Playtime',
             frequency: 'daily',
             petId: '',
@@ -69,7 +69,7 @@ class TrackingService {
       case 'bird':
         return [
           TrackingMetric(
-            id: 'feeding_bird_${DateTime.now().millisecondsSinceEpoch}',
+            id: '', // Let database generate UUID
             name: 'Feeding',
             frequency: 'daily',
             petId: '',
@@ -78,7 +78,7 @@ class TrackingService {
             category: 'nutrition',
           ),
           TrackingMetric(
-            id: 'socialization_bird_${DateTime.now().millisecondsSinceEpoch}',
+            id: '', // Let database generate UUID
             name: 'Socialization Time',
             frequency: 'daily',
             petId: '',
@@ -91,7 +91,7 @@ class TrackingService {
       case 'fish':
         return [
           TrackingMetric(
-            id: 'feeding_fish_${DateTime.now().millisecondsSinceEpoch}',
+            id: '', // Let database generate UUID
             name: 'Feeding',
             frequency: 'daily',
             petId: '',
@@ -100,7 +100,7 @@ class TrackingService {
             category: 'nutrition',
           ),
           TrackingMetric(
-            id: 'water_change_fish_${DateTime.now().millisecondsSinceEpoch}',
+            id: '', // Let database generate UUID
             name: 'Water Changes',
             frequency: 'weekly',
             petId: '',
@@ -115,7 +115,7 @@ class TrackingService {
       case 'rabbit':
         return [
           TrackingMetric(
-            id: 'feeding_small_${DateTime.now().millisecondsSinceEpoch}',
+            id: '', // Let database generate UUID
             name: 'Feeding',
             frequency: 'daily',
             petId: '',
@@ -124,7 +124,7 @@ class TrackingService {
             category: 'nutrition',
           ),
           TrackingMetric(
-            id: 'exercise_small_${DateTime.now().millisecondsSinceEpoch}',
+            id: '', // Let database generate UUID
             name: 'Exercise Time',
             frequency: 'daily',
             petId: '',

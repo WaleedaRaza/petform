@@ -17,7 +17,7 @@ class TrackingScreen extends StatelessWidget {
 
     if (result != null && result['name'] != null && result['frequency'] != null) {
       final newMetric = TrackingMetric(
-        id: 'metric_${DateTime.now().millisecondsSinceEpoch}',
+        id: '', // Let database generate UUID
         petId: pet.id.toString(),
         name: result['name']!,
         frequency: result['frequency']!,

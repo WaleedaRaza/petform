@@ -51,7 +51,7 @@ class TrackingMetric {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      // Don't send 'id' - let database generate UUID
       'name': name,
       'category': category,
       'pet_id': petId,

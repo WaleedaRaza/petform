@@ -484,7 +484,7 @@ class _AddMetricDialogState extends State<_AddMetricDialog> {
     }
 
     final newMetric = TrackingMetric(
-      id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+      id: '', // Let database generate UUID
       name: _nameController.text,
       frequency: _selectedFrequency,
       petId: widget.pet!.id.toString(),
