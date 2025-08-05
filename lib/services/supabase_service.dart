@@ -168,6 +168,9 @@ class SupabaseService {
         return null;
       }
       
+      // First, ensure the user has a profile
+      await ensureUserProfile(userId);
+      
       // Check if username is already taken by another user
       Map<String, dynamic>? existingUser;
       try {
@@ -238,6 +241,65 @@ class SupabaseService {
         print('SupabaseService: Error updating display name: $e');
       }
       rethrow;
+    }
+  }
+  
+  // Ensure user has a profile in the profiles table
+  static Future<void> ensureUserProfile(String userId) async {
+    try {
+      // Check if profile exists
+      Map<String, dynamic>? existingProfile;
+      try {
+        existingProfile = await client
+            .from('profiles')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle();
+      } catch (e) {
+        // Try with 'id' column instead
+        existingProfile = await client
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
+      }
+      
+      if (existingProfile == null) {
+        // Create profile if it doesn't exist
+        if (kDebugMode) {
+          print('SupabaseService: Creating profile for user: $userId');
+        }
+        
+        try {
+          await client
+              .from('profiles')
+              .insert({
+                'user_id': userId,
+                'email': Auth0Service.instance.currentUser?.email ?? '',
+                'username': Auth0Service.instance.currentUser?.email?.split('@')[0] ?? 'user',
+                'display_name': Auth0Service.instance.currentUser?.name ?? 'User',
+                'created_at': DateTime.now().toIso8601String(),
+                'updated_at': DateTime.now().toIso8601String(),
+              });
+        } catch (e) {
+          // Try with 'id' column instead
+          await client
+              .from('profiles')
+              .insert({
+                'id': userId,
+                'email': Auth0Service.instance.currentUser?.email ?? '',
+                'username': Auth0Service.instance.currentUser?.email?.split('@')[0] ?? 'user',
+                'display_name': Auth0Service.instance.currentUser?.name ?? 'User',
+                'created_at': DateTime.now().toIso8601String(),
+                'updated_at': DateTime.now().toIso8601String(),
+              });
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error ensuring user profile: $e');
+      }
+      // Don't rethrow - we'll continue with the update attempt
     }
   }
   
