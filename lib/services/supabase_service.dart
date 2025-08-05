@@ -197,16 +197,42 @@ class SupabaseService {
         throw Exception('Username "$newDisplayName" is already taken. Please choose a different name.');
       }
       
-      final result = await client.rpc('update_display_name', params: {
-        'p_user_id': userId,
-        'p_new_display_name': newDisplayName,
-      });
+      // Try direct update instead of RPC to avoid column issues
+      Map<String, dynamic>? result;
+      try {
+        // Try with user_id column first
+        result = await client
+            .from('profiles')
+            .update({
+              'display_name': newDisplayName,
+              'username': newDisplayName,
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('user_id', userId)
+            .select('display_name')
+            .single();
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: user_id column not found, trying id column for update');
+        }
+        // Try with 'id' column instead
+        result = await client
+            .from('profiles')
+            .update({
+              'display_name': newDisplayName,
+              'username': newDisplayName,
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('id', userId)
+            .select('display_name')
+            .single();
+      }
       
       if (kDebugMode) {
         print('SupabaseService: Display name updated: $result');
       }
       
-      return result?.toString();
+      return result?['display_name']?.toString();
     } catch (e) {
       if (kDebugMode) {
         print('SupabaseService: Error updating display name: $e');
