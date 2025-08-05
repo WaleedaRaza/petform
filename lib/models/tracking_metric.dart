@@ -32,21 +32,19 @@ class TrackingMetric {
     return TrackingMetric(
       id: json['id'] as String? ?? 'metric_${DateTime.now().millisecondsSinceEpoch}',
       name: json['name'] as String? ?? 'Unknown Metric',
-      frequency: json['frequency'] as String? ?? 'daily',
+      frequency: 'daily', // Default frequency since it's not in DB
       petId: json['pet_id'] as String? ?? '',
       targetValue: (json['target_value'] as num?)?.toDouble() ?? 10.0,
-      currentValue: (json['current_value'] as num?)?.toDouble() ?? 0.0,
+      currentValue: 0.0, // Default since current_value is not in DB
       createdAt: json['created_at'] != null 
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
       lastUpdated: json['updated_at'] != null 
           ? DateTime.parse(json['updated_at'] as String) 
           : null,
-      history: (json['history'] as List<dynamic>?)
-          ?.map((e) => TrackingEntry.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
-      description: json['description'] as String?,
-      isActive: json['is_active'] as bool? ?? true,
+      history: [], // Empty history since it's not stored in DB
+      description: json['unit'] as String?, // Use unit field for description
+      isActive: true, // Default since is_active is not in DB
       category: json['category'] as String?,
     );
   }
@@ -55,15 +53,12 @@ class TrackingMetric {
     return {
       'id': id,
       'name': name,
-      'frequency': frequency,
+      'category': category,
       'pet_id': petId,
       'target_value': targetValue,
-      'current_value': currentValue,
+      'unit': description, // Use description field for unit
       'created_at': createdAt.toIso8601String(),
       'updated_at': lastUpdated?.toIso8601String(),
-      'description': description,
-      'is_active': isActive,
-      'category': category,
     };
   }
 
