@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../widgets/video_background.dart';
 import '../services/auth0_service.dart';
+import '../services/supabase_service.dart';
 import '../providers/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:app_links/app_links.dart';
@@ -128,17 +129,21 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
       if (!mounted || _hasNavigated) return;
 
-      // Create or get username for the user
+      // Get or create username and load saved display name
       final username = await SupabaseService.getOrCreateUsername(
         result.user.email ?? '',
         result.user.nickname ?? result.user.name,
       );
       
-      // Update UserProvider with the authenticated user
+      // Get user profile to load saved display name
+      final userProfile = await SupabaseService.getUserProfile();
+      final savedDisplayName = userProfile?['display_name'] ?? username ?? result.user.nickname ?? result.user.name ?? result.user.email?.split('@')[0] ?? 'user';
+      
+      // Update UserProvider with the authenticated user and saved display name
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       userProvider.setCurrentUser(
         result.user.sub,
-        username ?? result.user.nickname ?? result.user.name ?? result.user.email?.split('@')[0] ?? 'user',
+        savedDisplayName,
         result.user.email ?? '',
       );
 

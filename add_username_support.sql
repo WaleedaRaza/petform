@@ -15,7 +15,7 @@ BEGIN
         RAISE NOTICE 'Username column already exists in profiles table';
     END IF;
     
-    -- Add unique constraint on username (optional, for uniqueness)
+    -- Add unique constraint on username (enforce uniqueness)
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint 
         WHERE conname = 'profiles_username_unique'
@@ -24,6 +24,17 @@ BEGIN
         RAISE NOTICE 'Added unique constraint on username';
     ELSE
         RAISE NOTICE 'Username unique constraint already exists';
+    END IF;
+    
+    -- Add unique constraint on email as well
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'profiles_email_unique'
+    ) THEN
+        ALTER TABLE profiles ADD CONSTRAINT profiles_email_unique UNIQUE (email);
+        RAISE NOTICE 'Added unique constraint on email';
+    ELSE
+        RAISE NOTICE 'Email unique constraint already exists';
     END IF;
 END $$;
 
@@ -77,6 +88,12 @@ BEGIN
     WHILE EXISTS(SELECT 1 FROM profiles WHERE username = v_username AND user_id != p_user_id) LOOP
         v_username := v_base_username || v_counter::text;
         v_counter := v_counter + 1;
+        
+        -- Prevent infinite loop
+        IF v_counter > 100 THEN
+            v_username := 'user_' || substr(p_user_id::text, 1, 8) || v_counter::text;
+            EXIT;
+        END IF;
     END LOOP;
     
     -- Insert or update profile with username

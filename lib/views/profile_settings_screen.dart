@@ -19,6 +19,7 @@ import '../widgets/rounded_button.dart';
 import 'post_detail_screen.dart';
 import 'saved_posts_screen.dart';
 import '../services/auth0_service.dart';
+import '../services/supabase_service.dart';
 import 'clerk_test_screen.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
@@ -1054,7 +1055,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     userProvider.setCurrentUser(
                       userProvider.currentUserId ?? '',
                       updatedDisplayName ?? controller.text.trim(),
-                      userProvider.currentUserEmail ?? '',
+                      userProvider.currentEmail ?? '',
                     );
                     
                     ScaffoldMessenger.of(context).showSnackBar(

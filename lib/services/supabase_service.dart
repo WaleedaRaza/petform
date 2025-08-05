@@ -168,6 +168,21 @@ class SupabaseService {
         return null;
       }
       
+      // Check if username is already taken by another user
+      final existingUser = await client
+          .from('profiles')
+          .select('user_id')
+          .eq('username', newDisplayName)
+          .neq('user_id', userId)
+          .maybeSingle();
+      
+      if (existingUser != null) {
+        if (kDebugMode) {
+          print('SupabaseService: Username already taken: $newDisplayName');
+        }
+        throw Exception('Username "$newDisplayName" is already taken. Please choose a different name.');
+      }
+      
       final result = await client.rpc('update_display_name', params: {
         'p_user_id': userId,
         'p_new_display_name': newDisplayName,
@@ -182,7 +197,7 @@ class SupabaseService {
       if (kDebugMode) {
         print('SupabaseService: Error updating display name: $e');
       }
-      return null;
+      rethrow;
     }
   }
   
