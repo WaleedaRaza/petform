@@ -206,32 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         type: BottomNavigationBarType.fixed,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Sign Out'),
-              content: const Text('Are you sure you want to sign out?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _signOut();
-                  },
-                  child: const Text('Sign Out', style: TextStyle(color: Colors.red)),
-                ),
-              ],
-            ),
-          );
-        },
-        backgroundColor: Colors.red,
-        child: const Icon(Icons.logout, color: Colors.white),
-      ),
+
     );
   }
 }

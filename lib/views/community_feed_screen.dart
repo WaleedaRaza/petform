@@ -297,7 +297,16 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                     width: 120,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: Colors.red,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.teal.shade600,
+                          Colors.pink.shade600,
+                          Colors.orange.shade600,
+                        ],
+                        stops: const [0.0, 0.5, 1.0],
+                      ),
                       borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
