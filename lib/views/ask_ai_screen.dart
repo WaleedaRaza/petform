@@ -570,102 +570,6 @@ class _AskAiScreenState extends State<AskAiScreen> {
                   ],
                 ),
               ),
-              // PROMINENT TEXT INPUT BOX AT THE TOP
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                padding: const EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.95),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: Text(
-                        '💬 Ask PetPal AI:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _textController,
-                            decoration: InputDecoration(
-                              hintText: 'Ask anything about your pet...',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey.shade300),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey.shade300),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            ),
-                            style: const TextStyle(fontSize: 16),
-                            maxLines: null,
-                            textInputAction: TextInputAction.send,
-                            onSubmitted: (value) async {
-                              if (value.trim().isNotEmpty) {
-                                await aiProvider.sendMessage(value, context);
-                                _textController.clear();
-                              }
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade600,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: aiProvider.isLoading
-                              ? const Padding(
-                                  padding: EdgeInsets.all(12.0),
-                                  child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                    ),
-                                  ),
-                                )
-                              : IconButton(
-                                  icon: const Icon(Icons.send, color: Colors.white),
-                                  onPressed: () async {
-                                    if (_textController.text.trim().isNotEmpty) {
-                                      await aiProvider.sendMessage(_textController.text, context);
-                                      _textController.clear();
-                                    }
-                                  },
-                                ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
               const QueryTypeDropdown(),
               const PetSelector(),
               const QuickActions(),
@@ -701,6 +605,93 @@ class _AskAiScreenState extends State<AskAiScreen> {
                           return MessageBubble(message: aiProvider.messages[index]);
                         },
                       ),
+              ),
+              // DARK THEMED TEXT INPUT AT THE BOTTOM
+              Container(
+                margin: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade900.withOpacity(0.8),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade700, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _textController,
+                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                        decoration: InputDecoration(
+                          hintText: 'Ask anything about your pet...',
+                          hintStyle: TextStyle(color: Colors.grey.shade400),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade600),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade600),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey.shade800.withOpacity(0.5),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                        maxLines: null,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (value) async {
+                          if (value.trim().isNotEmpty) {
+                            await aiProvider.sendMessage(value, context);
+                            _textController.clear();
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.blue.shade600,
+                            Colors.purple.shade600,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: aiProvider.isLoading
+                          ? const Padding(
+                              padding: EdgeInsets.all(12.0),
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              ),
+                            )
+                          : IconButton(
+                              icon: const Icon(Icons.send, color: Colors.white),
+                              onPressed: () async {
+                                if (_textController.text.trim().isNotEmpty) {
+                                  await aiProvider.sendMessage(_textController.text, context);
+                                  _textController.clear();
+                                }
+                              },
+                            ),
+                    ),
+                  ],
+                ),
               ),
             ],
             ),
