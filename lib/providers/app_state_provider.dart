@@ -464,13 +464,23 @@ class AppStateProvider with ChangeNotifier {
       final allMetrics = <TrackingMetric>[];
       for (final pet in pets) {
         try {
-          final petMetrics = await SupabaseService.getTrackingMetricsForPet(pet.id);
+          final petId = pet['id'] as String?;
+          final petName = pet['name'] as String?;
+          
+          if (petId == null) {
+            if (kDebugMode) {
+              print('AppStateProvider._loadTrackingMetrics: Pet has no ID, skipping');
+            }
+            continue;
+          }
+          
+          final petMetrics = await SupabaseService.getTrackingMetricsForPet(petId);
           for (final metricData in petMetrics) {
             try {
               final metric = TrackingMetric.fromJson(metricData);
               allMetrics.add(metric);
               if (kDebugMode) {
-                print('AppStateProvider._loadTrackingMetrics: Loaded metric: ${metric.name} for pet: ${pet.name}');
+                print('AppStateProvider._loadTrackingMetrics: Loaded metric: ${metric.name} for pet: ${petName ?? 'Unknown'}');
               }
             } catch (e) {
               if (kDebugMode) {
@@ -480,7 +490,7 @@ class AppStateProvider with ChangeNotifier {
           }
         } catch (e) {
           if (kDebugMode) {
-            print('AppStateProvider._loadTrackingMetrics: Error loading metrics for pet ${pet.name}: $e');
+            print('AppStateProvider._loadTrackingMetrics: Error loading metrics for pet: $e');
           }
         }
       }
