@@ -436,17 +436,68 @@ class AppStateProvider with ChangeNotifier {
   // Tracking metrics management
   Future<void> _loadTrackingMetrics() async {
     try {
-      // For now, we'll load tracking metrics when needed for specific pets
-      _trackingMetrics = [];
+      if (kDebugMode) {
+        print('AppStateProvider._loadTrackingMetrics: Loading tracking metrics from database');
+      }
+      
+      // Get current user ID
+      final userId = await SupabaseService.getCurrentUserId();
+      if (userId == null) {
+        if (kDebugMode) {
+          print('AppStateProvider._loadTrackingMetrics: No user ID found');
+        }
+        _trackingMetrics = [];
+        return;
+      }
+      
+      // Load all pets for the user
+      final pets = await SupabaseService.getPets();
+      if (pets.isEmpty) {
+        if (kDebugMode) {
+          print('AppStateProvider._loadTrackingMetrics: No pets found');
+        }
+        _trackingMetrics = [];
+        return;
+      }
+      
+      // Load tracking metrics for all pets
+      final allMetrics = <TrackingMetric>[];
+      for (final pet in pets) {
+        try {
+          final petMetrics = await SupabaseService.getTrackingMetricsForPet(pet.id);
+          for (final metricData in petMetrics) {
+            try {
+              final metric = TrackingMetric.fromJson(metricData);
+              allMetrics.add(metric);
+              if (kDebugMode) {
+                print('AppStateProvider._loadTrackingMetrics: Loaded metric: ${metric.name} for pet: ${pet.name}');
+              }
+            } catch (e) {
+              if (kDebugMode) {
+                print('AppStateProvider._loadTrackingMetrics: Error parsing metric: $e');
+              }
+            }
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('AppStateProvider._loadTrackingMetrics: Error loading metrics for pet ${pet.name}: $e');
+          }
+        }
+      }
+      
+      _trackingMetrics = allMetrics;
       
       if (kDebugMode) {
-        print('AppStateProvider._loadTrackingMetrics: Tracking metrics loaded');
+        print('AppStateProvider._loadTrackingMetrics: Loaded ${_trackingMetrics.length} tracking metrics');
       }
+      
+      notifyListeners();
     } catch (e) {
       if (kDebugMode) {
         print('AppStateProvider: Error loading tracking metrics: $e');
       }
-      rethrow;
+      _trackingMetrics = [];
+      // Don't rethrow - let the app continue
     }
   }
   
