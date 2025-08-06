@@ -452,43 +452,69 @@ class AppStateProvider with ChangeNotifier {
   
   Future<void> addDefaultMetricsForPet(String petId) async {
     try {
-      // Add default tracking metrics for the pet
+      if (kDebugMode) {
+        print('AppStateProvider: Adding default metrics for pet $petId');
+      }
+      
+      // Create simple, bulletproof default metrics
       final defaultMetrics = [
         {
           'pet_id': petId,
           'name': 'Weight',
           'category': 'Health',
           'unit': 'lbs',
-          'target_value': null,
+          'target_value': 0.0,
+          'current_value': 0.0,
+          'frequency': 'daily',
+          'description': 'Weight tracking',
+          'is_active': true,
         },
         {
           'pet_id': petId,
           'name': 'Food Intake',
           'category': 'Nutrition',
           'unit': 'cups',
-          'target_value': null,
+          'target_value': 0.0,
+          'current_value': 0.0,
+          'frequency': 'daily',
+          'description': 'Food intake tracking',
+          'is_active': true,
         },
         {
           'pet_id': petId,
           'name': 'Exercise',
           'category': 'Activity',
           'unit': 'minutes',
-          'target_value': null,
+          'target_value': 0.0,
+          'current_value': 0.0,
+          'frequency': 'daily',
+          'description': 'Exercise tracking',
+          'is_active': true,
         },
       ];
       
       for (final metric in defaultMetrics) {
-        await SupabaseService.createTrackingMetric(metric);
+        try {
+          await SupabaseService.createTrackingMetric(metric);
+          if (kDebugMode) {
+            print('AppStateProvider: Successfully created metric: ${metric['name']}');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('AppStateProvider: Failed to create metric ${metric['name']}: $e');
+          }
+          // Continue with other metrics even if one fails
+        }
       }
       
-    if (kDebugMode) {
-        print('AppStateProvider: Added default tracking metrics for pet $petId');
-    }
+      if (kDebugMode) {
+        print('AppStateProvider: Finished adding default tracking metrics for pet $petId');
+      }
     } catch (e) {
       if (kDebugMode) {
         print('AppStateProvider: Error adding default metrics: $e');
       }
-      rethrow;
+      // Don't rethrow - let the app continue
     }
   }
   
@@ -525,13 +551,40 @@ class AppStateProvider with ChangeNotifier {
   
   Future<void> addTrackingMetric(TrackingMetric metric) async {
     try {
-      await SupabaseService.createTrackingMetric(metric.toJson());
+      if (kDebugMode) {
+        print('AppStateProvider: Adding tracking metric: ${metric.name}');
+      }
+      
+      // Create a bulletproof metric data object
+      final metricData = {
+        'name': metric.name,
+        'category': metric.category ?? 'Health',
+        'pet_id': metric.petId,
+        'target_value': metric.targetValue,
+        'current_value': metric.currentValue,
+        'frequency': metric.frequency,
+        'description': metric.description ?? '',
+        'is_active': metric.isActive,
+        'unit': metric.description ?? '',
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      
+      if (kDebugMode) {
+        print('AppStateProvider: Metric data: $metricData');
+      }
+      
+      await SupabaseService.createTrackingMetric(metricData);
       await _loadTrackingMetrics();
+      
+      if (kDebugMode) {
+        print('AppStateProvider: Successfully added tracking metric');
+      }
     } catch (e) {
       if (kDebugMode) {
         print('AppStateProvider: Error adding tracking metric: $e');
       }
-      rethrow;
+      // Don't rethrow - let the app continue
     }
   }
 

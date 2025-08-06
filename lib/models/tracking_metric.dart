@@ -30,12 +30,12 @@ class TrackingMetric {
 
   factory TrackingMetric.fromJson(Map<String, dynamic> json) {
     return TrackingMetric(
-      id: json['id'] as String? ?? 'metric_${DateTime.now().millisecondsSinceEpoch}',
+      id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? 'Unknown Metric',
-      frequency: 'daily', // Default frequency since it's not in DB
+      frequency: json['frequency'] as String? ?? 'daily',
       petId: json['pet_id'] as String? ?? '',
       targetValue: (json['target_value'] as num?)?.toDouble() ?? 10.0,
-      currentValue: 0.0, // Default since current_value is not in DB
+      currentValue: (json['current_value'] as num?)?.toDouble() ?? 0.0,
       createdAt: json['created_at'] != null 
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
@@ -43,8 +43,8 @@ class TrackingMetric {
           ? DateTime.parse(json['updated_at'] as String) 
           : null,
       history: [], // Empty history since it's not stored in DB
-      description: json['unit'] as String?, // Use unit field for description
-      isActive: true, // Default since is_active is not in DB
+      description: json['description'] as String?,
+      isActive: json['is_active'] as bool? ?? true,
       category: json['category'] as String?,
     );
   }
@@ -53,10 +53,14 @@ class TrackingMetric {
     return {
       // Don't send 'id' - let database generate UUID
       'name': name,
-      'category': category,
+      'category': category ?? 'Health',
       'pet_id': petId,
       'target_value': targetValue,
-      'unit': description, // Use description field for unit
+      'current_value': currentValue,
+      'frequency': frequency,
+      'description': description ?? '',
+      'is_active': isActive,
+      'unit': description ?? '', // Use description field for unit
       'created_at': createdAt.toIso8601String(),
       'updated_at': lastUpdated?.toIso8601String(),
     };

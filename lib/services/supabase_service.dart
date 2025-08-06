@@ -761,12 +761,36 @@ class SupabaseService {
 
   static Future<void> createTrackingMetric(Map<String, dynamic> metricData) async {
     try {
+      // Ensure all required fields are present with defaults
+      final safeData = {
+        'name': metricData['name'] ?? 'Unknown Metric',
+        'category': metricData['category'] ?? 'Health',
+        'pet_id': metricData['pet_id'] ?? '',
+        'target_value': metricData['target_value'] ?? 0.0,
+        'current_value': metricData['current_value'] ?? 0.0,
+        'frequency': metricData['frequency'] ?? 'daily',
+        'description': metricData['description'] ?? '',
+        'is_active': metricData['is_active'] ?? true,
+        'unit': metricData['unit'] ?? '',
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      
+      if (kDebugMode) {
+        print('SupabaseService: Creating tracking metric with data: $safeData');
+      }
+      
       await client
           .from('tracking_metrics')
-          .insert(metricData);
+          .insert(safeData);
+          
+      if (kDebugMode) {
+        print('SupabaseService: Tracking metric created successfully');
+      }
     } catch (e) {
       if (kDebugMode) {
         print('SupabaseService: Error creating tracking metric: $e');
+        print('SupabaseService: Data that failed: $metricData');
       }
       rethrow;
     }
