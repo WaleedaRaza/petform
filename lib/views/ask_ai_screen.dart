@@ -570,45 +570,9 @@ class _AskAiScreenState extends State<AskAiScreen> {
                   ],
                 ),
               ),
-              const QueryTypeDropdown(),
-              const PetSelector(),
-              const QuickActions(),
-              Expanded(
-                child: aiProvider.messages.isEmpty
-                    ? const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
-                            SizedBox(height: 16),
-                            Text(
-                              'Start a conversation with PetPal!',
-                              style: TextStyle(fontSize: 18, color: Colors.grey),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Select a pet for personalized advice',
-                              style: TextStyle(fontSize: 14, color: Colors.grey),
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              '💡 Tip: Use the quick action buttons above for specific advice',
-                              style: TextStyle(fontSize: 12, color: Colors.grey),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: aiProvider.messages.length,
-                        itemBuilder: (context, index) {
-                          return MessageBubble(message: aiProvider.messages[index]);
-                        },
-                      ),
-              ),
-              // Text input area with better visibility
+              // PROMINENT TEXT INPUT BOX AT THE TOP
               Container(
-                margin: const EdgeInsets.all(16.0),
+                margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.95),
@@ -641,7 +605,7 @@ class _AskAiScreenState extends State<AskAiScreen> {
                           child: TextField(
                             controller: _textController,
                             decoration: InputDecoration(
-                              hintText: _getHintText(aiProvider.selectedQueryType),
+                              hintText: 'Ask anything about your pet...',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(color: Colors.grey.shade300),
@@ -701,6 +665,42 @@ class _AskAiScreenState extends State<AskAiScreen> {
                     ),
                   ],
                 ),
+              ),
+              const QueryTypeDropdown(),
+              const PetSelector(),
+              const QuickActions(),
+              Expanded(
+                child: aiProvider.messages.isEmpty
+                    ? const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
+                            SizedBox(height: 16),
+                            Text(
+                              'Start a conversation with PetPal!',
+                              style: TextStyle(fontSize: 18, color: Colors.grey),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Select a pet for personalized advice',
+                              style: TextStyle(fontSize: 14, color: Colors.grey),
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              '💡 Tip: Use the quick action buttons above for specific advice',
+                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: aiProvider.messages.length,
+                        itemBuilder: (context, index) {
+                          return MessageBubble(message: aiProvider.messages[index]);
+                        },
+                      ),
               ),
             ],
             ),
