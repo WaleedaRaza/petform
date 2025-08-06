@@ -606,36 +606,99 @@ class _AskAiScreenState extends State<AskAiScreen> {
                         },
                       ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
+              // Text input area with better visibility
+              Container(
+                margin: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.95),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _textController,
-                        decoration: InputDecoration(
-                          hintText: _getHintText(aiProvider.selectedQueryType),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          filled: true,
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Text(
+                        '💬 Ask PetPal AI:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade700,
                         ),
-                        onSubmitted: (value) async {
-                          await aiProvider.sendMessage(value, context);
-                          _textController.clear();
-                        },
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    aiProvider.isLoading
-                        ? const CircularProgressIndicator()
-                        : IconButton(
-                            icon: const Icon(Icons.send),
-                            onPressed: () async {
-                              await aiProvider.sendMessage(_textController.text, context);
-                              _textController.clear();
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _textController,
+                            decoration: InputDecoration(
+                              hintText: _getHintText(aiProvider.selectedQueryType),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                            style: const TextStyle(fontSize: 16),
+                            maxLines: null,
+                            textInputAction: TextInputAction.send,
+                            onSubmitted: (value) async {
+                              if (value.trim().isNotEmpty) {
+                                await aiProvider.sendMessage(value, context);
+                                _textController.clear();
+                              }
                             },
                           ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade600,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: aiProvider.isLoading
+                              ? const Padding(
+                                  padding: EdgeInsets.all(12.0),
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  ),
+                                )
+                              : IconButton(
+                                  icon: const Icon(Icons.send, color: Colors.white),
+                                  onPressed: () async {
+                                    if (_textController.text.trim().isNotEmpty) {
+                                      await aiProvider.sendMessage(_textController.text, context);
+                                      _textController.clear();
+                                    }
+                                  },
+                                ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
