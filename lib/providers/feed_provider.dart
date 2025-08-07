@@ -312,12 +312,18 @@ class FeedProvider with ChangeNotifier {
         }
       }
 
-      // Shuffle posts for better variety (especially for "All" category)
+      // FILTER INAPPROPRIATE CONTENT
+      allPosts = _filterInappropriateContent(allPosts);
+      
+      // CREATE BALANCED ASSORTMENT
       if (_selectedPetType == 'All') {
-        allPosts.shuffle();
+        allPosts = _createBalancedAssortment(allPosts);
         if (kDebugMode) {
-          print('FeedProvider: Shuffled posts for "All" category');
+          print('FeedProvider: Created balanced assortment with ${allPosts.length} posts');
         }
+      } else {
+        // For specific pet types, still filter but don't balance
+        allPosts = _filterInappropriateContent(allPosts);
       }
 
       // Sort all posts by creation date (newest first)
@@ -431,5 +437,138 @@ class FeedProvider with ChangeNotifier {
     }
     
     notifyListeners();
+  }
+
+  // Filter out inappropriate content
+  List<Post> _filterInappropriateContent(List<Post> posts) {
+    final inappropriateKeywords = [
+      'testicles', 'testicle', 'balls', 'ball', 'penis', 'dick', 'cock',
+      'vagina', 'pussy', 'sex', 'sexual', 'mating', 'breeding', 'fuck',
+      'shit', 'piss', 'pissed', 'pissing', 'fucking', 'ass', 'asshole',
+      'dickhead', 'cock', 'cunt', 'whore', 'slut', 'bitch', 'bastard',
+      'nude', 'naked', 'nudity', 'porn', 'pornographic', 'explicit',
+      'inappropriate', 'nsfw', 'adult', 'mature', 'sexual content'
+    ];
+
+    return posts.where((post) {
+      final title = post.title.toLowerCase();
+      final content = post.content.toLowerCase();
+      
+      // Check for inappropriate keywords
+      for (final keyword in inappropriateKeywords) {
+        if (title.contains(keyword) || content.contains(keyword)) {
+          if (kDebugMode) {
+            print('FeedProvider: Filtered out post with inappropriate keyword: $keyword');
+          }
+          return false;
+        }
+      }
+      
+      // Check for excessive repetition of the same topic
+      final words = (title + ' ' + content).toLowerCase().split(' ');
+      final wordCount = <String, int>{};
+      for (final word in words) {
+        if (word.length > 3) { // Only count words longer than 3 characters
+          wordCount[word] = (wordCount[word] ?? 0) + 1;
+        }
+      }
+      
+      // If any word appears more than 5 times, it might be spam
+      for (final entry in wordCount.entries) {
+        if (entry.value > 5) {
+          if (kDebugMode) {
+            print('FeedProvider: Filtered out post with repetitive word: ${entry.key}');
+          }
+          return false;
+        }
+      }
+      
+      return true;
+    }).toList();
+  }
+
+  // Create balanced assortment from different pet types and topics
+  List<Post> _createBalancedAssortment(List<Post> posts) {
+    if (posts.isEmpty) return posts;
+
+    // Group posts by pet type
+    final postsByPetType = <String, List<Post>>{};
+    final postsByTopic = <String, List<Post>>{};
+    
+    for (final post in posts) {
+      // Group by pet type
+      final petType = post.petType ?? 'Unknown';
+      postsByPetType.putIfAbsent(petType, () => []).add(post);
+      
+      // Group by topic (extract main topic from title/content)
+      final topic = _extractMainTopic(post.title, post.content);
+      postsByTopic.putIfAbsent(topic, () => []).add(post);
+    }
+
+    final balancedPosts = <Post>[];
+    final maxPostsPerPetType = 3; // Maximum 3 posts per pet type
+    final maxPostsPerTopic = 2; // Maximum 2 posts per topic
+    
+    // Add posts from each pet type (balanced)
+    for (final petType in postsByPetType.keys) {
+      final petPosts = postsByPetType[petType]!;
+      petPosts.sort((a, b) => b.createdAt.compareTo(a.createdAt)); // Newest first
+      
+      // Take up to maxPostsPerPetType from each pet type
+      balancedPosts.addAll(petPosts.take(maxPostsPerPetType));
+    }
+    
+    // Add posts from each topic (balanced)
+    final topicPosts = <Post>[];
+    for (final topic in postsByTopic.keys) {
+      final topicPostList = postsByTopic[topic]!;
+      topicPostList.sort((a, b) => b.createdAt.compareTo(a.createdAt)); // Newest first
+      
+      // Take up to maxPostsPerTopic from each topic
+      topicPosts.addAll(topicPostList.take(maxPostsPerTopic));
+    }
+    
+    // Combine and shuffle for variety
+    final allBalancedPosts = <Post>[...balancedPosts, ...topicPosts];
+    allBalancedPosts.shuffle();
+    
+    // Take top 20 posts for good variety
+    return allBalancedPosts.take(20).toList();
+  }
+
+  // Extract main topic from post title and content
+  String _extractMainTopic(String title, String content) {
+    final text = (title + ' ' + content).toLowerCase();
+    
+    // Define topic keywords
+    final topicKeywords = {
+      'health': ['vet', 'veterinary', 'health', 'medical', 'sick', 'illness', 'disease', 'symptom', 'treatment'],
+      'training': ['training', 'train', 'behavior', 'obedience', 'command', 'trick', 'socialization'],
+      'nutrition': ['food', 'diet', 'feeding', 'nutrition', 'meal', 'treat', 'feeding'],
+      'care': ['care', 'grooming', 'bathing', 'cleaning', 'maintenance', 'hygiene'],
+      'exercise': ['exercise', 'walk', 'play', 'activity', 'workout', 'fitness'],
+      'adoption': ['adopt', 'adoption', 'rescue', 'foster', 'shelter'],
+      'equipment': ['toy', 'bed', 'crate', 'collar', 'leash', 'equipment', 'supplies'],
+      'general': ['general', 'question', 'advice', 'help', 'support']
+    };
+    
+    // Find the most relevant topic
+    String bestTopic = 'general';
+    int maxMatches = 0;
+    
+    for (final entry in topicKeywords.entries) {
+      int matches = 0;
+      for (final keyword in entry.value) {
+        if (text.contains(keyword)) {
+          matches++;
+        }
+      }
+      if (matches > maxMatches) {
+        maxMatches = matches;
+        bestTopic = entry.key;
+      }
+    }
+    
+    return bestTopic;
   }
 }
