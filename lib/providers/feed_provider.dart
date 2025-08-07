@@ -143,9 +143,9 @@ class FeedProvider with ChangeNotifier {
                     limit: postsPerSubreddit + 5, // Fetch more posts for better variety
                   );
                   
-                  // Assign general pet type
+                  // Intelligently assign pet type based on content
                   for (var post in posts) {
-                    post.petType = 'All';
+                    post.petType = _detectPetTypeFromContent(post.title, post.content);
                   }
                   
                   redditPosts.addAll(posts);
@@ -606,5 +606,63 @@ class FeedProvider with ChangeNotifier {
     }
     
     return bestTopic;
+  }
+
+  // Detect pet type from post content
+  String _detectPetTypeFromContent(String title, String content) {
+    final text = (title + ' ' + content).toLowerCase();
+    
+    // Define pet type keywords
+    final petTypeKeywords = {
+      'Dog': ['dog', 'puppy', 'puppies', 'canine', 'hound', 'breed', 'leash', 'walk', 'bark', 'woof'],
+      'Cat': ['cat', 'kitten', 'kittens', 'feline', 'meow', 'purr', 'litter', 'scratch'],
+      'Bird': ['bird', 'parrot', 'cockatiel', 'budgie', 'canary', 'finch', 'wing', 'feather', 'cage'],
+      'Fish': ['fish', 'aquarium', 'tank', 'water', 'swim', 'guppy', 'betta', 'goldfish', 'tropical'],
+      'Rabbit': ['rabbit', 'bunny', 'bunnies', 'hare', 'hop', 'carrot', 'hutch'],
+      'Hamster': ['hamster', 'gerbil', 'mouse', 'rodent', 'wheel', 'cage'],
+      'Snake': ['snake', 'python', 'boa', 'reptile', 'scale', 'slither', 'terrarium'],
+      'Lizard': ['lizard', 'gecko', 'bearded dragon', 'iguana', 'reptile', 'scale'],
+      'Turtle': ['turtle', 'tortoise', 'shell', 'aquatic', 'pond'],
+      'Guinea Pig': ['guinea pig', 'cavy', 'pig', 'rodent'],
+      'Parrot': ['parrot', 'macaw', 'cockatoo', 'african grey', 'amazon'],
+      'Hedgehog': ['hedgehog', 'spike', 'quill'],
+      'Ferret': ['ferret', 'weasel', 'playful'],
+      'Chinchilla': ['chinchilla', 'dust bath', 'soft'],
+      'Frog': ['frog', 'toad', 'amphibian', 'pond'],
+      'Tarantula': ['tarantula', 'spider', 'arachnid', 'web'],
+      'Axolotl': ['axolotl', 'salamander', 'aquatic'],
+      'Mouse': ['mouse', 'mice', 'rodent', 'small'],
+      'Goat': ['goat', 'farm', 'hoof', 'mountain'],
+    };
+    
+    // Find the most relevant pet type
+    String bestPetType = 'All';
+    int maxMatches = 0;
+    
+    for (final entry in petTypeKeywords.entries) {
+      int matches = 0;
+      for (final keyword in entry.value) {
+        if (text.contains(keyword)) {
+          matches++;
+        }
+      }
+      if (matches > maxMatches) {
+        maxMatches = matches;
+        bestPetType = entry.key;
+      }
+    }
+    
+    // Only return specific pet type if we have good confidence (at least 2 matches)
+    if (maxMatches >= 2) {
+      if (kDebugMode) {
+        print('FeedProvider: Detected pet type "$bestPetType" with $maxMatches matches');
+      }
+      return bestPetType;
+    } else {
+      if (kDebugMode) {
+        print('FeedProvider: Could not detect specific pet type, using "All"');
+      }
+      return 'All';
+    }
   }
 }
