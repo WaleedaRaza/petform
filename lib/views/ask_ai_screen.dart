@@ -606,9 +606,9 @@ class _AskAiScreenState extends State<AskAiScreen> {
                         },
                       ),
               ),
-              // DARK THEMED TEXT INPUT AT THE BOTTOM
+              // DARK THEMED TEXT INPUT AT THE BOTTOM - MOVED UP
               Container(
-                margin: const EdgeInsets.all(16.0),
+                margin: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade900.withOpacity(0.8),
@@ -693,6 +693,8 @@ class _AskAiScreenState extends State<AskAiScreen> {
                   ],
                 ),
               ),
+              // Add bottom padding to ensure space above navigation
+              const SizedBox(height: 20),
             ],
             ),
           ),
