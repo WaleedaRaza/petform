@@ -505,35 +505,71 @@ class FeedProvider with ChangeNotifier {
       postsByTopic.putIfAbsent(topic, () => []).add(post);
     }
 
+    if (kDebugMode) {
+      print('FeedProvider: Posts by pet type: ${postsByPetType.keys.toList()}');
+      for (final entry in postsByPetType.entries) {
+        print('FeedProvider: ${entry.key}: ${entry.value.length} posts');
+      }
+    }
+
     final balancedPosts = <Post>[];
-    final maxPostsPerPetType = 3; // Maximum 3 posts per pet type
-    final maxPostsPerTopic = 2; // Maximum 2 posts per topic
+    final maxPostsPerPetType = 2; // Reduced from 3 to 2 for better variety
+    final maxPostsPerTopic = 1; // Reduced from 2 to 1 for better variety
+    final targetTotalPosts = 15; // Reduced from 20 to 15 for better curation
     
-    // Add posts from each pet type (balanced)
-    for (final petType in postsByPetType.keys) {
+    // STRICT PET TYPE BALANCING - ensure variety
+    final petTypes = postsByPetType.keys.toList();
+    petTypes.sort(); // Sort for consistent ordering
+    
+    // Take exactly 1 post from each pet type first (if available)
+    for (final petType in petTypes) {
       final petPosts = postsByPetType[petType]!;
       petPosts.sort((a, b) => b.createdAt.compareTo(a.createdAt)); // Newest first
       
-      // Take up to maxPostsPerPetType from each pet type
-      balancedPosts.addAll(petPosts.take(maxPostsPerPetType));
+      if (petPosts.isNotEmpty) {
+        balancedPosts.add(petPosts.first); // Take 1 from each pet type
+        if (kDebugMode) {
+          print('FeedProvider: Added 1 post from $petType');
+        }
+      }
     }
     
-    // Add posts from each topic (balanced)
-    final topicPosts = <Post>[];
-    for (final topic in postsByTopic.keys) {
-      final topicPostList = postsByTopic[topic]!;
-      topicPostList.sort((a, b) => b.createdAt.compareTo(a.createdAt)); // Newest first
+    // Then add additional posts to fill up to target, but maintain balance
+    final remainingSlots = targetTotalPosts - balancedPosts.length;
+    if (remainingSlots > 0) {
+      final additionalPosts = <Post>[];
       
-      // Take up to maxPostsPerTopic from each topic
-      topicPosts.addAll(topicPostList.take(maxPostsPerTopic));
+      // Add more posts from different pet types, but limit to maxPostsPerPetType
+      for (final petType in petTypes) {
+        final petPosts = postsByPetType[petType]!;
+        if (petPosts.length > 1) {
+          // Take additional posts (skip the first one we already took)
+          final additionalFromThisType = petPosts.skip(1).take(maxPostsPerPetType - 1);
+          additionalPosts.addAll(additionalFromThisType);
+        }
+      }
+      
+      // Shuffle additional posts and take what we need
+      additionalPosts.shuffle();
+      balancedPosts.addAll(additionalPosts.take(remainingSlots));
     }
     
-    // Combine and shuffle for variety
-    final allBalancedPosts = <Post>[...balancedPosts, ...topicPosts];
-    allBalancedPosts.shuffle();
+    // Final shuffle for variety
+    balancedPosts.shuffle();
     
-    // Take top 20 posts for good variety
-    return allBalancedPosts.take(20).toList();
+    if (kDebugMode) {
+      print('FeedProvider: Final balanced assortment: ${balancedPosts.length} posts');
+      final finalPetTypes = <String, int>{};
+      for (final post in balancedPosts) {
+        final petType = post.petType ?? 'Unknown';
+        finalPetTypes[petType] = (finalPetTypes[petType] ?? 0) + 1;
+      }
+      for (final entry in finalPetTypes.entries) {
+        print('FeedProvider: Final mix - ${entry.key}: ${entry.value} posts');
+      }
+    }
+    
+    return balancedPosts;
   }
 
   // Extract main topic from post title and content
