@@ -1,4 +1,4 @@
-# PetForm - Enterprise-Grade Pet Management Platform
+# PetForm - All-in-One Pet Management App
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.19.0-blue.svg)](https://flutter.dev/)
 [![Dart](https://img.shields.io/badge/Dart-3.2.0-blue.svg)](https://dart.dev/)
@@ -8,586 +8,347 @@
 [![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4-green.svg)](https://openai.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://postgresql.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20Android%20%7C%20Web-blue.svg)](https://flutter.dev/)
-[![Users](https://img.shields.io/badge/Users-300%2B-green.svg)](https://petform.app)
+[![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20Android-blue.svg)](https://flutter.dev/)
 
-> **Revolutionary pet management platform featuring AI-powered insights, real-time community engagement, comprehensive health tracking, and intelligent automation. Built with cutting-edge technologies for the modern pet owner.**
+> **Comprehensive pet management app with AI-powered insights, health tracking, community engagement, and smart shopping. Built with Flutter, Auth0, Supabase, and OpenAI GPT-4.**
 
-## 📊 Project Statistics
+## 📊 Project Overview
 
-- **🏗️ Architecture**: Microservices with event-driven design
-- **📱 Platforms**: iOS, Android, Web (PWA)
-- **👥 Active Users**: 300+ registered users
-- **🤖 AI Queries**: 10,000+ GPT-4 interactions
-- **📊 Data Points**: 50,000+ tracking metrics
-- **🌐 Community Posts**: 15,000+ curated Reddit posts
-- **🔐 Security**: Enterprise-grade with SOC 2 compliance
-- **⚡ Performance**: 99.9% uptime with sub-100ms response times
+- **🏗️ Architecture**: Flutter app with Auth0 authentication and Supabase backend
+- **📱 Platforms**: iOS and Android with responsive design
+- **🤖 AI Integration**: OpenAI GPT-4 for personalized pet advice
+- **📊 Tracking**: Comprehensive health and behavior metrics
+- **🌐 Community**: Curated Reddit content with smart filtering
+- **🛒 Shopping**: AI-driven product recommendations
+- **🔐 Security**: Auth0 with social login and secure token management
 
 ## 🚀 Overview
 
-PetForm is a sophisticated, full-stack pet management application that revolutionizes how pet owners care for their companions. Built with cutting-edge technologies, it provides a unified platform for tracking, AI-powered insights, community engagement, and intelligent automation.
+PetForm is a comprehensive pet management app that helps pet owners track their pets' health, get AI-powered advice, engage with the community, and manage shopping needs. Built with Flutter, it provides a seamless experience across iOS and Android platforms.
 
-### Key Features
+### Core Features
 
-- **🤖 AI-Powered Pet Assistant** - GPT-4 integration for personalized health, behavior, and nutrition advice
-- **📊 Advanced Tracking System** - Comprehensive metrics with ML-powered insights and predictive analytics
-- **🌐 Real-Time Community** - Curated Reddit integration with pet-specific content filtering
-- **🛒 Smart Shopping** - AI-driven product recommendations based on breed and lifecycle
-- **🔐 Enterprise Security** - Auth0 integration with social login and token validation
-- **📱 Cross-Platform** - Native iOS/Android with responsive web dashboard
-- **⚡ Real-Time Sync** - Firebase Realtime Database with offline-first architecture
+- **🤖 AI Pet Assistant** - GPT-4 powered chat for health, behavior, and nutrition advice
+- **📊 Health Tracking** - Monitor weight, feeding, exercise, grooming, and medication schedules
+- **🌐 Community Feed** - Curated Reddit content with smart filtering and balanced assortment
+- **🛒 Shopping Lists** - AI-driven product recommendations and shopping management
+- **🔐 Secure Auth** - Auth0 authentication with social login (Google, Apple)
+- **📱 Cross-Platform** - Native iOS and Android apps with responsive design
+- **⚡ Real-Time Data** - Supabase backend with live synchronization
 
-## 🏗️ Enterprise Architecture
+## 🏗️ Technical Architecture
 
-### System Architecture Overview
+### System Overview
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Mobile App    │    │   Web Dashboard │    │   Admin Panel   │
-│   (Flutter)     │    │   (React/TS)    │    │   (Vue.js)      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │   API Gateway   │
-                    │  (Kong/Envoy)   │
-                    └─────────────────┘
-                                 │
-         ┌───────────────────────┼───────────────────────┐
-         │                       │                       │
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│  Auth Service   │    │  AI Service     │    │  Analytics      │
-│   (Auth0)       │    │  (OpenAI)       │    │  (BigQuery)     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │  Event Bus      │
-                    │ (Apache Kafka)  │
-                    └─────────────────┘
-                                 │
-         ┌───────────────────────┼───────────────────────┐
-         │                       │                       │
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│  User Service   │    │  Pet Service    │    │  Community      │
-│  (Node.js)      │    │  (Python)       │    │  (Go)           │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │  Data Layer     │
-                    │ (PostgreSQL)    │
-                    └─────────────────┘
+┌─────────────────┐
+│   Flutter App   │
+│  (iOS/Android)  │
+└─────────────────┘
+         │
+         ▼
+┌─────────────────┐
+│   Auth0 Auth    │
+│  (Social Login) │
+└─────────────────┘
+         │
+         ▼
+┌─────────────────┐    ┌─────────────────┐
+│   Supabase      │    │   OpenAI        │
+│  (PostgreSQL)   │    │   (GPT-4 API)   │
+└─────────────────┘    └─────────────────┘
+         │                       │
+         ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐
+│   Reddit API    │    │   Firebase      │
+│  (Community)    │    │  (Real-time)    │
+└─────────────────┘    └─────────────────┘
 ```
 
-### Frontend Stack (Mobile & Web)
-- **Flutter 3.19.0** - Cross-platform UI framework with custom design system
-  - Custom widget library with 100+ reusable components
-  - Responsive design with adaptive layouts
-  - Accessibility features (WCAG 2.1 AA compliant)
-  - Dark/Light theme support with dynamic theming
-- **Dart 3.2.0** - Type-safe programming language with null safety
-  - Advanced generics and metaprogramming
-  - Custom code generation with build_runner
-  - Comprehensive unit and integration testing
-- **State Management** - Provider pattern with reactive programming
-  - Centralized state management with immutable data
-  - Real-time state synchronization across devices
-  - Offline-first architecture with conflict resolution
-- **Performance Optimization**
-  - Lazy loading with virtual scrolling
-  - Image optimization with WebP/AVIF support
-  - Memory management with automatic garbage collection
-  - Background processing with isolate workers
+### Frontend (Flutter)
+- **Flutter 3.19.0** - Cross-platform mobile development
+  - Custom UI components with dark theme
+  - Responsive design for different screen sizes
+  - Provider pattern for state management
+  - Offline-first architecture with local storage
+- **Dart 3.2.0** - Type-safe programming with null safety
+  - Custom models for pets, tracking metrics, and posts
+  - Service layer for API communication
+  - Error handling and validation
 
-### Backend Infrastructure (Microservices)
-- **API Gateway** - Kong/Envoy for request routing and load balancing
-  - Rate limiting and DDoS protection
-  - Request/response transformation
-  - API versioning and backward compatibility
-  - Circuit breaker pattern implementation
-- **Authentication Service** - Auth0 with custom extensions
-  - Multi-factor authentication (MFA)
-  - Social login (Apple, Google, Facebook, Twitter)
-  - Role-based access control (RBAC)
-  - JWT token management with refresh tokens
-- **Database Layer** - PostgreSQL 15 with advanced features
-  - Row Level Security (RLS) policies
-  - Full-text search with pg_trgm
-  - JSONB for flexible schema evolution
-  - Partitioning for large datasets
-  - Read replicas for horizontal scaling
-- **Real-Time Infrastructure** - Firebase + WebSockets
-  - Real-time database with conflict resolution
-  - Push notifications with rich content
-  - Live collaboration features
-  - Offline synchronization
+### Backend Services
+- **Auth0** - Authentication and user management
+  - Social login (Google, Apple)
+  - JWT token validation
+  - User profile management
+  - Email verification
+- **Supabase** - Database and real-time features
+  - PostgreSQL database with Row Level Security
+  - Real-time subscriptions for live updates
+  - User mapping between Auth0 and Supabase
+  - Custom RPC functions for complex operations
+- **OpenAI GPT-4** - AI assistant integration
+  - Natural language processing for pet advice
+  - Context-aware conversations
+  - Health and behavior recommendations
+- **Reddit API** - Community content
+  - Curated posts from pet subreddits
+  - Smart content filtering
+  - Balanced content assortment
 
-### AI & Machine Learning Stack
-- **OpenAI GPT-4 API** - Advanced natural language processing
-  - Context-aware conversation management
-  - Multi-turn dialogue with memory
-  - Sentiment analysis for user feedback
-  - Content generation for personalized advice
-- **Custom ML Models** - TensorFlow/PyTorch implementation
-  - Health prediction models (Random Forest, XGBoost)
-  - Behavior analysis with LSTM networks
-  - Image recognition for breed identification
-  - Anomaly detection for health monitoring
-- **Data Pipeline** - Apache Kafka + Apache Spark
-  - Real-time data processing
-  - Feature engineering for ML models
-  - A/B testing framework
-  - Model versioning and deployment
-
-### DevOps & Infrastructure
-- **Container Orchestration** - Kubernetes with Helm charts
-  - Auto-scaling based on CPU/memory metrics
-  - Blue-green deployments with zero downtime
-  - Service mesh with Istio
-  - Secrets management with HashiCorp Vault
-- **Monitoring & Observability** - Prometheus + Grafana
-  - Application performance monitoring (APM)
-  - Distributed tracing with Jaeger
-  - Log aggregation with ELK stack
-  - Custom dashboards for business metrics
-- **CI/CD Pipeline** - GitHub Actions + ArgoCD
-  - Automated testing with 95% code coverage
-  - Security scanning with Snyk
-  - Performance testing with k6
-  - Automated deployment to staging/production
-
-## 🔧 Advanced Core Features
-
-### 🤖 AI-Powered Pet Assistant (GPT-4 Integration)
-```dart
-// Advanced AI service with context management
-class PetAI {
-  Future<AIResponse> getHealthAdvice(String question, Pet pet, List<TrackingMetric> metrics);
-  Future<AIResponse> getBehaviorAnalysis(String behavior, Pet pet, List<BehaviorEvent> events);
-  Future<AIResponse> getNutritionAdvice(String question, Pet pet, List<ShoppingItem> items);
-  Future<EmergencyResponse> getEmergencyAdvice(String situation, Pet pet);
-  Future<List<Recommendation>> getPersonalizedRecommendations(Pet pet);
-}
-
-// AI Response with structured data
-class AIResponse {
-  final String answer;
-  final double confidence;
-  final List<String> sources;
-  final List<Action> suggestedActions;
-  final Map<String, dynamic> metadata;
-}
-```
-
-**Advanced AI Features:**
-- **Context-Aware Conversations** - Multi-turn dialogue with conversation memory
-- **Breed-Specific Intelligence** - 200+ breed profiles with specialized knowledge
-- **Health History Integration** - AI considers complete medical and behavioral history
-- **Predictive Health Alerts** - ML models predict potential health issues
-- **Multi-Language Support** - 15+ languages with cultural pet care adaptations
-- **Emergency Triage** - AI-powered emergency assessment with vet routing
-- **Sentiment Analysis** - Detects user emotional state for better responses
-- **Voice Integration** - Speech-to-text and text-to-speech capabilities
-
-### 📊 Advanced Tracking System (ML-Powered Analytics)
+### Database Schema
 ```sql
--- Comprehensive tracking with ML insights and predictive analytics
-CREATE TABLE tracking_metrics (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  pet_id UUID REFERENCES pets(id) ON DELETE CASCADE,
-  metric_type TEXT NOT NULL,
-  category TEXT NOT NULL DEFAULT 'Health',
-  value DECIMAL(10,2),
-  unit TEXT,
-  frequency TEXT DEFAULT 'daily',
-  target_value DECIMAL(10,2),
-  current_value DECIMAL(10,2) DEFAULT 0.0,
-  ml_insights JSONB,
-  predictive_alerts JSONB,
-  trend_analysis JSONB,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- Core tables
+CREATE TABLE pets (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id),
+  name TEXT NOT NULL,
+  breed TEXT,
+  birth_date DATE,
+  weight DECIMAL(5,2),
+  created_at TIMESTAMP DEFAULT NOW()
 );
 
--- ML-powered health predictions
-CREATE TABLE health_predictions (
+CREATE TABLE tracking_metrics (
   id UUID PRIMARY KEY,
   pet_id UUID REFERENCES pets(id),
-  prediction_type TEXT NOT NULL,
-  confidence DECIMAL(3,2),
-  predicted_date DATE,
-  risk_factors JSONB,
-  recommendations JSONB,
+  name TEXT NOT NULL,
+  category TEXT DEFAULT 'Health',
+  target_value DECIMAL(10,2),
+  current_value DECIMAL(10,2),
+  frequency TEXT DEFAULT 'daily',
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id),
+  username TEXT UNIQUE,
+  display_name TEXT,
   created_at TIMESTAMP DEFAULT NOW()
 );
 ```
 
-**Advanced Tracking Capabilities:**
-- **50+ Tracking Categories** - Weight, feeding, exercise, grooming, medication, training, behavior
-- **ML-Powered Insights** - Predictive health alerts using Random Forest and XGBoost models
-- **Smart Scheduling** - AI-generated reminders based on pet behavior patterns and health trends
-- **Data Visualization** - Interactive charts with D3.js, trend analysis, and goal tracking
-- **Export Functionality** - PDF reports for veterinary consultations with medical summaries
-- **Real-Time Alerts** - Push notifications for health anomalies and schedule reminders
-- **Trend Analysis** - Statistical analysis with seasonal adjustments and breed-specific baselines
-- **Goal Setting** - SMART goal framework with progress tracking and milestone celebrations
-- **Health Scoring** - Composite health score based on multiple metrics and ML predictions
+## 🔧 Core Features
 
-### 🌐 Real-Time Community Platform (Advanced Content Curation)
+### 🤖 AI Pet Assistant
 ```dart
-// Advanced community management with AI content filtering
-class CommunityFeed {
-  Future<List<Post>> getCuratedPosts(String petType, List<String> topics, UserPreferences prefs);
-  Future<void> filterInappropriateContent(List<Post> posts);
-  Future<List<Post>> createBalancedAssortment(List<Post> posts);
-  Future<EngagementMetrics> trackUserEngagement(String userId, String postId, String action);
-  Future<List<Recommendation>> getPersonalizedRecommendations(User user);
+// GPT-4 powered pet advice
+class PetAI {
+  Future<String> getHealthAdvice(String question, Pet pet, List<TrackingMetric> metrics);
+  Future<String> getBehaviorAnalysis(String behavior, Pet pet);
+  Future<String> getNutritionAdvice(String question, Pet pet, List<ShoppingItem> items);
 }
 
-// Advanced post structure with engagement tracking
+// AI chat interface
+class AskAiScreen extends StatefulWidget {
+  // Dark-themed chat interface
+  // Real-time conversation with GPT-4
+  // Context-aware responses based on pet data
+}
+```
+
+**AI Features:**
+- **GPT-4 Integration** - Natural language processing for pet advice
+- **Context-Aware Responses** - AI considers pet breed, age, and health history
+- **Health & Behavior Advice** - Personalized recommendations based on pet data
+- **Nutrition Guidance** - Diet recommendations and feeding schedules
+- **Emergency Advice** - Quick responses for urgent pet care situations
+- **Multi-turn Conversations** - Maintains context throughout the conversation
+
+### 📊 Health Tracking System
+```dart
+// Tracking metrics model
+class TrackingMetric {
+  final String id;
+  final String name;
+  final String category;
+  final double targetValue;
+  final double currentValue;
+  final String frequency;
+  final String petId;
+  final DateTime createdAt;
+}
+
+// Tracking screen with metrics display
+class TrackingScreen extends StatefulWidget {
+  // Display tracking metrics for each pet
+  // Add new metrics with categories
+  // Track progress over time
+}
+```
+
+**Tracking Features:**
+- **Multiple Categories** - Weight, feeding, exercise, grooming, medication
+- **Custom Metrics** - Add personalized tracking for specific needs
+- **Progress Tracking** - Monitor trends and set goals
+- **Default Metrics** - Pre-configured tracking for common pet care needs
+- **Data Persistence** - Store tracking data in Supabase with real-time sync
+- **Visual Progress** - Charts and graphs for tracking visualization
+
+### 🌐 Community Feed
+```dart
+// Community feed with Reddit integration
+class CommunityFeedScreen extends StatefulWidget {
+  // Curated Reddit posts from pet subreddits
+  // Smart content filtering
+  // Balanced assortment of pet types
+}
+
+// Post model
 class Post {
   final String id;
   final String title;
   final String content;
   final String petType;
-  final User author;
-  final List<String> tags;
-  final EngagementMetrics engagement;
-  final ContentQualityScore qualityScore;
-  final List<Comment> comments;
+  final String author;
   final DateTime createdAt;
+  final int upvotes;
+  final int downvotes;
 }
 ```
 
-**Advanced Community Features:**
-- **Reddit API Integration** - Curated content from 50+ pet subreddits with real-time updates
-- **AI Content Filtering** - GPT-4 powered inappropriate content detection with 99.5% accuracy
-- **Smart Assortment Algorithm** - Balanced mix of pet types and topics using collaborative filtering
-- **Real-Time Comments** - Live discussion threads with moderation tools and spam detection
-- **Voting System** - Upvote/downvote with reputation tracking and anti-gaming measures
-- **Pet-Specific Filters** - Content tailored to user's pets with breed-specific relevance
-- **Engagement Analytics** - Advanced metrics tracking with user behavior analysis
-- **Content Quality Scoring** - ML-based content quality assessment
-- **Moderation Tools** - AI-powered moderation with human oversight
-- **Community Guidelines** - Automated enforcement with appeal process
+**Community Features:**
+- **Reddit Integration** - Curated posts from popular pet subreddits
+- **Smart Filtering** - AI-powered inappropriate content detection
+- **Balanced Content** - Mix of different pet types and topics
+- **Pet-Specific Filters** - Filter content by pet type (Dog, Cat, etc.)
+- **Real-Time Updates** - Live feed with new posts
+- **Save Posts** - Bookmark interesting posts for later
+- **Comments** - View and add comments to posts
 
-### 🛒 Smart Shopping System (AI-Driven Recommendations)
+### 🛒 Shopping Lists
 ```dart
-// Advanced shopping assistant with ML recommendations
-class ShoppingAssistant {
-  Future<List<Product>> getRecommendations(Pet pet, List<TrackingMetric> metrics, Budget budget);
-  Future<List<Product>> getBreedSpecificProducts(String breed, PetAge age, PetSize size);
-  Future<List<Product>> getLifecycleProducts(PetAge age, PetSize size, HealthStatus health);
-  Future<PriceAnalysis> analyzePricing(List<Product> products);
-  Future<SubscriptionPlan> createSmartSubscription(Pet pet, List<Product> products);
+// Shopping list management
+class ShoppingListScreen extends StatefulWidget {
+  // Add items to shopping list
+  // Mark items as purchased
+  // Organize by categories
 }
 
-// Advanced product recommendation engine
-class ProductRecommendationEngine {
-  Future<List<Product>> collaborativeFiltering(User user, List<User> similarUsers);
-  Future<List<Product>> contentBasedFiltering(Pet pet, List<Product> history);
-  Future<List<Product>> hybridRecommendations(User user, Pet pet);
+// Shopping item model
+class ShoppingItem {
+  final String id;
+  final String name;
+  final String category;
+  final bool isPurchased;
+  final DateTime addedAt;
 }
 ```
 
-**Advanced Shopping Capabilities:**
-- **300+ Product Categories** - Food, toys, health, grooming, training, accessories, technology
-- **Breed-Specific Recommendations** - Tailored suggestions based on breed characteristics and health needs
-- **Lifecycle Tracking** - Age-appropriate product suggestions with health status consideration
-- **Price Comparison** - Integration with 20+ retailers with real-time price tracking
-- **Subscription Management** - AI-powered auto-reorder with smart frequency adjustment
-- **Budget Tracking** - Advanced spending analytics with budget alerts and optimization suggestions
-- **Quality Assessment** - ML-based product quality scoring with user review integration
-- **Inventory Management** - Smart inventory tracking with low-stock alerts
-- **Veterinary Integration** - Prescription medication tracking and refill reminders
+**Shopping Features:**
+- **Add Items** - Add pet supplies to shopping list
+- **Categories** - Organize items by type (Food, Toys, Health, etc.)
+- **Purchase Tracking** - Mark items as purchased
+- **My List** - Personal shopping list management
+- **Item Management** - Add, remove, and edit shopping items
 
-### Advanced Tracking System
-```sql
--- Comprehensive tracking with ML insights
-CREATE TABLE tracking_metrics (
-  id UUID PRIMARY KEY,
-  pet_id UUID REFERENCES pets(id),
-  metric_type TEXT NOT NULL,
-  value DECIMAL(10,2),
-  frequency TEXT DEFAULT 'daily',
-  ml_insights JSONB,
-  predictive_alerts JSONB,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-```
+## 🔐 Authentication & Security
 
-**Capabilities:**
-- **50+ Tracking Categories** - Weight, feeding, exercise, grooming, medication, training
-- **ML-Powered Insights** - Predictive health alerts and trend analysis
-- **Smart Scheduling** - AI-generated reminders based on pet behavior patterns
-- **Data Visualization** - Interactive charts with trend analysis and goal tracking
-- **Export Functionality** - PDF reports for veterinary consultations
-
-### Real-Time Community Platform
+### Auth0 Integration
 ```dart
-// Curated content with advanced filtering
-class CommunityFeed {
-  Future<List<Post>> getCuratedPosts(String petType, List<String> topics);
-  Future<void> filterInappropriateContent(List<Post> posts);
-  Future<List<Post>> createBalancedAssortment(List<Post> posts);
+// Auth0 authentication service
+class Auth0Service {
+  Future<Credentials> login();
+  Future<void> logout();
+  Future<UserProfile?> getUserProfile();
+  Future<bool> isAuthenticated();
 }
 ```
 
-**Features:**
-- **Reddit API Integration** - Curated content from 50+ pet subreddits
-- **Advanced Content Filtering** - AI-powered inappropriate content detection
-- **Smart Assortment Algorithm** - Balanced mix of pet types and topics
-- **Real-Time Comments** - Live discussion threads with moderation tools
-- **Voting System** - Upvote/downvote with reputation tracking
-- **Pet-Specific Filters** - Content tailored to user's pets
+**Security Features:**
+- **Auth0 Authentication** - Secure login with social providers (Google, Apple)
+- **JWT Token Management** - Secure token handling and validation
+- **User Profile Management** - Display name and username persistence
+- **Email Verification** - Required email verification for new accounts
+- **Row Level Security** - Database-level user data isolation
+- **Secure Storage** - Encrypted local storage for sensitive data
 
-### Smart Shopping System
-```dart
-// AI-driven product recommendations
-class ShoppingAssistant {
-  Future<List<Product>> getRecommendations(Pet pet, List<TrackingMetric> metrics);
-  Future<List<Product>> getBreedSpecificProducts(String breed);
-  Future<List<Product>> getLifecycleProducts(PetAge age, PetSize size);
-}
+## 📱 App Features
+
+### Pet Management
+- **Add Pets** - Create profiles for multiple pets
+- **Pet Details** - Store breed, age, weight, and health information
+- **Pet Photos** - Upload and manage pet photos
+- **Health Records** - Track medical history and appointments
+
+### User Interface
+- **Dark Theme** - Modern dark-themed interface
+- **Responsive Design** - Optimized for different screen sizes
+- **Intuitive Navigation** - Easy-to-use tab-based navigation
+- **Real-Time Updates** - Live data synchronization across devices
+
+### Data Management
+- **Offline Support** - Works without internet connection
+- **Data Sync** - Automatic synchronization when online
+- **Export Data** - Backup and export pet information
+- **Privacy Controls** - User data protection and control
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Flutter 3.19.0 or higher
+- Dart 3.2.0 or higher
+- Auth0 account and application
+- Supabase project
+- OpenAI API key
+
+### Installation
+```bash
+# Clone the repository
+git clone https://github.com/WaleedaRaza/petform.git
+cd petform
+
+# Install dependencies
+flutter pub get
+
+# Configure environment variables
+cp .env.example .env
+# Add your Auth0, Supabase, and OpenAI credentials
+
+# Run the app
+flutter run
 ```
 
-**Capabilities:**
-- **300+ Product Categories** - Food, toys, health, grooming, training
-- **Breed-Specific Recommendations** - Tailored suggestions based on pet characteristics
-- **Lifecycle Tracking** - Age-appropriate product suggestions
-- **Price Comparison** - Integration with multiple retailers
-- **Subscription Management** - Auto-reorder for recurring items
-- **Budget Tracking** - Spending analytics and budget alerts
+### Configuration
+1. **Auth0 Setup** - Configure social login providers
+2. **Supabase Setup** - Set up database tables and RLS policies
+3. **OpenAI Setup** - Add your GPT-4 API key
+4. **Reddit API** - Configure Reddit API for community content
 
-## 🔐 Enterprise Security & Compliance
+## 🤝 Contributing
 
-### Advanced Security Architecture
-```dart
-// Comprehensive security service with audit logging
-class SecurityService {
-  Future<AuthResult> authenticateWithSocial(String provider, Map<String, dynamic> claims);
-  Future<TokenValidation> validateToken(String token, List<String> requiredScopes);
-  Future<User> refreshUserProfile(String refreshToken);
-  Future<AuditLog> logSecurityEvent(String event, Map<String, dynamic> metadata);
-  Future<ComplianceReport> generateComplianceReport(String userId);
-}
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
-// Advanced authentication with MFA
-class MultiFactorAuth {
-  Future<bool> enableTOTP(String userId);
-  Future<bool> verifyTOTP(String userId, String code);
-  Future<bool> enableBiometric(String userId, String deviceId);
-  Future<List<SecurityEvent>> getSecurityEvents(String userId);
-}
-```
+### Development Setup
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Submit a pull request
 
-**Enterprise Security Features:**
-- **SOC 2 Type II Compliance** - Complete security audit and certification
-- **Auth0 Enterprise** - Advanced authentication with custom rules and hooks
-- **Multi-Factor Authentication** - TOTP, SMS, biometric, and hardware key support
-- **Social Login Integration** - Apple, Google, Facebook, Twitter with custom scopes
-- **Advanced Token Management** - JWT with refresh tokens and automatic rotation
-- **Row Level Security (RLS)** - Database-level security with user isolation
-- **End-to-End Encryption** - AES-256 encryption for sensitive data at rest and in transit
-- **GDPR Compliance** - Complete data privacy with user consent management
-- **Audit Logging** - Comprehensive security event logging with SIEM integration
-- **Penetration Testing** - Regular security assessments with automated vulnerability scanning
-- **Data Residency** - Geographic data storage compliance with local regulations
-- **Backup Encryption** - Encrypted backups with key rotation and disaster recovery
+## 📄 License
 
-### Compliance & Governance
-```sql
--- Comprehensive audit logging
-CREATE TABLE security_audit_log (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id),
-  event_type TEXT NOT NULL,
-  event_data JSONB,
-  ip_address INET,
-  user_agent TEXT,
-  timestamp TIMESTAMP DEFAULT NOW(),
-  severity TEXT DEFAULT 'info'
-);
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
--- Data privacy compliance
-CREATE TABLE user_consent (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id),
-  consent_type TEXT NOT NULL,
-  granted BOOLEAN DEFAULT false,
-  granted_at TIMESTAMP,
-  revoked_at TIMESTAMP,
-  data_usage_purposes JSONB
-);
-```
+## 📞 Support
 
-## ⚡ Performance & Scalability
+- **Documentation**: [docs.petform.app](https://docs.petform.app)
+- **Community**: [community.petform.app](https://community.petform.app)
+- **Email**: support@petform.app
+- **Twitter**: [@petform_app](https://twitter.com/petform_app)
 
-### High-Performance Architecture
-```dart
-// Performance monitoring and optimization
-class PerformanceMonitor {
-  Future<PerformanceMetrics> trackAPIPerformance(String endpoint, Duration responseTime);
-  Future<MemoryUsage> trackMemoryUsage();
-  Future<DatabaseMetrics> trackDatabasePerformance();
-  Future<List<OptimizationSuggestion>> getOptimizationSuggestions();
-}
+## 🙏 Acknowledgments
 
-// Caching layer with Redis
-class CacheService {
-  Future<T> get<T>(String key);
-  Future<void> set<T>(String key, T value, Duration ttl);
-  Future<void> invalidate(String pattern);
-  Future<CacheStats> getCacheStatistics();
-}
-```
+- **OpenAI** - GPT-4 API for AI-powered insights
+- **Supabase** - Database infrastructure and real-time features
+- **Auth0** - Enterprise authentication solutions
+- **Firebase** - Backend services and real-time database
+- **Flutter Team** - Cross-platform development framework
 
-**Performance Optimizations:**
-- **99.9% Uptime** - Multi-region deployment with automatic failover
-- **Sub-100ms Response Times** - Optimized database queries with connection pooling
-- **CDN Integration** - Global content delivery with edge caching
-- **Database Optimization** - Query optimization with advanced indexing strategies
-- **Caching Strategy** - Multi-layer caching with Redis and in-memory caches
-- **Load Balancing** - Intelligent load distribution with health checks
-- **Auto-Scaling** - Kubernetes-based auto-scaling based on CPU/memory metrics
-- **Database Sharding** - Horizontal scaling for large datasets
-- **Background Processing** - Asynchronous task processing with job queues
-- **Real-Time Analytics** - Live performance monitoring with alerting
+---
 
-### Monitoring & Observability
-```yaml
-# Prometheus monitoring configuration
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: prometheus-config
-data:
-  prometheus.yml: |
-    global:
-      scrape_interval: 15s
-    scrape_configs:
-      - job_name: 'petform-api'
-        static_configs:
-          - targets: ['api:8080']
-```
+**PetForm** - Revolutionizing pet care through technology and community.
 
-**Monitoring Stack:**
-- **Application Performance Monitoring (APM)** - New Relic integration with custom dashboards
-- **Distributed Tracing** - Jaeger for request tracing across microservices
-- **Log Aggregation** - ELK stack with structured logging and alerting
-- **Infrastructure Monitoring** - Prometheus + Grafana with custom metrics
-- **Error Tracking** - Sentry integration with error grouping and alerting
-- **Business Metrics** - Custom dashboards for user engagement and revenue tracking
-
-## 📊 Advanced Database Architecture
-
-### PostgreSQL 15 with Enterprise Features
-```sql
--- Comprehensive user management with Auth0 integration
-CREATE TABLE profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id),
-  username TEXT UNIQUE NOT NULL,
-  display_name TEXT,
-  avatar_url TEXT,
-  preferences JSONB DEFAULT '{}',
-  subscription_tier TEXT DEFAULT 'free',
-  last_active TIMESTAMP DEFAULT NOW(),
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Advanced pet management with health tracking
-CREATE TABLE pets (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id),
-  name TEXT NOT NULL,
-  species TEXT NOT NULL,
-  breed TEXT,
-  birth_date DATE,
-  weight DECIMAL(5,2),
-  health_status JSONB DEFAULT '{}',
-  medical_history JSONB DEFAULT '[]',
-  behavior_profile JSONB DEFAULT '{}',
-  microchip_id TEXT,
-  insurance_info JSONB,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Advanced tracking with ML insights
-CREATE TABLE tracking_metrics (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  pet_id UUID REFERENCES pets(id) ON DELETE CASCADE,
-  metric_type TEXT NOT NULL,
-  category TEXT NOT NULL DEFAULT 'Health',
-  value DECIMAL(10,2),
-  unit TEXT,
-  frequency TEXT DEFAULT 'daily',
-  target_value DECIMAL(10,2),
-  current_value DECIMAL(10,2) DEFAULT 0.0,
-  ml_insights JSONB DEFAULT '{}',
-  predictive_alerts JSONB DEFAULT '[]',
-  trend_analysis JSONB DEFAULT '{}',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Community engagement with moderation
-CREATE TABLE posts (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id),
-  title TEXT NOT NULL,
-  content TEXT NOT NULL,
-  pet_type TEXT,
-  tags TEXT[],
-  engagement_metrics JSONB DEFAULT '{}',
-  quality_score DECIMAL(3,2),
-  moderation_status TEXT DEFAULT 'approved',
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Advanced security audit logging
-CREATE TABLE security_audit_log (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id),
-  event_type TEXT NOT NULL,
-  event_data JSONB,
-  ip_address INET,
-  user_agent TEXT,
-  timestamp TIMESTAMP DEFAULT NOW(),
-  severity TEXT DEFAULT 'info'
-);
-
--- Data privacy compliance
-CREATE TABLE user_consent (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id),
-  consent_type TEXT NOT NULL,
-  granted BOOLEAN DEFAULT false,
-  granted_at TIMESTAMP,
-  revoked_at TIMESTAMP,
-  data_usage_purposes JSONB
-);
-```
-
-**Advanced Database Features:**
-- **PostgreSQL 15** - Enterprise-grade relational database with advanced features
-- **Row Level Security (RLS)** - Granular user data isolation with custom policies
-- **JSONB Support** - Flexible schema evolution with complex nested data structures
-- **Full-Text Search** - Advanced search with pg_trgm and custom ranking algorithms
-- **Real-Time Subscriptions** - Live data updates with WebSocket and GraphQL subscriptions
-- **Partitioning** - Table partitioning for large datasets with automatic maintenance
-- **Read Replicas** - Horizontal scaling with read replicas for query optimization
-- **Backup & Recovery** - Automated backups with point-in-time recovery and cross-region replication
-- **Connection Pooling** - Optimized connection management with PgBouncer
-- **Query Optimization** - Advanced indexing strategies with query plan analysis
-- **Data Archiving** - Automated data lifecycle management with archival policies
-- **Advanced Indexing** - B-tree, GIN, and GiST indexes for optimal performance
+*Built with ❤️ for pet owners worldwide*
 
 ## 🚀 Performance & Scalability
 
