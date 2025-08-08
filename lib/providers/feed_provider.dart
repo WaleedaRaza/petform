@@ -311,14 +311,35 @@ class FeedProvider with ChangeNotifier {
       // FILTER INAPPROPRIATE CONTENT
       allPosts = _filterInappropriateContent(allPosts);
       
-      // SIMPLE MAIN FEED - show most relevant posts without over-aggressive balancing
+      // PRIORITIZE DOGS, CATS, FISH FOR FIRST 10 POSTS, THEN MIX OTHERS
       if (_selectedPetType == 'All') {
-        // For main feed, just show the most recent and relevant posts
-        // Sort by date and take top posts
-        allPosts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        allPosts = allPosts.take(30).toList(); // Show top 30 posts
+        // Separate posts by priority
+        List<Post> priorityPosts = []; // Dogs, Cats, Fish
+        List<Post> otherPosts = []; // Everything else
+        
+        for (Post post in allPosts) {
+          String? petType = post.petType?.toLowerCase();
+          if (petType == 'dog' || petType == 'cat' || petType == 'fish') {
+            priorityPosts.add(post);
+          } else {
+            otherPosts.add(post);
+          }
+        }
+        
+        // Sort both lists by date (newest first)
+        priorityPosts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        otherPosts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        
+        // Take first 10 from priority posts, then 20 from others
+        List<Post> finalPosts = [];
+        finalPosts.addAll(priorityPosts.take(10));
+        finalPosts.addAll(otherPosts.take(20));
+        
+        allPosts = finalPosts;
+        
         if (kDebugMode) {
-          print('FeedProvider: Main feed showing ${allPosts.length} most recent posts');
+          print('FeedProvider: Main feed - ${priorityPosts.length} priority posts, ${otherPosts.length} other posts');
+          print('FeedProvider: Final feed - ${allPosts.length} posts (10 priority + 20 others)');
         }
       } else {
         // For specific pet types, keep as is
