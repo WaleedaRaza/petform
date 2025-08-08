@@ -64,38 +64,6 @@ PetForm is a comprehensive pet management app that helps pet owners track their 
 └─────────────────┘    └─────────────────┘
 ```
 
-### Frontend (Flutter)
-- **Flutter 3.19.0** - Cross-platform mobile development
-  - Custom UI components with dark theme
-  - Responsive design for different screen sizes
-  - Provider pattern for state management
-  - Offline-first architecture with local storage
-- **Dart 3.2.0** - Type-safe programming with null safety
-  - Custom models for pets, tracking metrics, and posts
-  - Service layer for API communication
-  - Error handling and validation
-
-### Backend Services
-- **Auth0** - Authentication and user management
-  - Social login (Google, Apple)
-  - JWT token validation
-  - User profile management
-  - Email verification
-- **Supabase** - Database and real-time features
-  - PostgreSQL database with Row Level Security
-  - Real-time subscriptions for live updates
-  - User mapping between Auth0 and Supabase
-  - Custom RPC functions for complex operations
-- **OpenAI GPT-4** - AI assistant integration
-  - Natural language processing for pet advice
-  - Context-aware conversations
-  - Health and behavior recommendations
-- **Reddit API** - Community content
-  - Curated posts from pet subreddits
-  - Smart content filtering
-  - Balanced content assortment
-
-
 ## 🔧 Core Features
 
 ### 🤖 AI Pet Assistant
@@ -157,23 +125,6 @@ PetForm is a comprehensive pet management app that helps pet owners track their 
 - **Export Data** - Backup and export pet information
 - **Privacy Controls** - User data protection and control
 
-### Version 2.0 - Enhanced AI & Social Features (Q1 2026)
-
-**Planned Features:**
-- **Pet Social Network** - Find nearby pets and schedule playdates
-- **Pet Sitter Marketplace** - Book verified pet sitters in your area
-- **Veterinary Integration** - Direct appointment booking with local vets
-- **Pet Insurance Quotes** - Compare and purchase pet insurance policies
-- **Advanced Tracking** - GPS tracking for outdoor pets with activity monitoring
-- **Pet Training Videos** - Curated training content with progress tracking
-- **Emergency Alerts** - 24/7 emergency response with vet routing
-- **Professional Services** - Book grooming, training, and veterinary services
-- **Breeder Network** - Reputable breeder directory with reviews
-- **Pet Photography** - Professional pet photo sessions
-- **Photo Analysis** - AI-powered breed identification and health assessment from photos
-- **Voice Assistant** - Natural language voice interface for hands-free operation
-- **Predictive Health** - ML models to predict potential health issues based on trends
-
 ## 🔬 Technical Deep Dive
 
 ### Architecture Overview
@@ -224,3 +175,20 @@ PetForm is a comprehensive pet management app that helps pet owners track their 
 - **Retry Logic** - Automatic retry for failed requests
 - **Caching Strategy** - Local caching for frequently accessed data
 - **Error Recovery** - Graceful degradation and user feedback
+
+### Version 2.0 - Enhanced AI & Social Features (Q1 2026)
+
+**Planned Features:**
+- **Pet Social Network** - Find nearby pets and schedule playdates
+- **Pet Sitter Marketplace** - Book verified pet sitters in your area
+- **Veterinary Integration** - Direct appointment booking with local vets
+- **Pet Insurance Quotes** - Compare and purchase pet insurance policies
+- **Advanced Tracking** - GPS tracking for outdoor pets with activity monitoring
+- **Pet Training Videos** - Curated training content with progress tracking
+- **Emergency Alerts** - 24/7 emergency response with vet routing
+- **Professional Services** - Book grooming, training, and veterinary services
+- **Breeder Network** - Reputable breeder directory with reviews
+- **Pet Photography** - Professional pet photo sessions
+- **Photo Analysis** - AI-powered breed identification and health assessment from photos
+- **Voice Assistant** - Natural language voice interface for hands-free operation
+- **Predictive Health** - ML models to predict potential health issues based on trends
