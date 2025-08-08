@@ -270,9 +270,9 @@ class FeedProvider with ChangeNotifier {
                     limit: 20, // Reduced to avoid duplicates
                   );
                   
-                  // Assign the specific pet type
+                  // Use content detection for ALL posts, even for specific pet types
                   for (var post in posts) {
-                    post.petType = _selectedPetType;
+                    post.petType = _detectPetTypeFromContent(post.title, post.content);
                   }
                   
                   redditPosts.addAll(posts);
@@ -316,6 +316,13 @@ class FeedProvider with ChangeNotifier {
         // Separate posts by priority
         List<Post> priorityPosts = []; // Dogs, Cats, Fish
         List<Post> otherPosts = []; // Everything else
+        
+        if (kDebugMode) {
+          print('FeedProvider: DEBUG - Pet types in allPosts:');
+          for (int i = 0; i < allPosts.length; i++) {
+            print('  Post ${i + 1}: "${allPosts[i].title}" -> petType: "${allPosts[i].petType}"');
+          }
+        }
         
         for (Post post in allPosts) {
           String? petType = post.petType?.toLowerCase();
