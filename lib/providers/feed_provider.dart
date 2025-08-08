@@ -464,18 +464,18 @@ class FeedProvider with ChangeNotifier {
         }
       }
       
-      // Check for excessive repetition of the same topic
+      // Check for excessive repetition of the same topic (less aggressive)
       final words = (title + ' ' + content).toLowerCase().split(' ');
       final wordCount = <String, int>{};
       for (final word in words) {
-        if (word.length > 3) { // Only count words longer than 3 characters
+        if (word.length > 4) { // Only count words longer than 4 characters
           wordCount[word] = (wordCount[word] ?? 0) + 1;
         }
       }
       
-      // If any word appears more than 5 times, it might be spam
+      // If any word appears more than 8 times, it might be spam (increased threshold)
       for (final entry in wordCount.entries) {
-        if (entry.value > 5) {
+        if (entry.value > 8) {
           if (kDebugMode) {
             print('FeedProvider: Filtered out post with repetitive word: ${entry.key}');
           }
@@ -513,23 +513,25 @@ class FeedProvider with ChangeNotifier {
     }
 
     final balancedPosts = <Post>[];
-    final maxPostsPerPetType = 2; // Reduced from 3 to 2 for better variety
-    final maxPostsPerTopic = 1; // Reduced from 2 to 1 for better variety
-    final targetTotalPosts = 15; // Reduced from 20 to 15 for better curation
+    final maxPostsPerPetType = 3; // Increased back to 3 for more posts
+    final maxPostsPerTopic = 2; // Increased back to 2 for more posts
+    final targetTotalPosts = 25; // Increased to 25 for more posts
     
     // STRICT PET TYPE BALANCING - ensure variety
     final petTypes = postsByPetType.keys.toList();
     petTypes.sort(); // Sort for consistent ordering
     
-    // Take exactly 1 post from each pet type first (if available)
+    // Take up to 2 posts from each pet type first (if available)
     for (final petType in petTypes) {
       final petPosts = postsByPetType[petType]!;
       petPosts.sort((a, b) => b.createdAt.compareTo(a.createdAt)); // Newest first
       
       if (petPosts.isNotEmpty) {
-        balancedPosts.add(petPosts.first); // Take 1 from each pet type
+        // Take up to 2 posts from each pet type
+        final postsToTake = petPosts.take(2).toList();
+        balancedPosts.addAll(postsToTake);
         if (kDebugMode) {
-          print('FeedProvider: Added 1 post from $petType');
+          print('FeedProvider: Added ${postsToTake.length} posts from $petType');
         }
       }
     }
@@ -612,27 +614,27 @@ class FeedProvider with ChangeNotifier {
   String _detectPetTypeFromContent(String title, String content) {
     final text = (title + ' ' + content).toLowerCase();
     
-    // Define pet type keywords
+    // Define pet type keywords with more comprehensive terms
     final petTypeKeywords = {
-      'Dog': ['dog', 'puppy', 'puppies', 'canine', 'hound', 'breed', 'leash', 'walk', 'bark', 'woof'],
-      'Cat': ['cat', 'kitten', 'kittens', 'feline', 'meow', 'purr', 'litter', 'scratch'],
-      'Bird': ['bird', 'parrot', 'cockatiel', 'budgie', 'canary', 'finch', 'wing', 'feather', 'cage'],
-      'Fish': ['fish', 'aquarium', 'tank', 'water', 'swim', 'guppy', 'betta', 'goldfish', 'tropical'],
-      'Rabbit': ['rabbit', 'bunny', 'bunnies', 'hare', 'hop', 'carrot', 'hutch'],
-      'Hamster': ['hamster', 'gerbil', 'mouse', 'rodent', 'wheel', 'cage'],
-      'Snake': ['snake', 'python', 'boa', 'reptile', 'scale', 'slither', 'terrarium'],
-      'Lizard': ['lizard', 'gecko', 'bearded dragon', 'iguana', 'reptile', 'scale'],
-      'Turtle': ['turtle', 'tortoise', 'shell', 'aquatic', 'pond'],
-      'Guinea Pig': ['guinea pig', 'cavy', 'pig', 'rodent'],
-      'Parrot': ['parrot', 'macaw', 'cockatoo', 'african grey', 'amazon'],
-      'Hedgehog': ['hedgehog', 'spike', 'quill'],
-      'Ferret': ['ferret', 'weasel', 'playful'],
-      'Chinchilla': ['chinchilla', 'dust bath', 'soft'],
-      'Frog': ['frog', 'toad', 'amphibian', 'pond'],
-      'Tarantula': ['tarantula', 'spider', 'arachnid', 'web'],
-      'Axolotl': ['axolotl', 'salamander', 'aquatic'],
-      'Mouse': ['mouse', 'mice', 'rodent', 'small'],
-      'Goat': ['goat', 'farm', 'hoof', 'mountain'],
+      'Dog': ['dog', 'puppy', 'puppies', 'canine', 'hound', 'breed', 'leash', 'walk', 'bark', 'woof', 'beagle', 'dachshund', 'rescue', 'house train', 'training', 'obedience'],
+      'Cat': ['cat', 'kitten', 'kittens', 'feline', 'meow', 'purr', 'litter', 'scratch', 'kitty', 'tabby', 'siamese'],
+      'Bird': ['bird', 'parrot', 'cockatiel', 'budgie', 'canary', 'finch', 'wing', 'feather', 'cage', 'avian', 'flying'],
+      'Fish': ['fish', 'aquarium', 'tank', 'water', 'swim', 'guppy', 'betta', 'goldfish', 'tropical', 'aquatic', 'underwater'],
+      'Rabbit': ['rabbit', 'bunny', 'bunnies', 'hare', 'hop', 'carrot', 'hutch', 'lagomorph'],
+      'Hamster': ['hamster', 'gerbil', 'mouse', 'rodent', 'wheel', 'cage', 'small pet'],
+      'Snake': ['snake', 'python', 'boa', 'reptile', 'scale', 'slither', 'terrarium', 'serpent'],
+      'Lizard': ['lizard', 'gecko', 'bearded dragon', 'iguana', 'reptile', 'scale', 'reptilian'],
+      'Turtle': ['turtle', 'tortoise', 'shell', 'aquatic', 'pond', 'chelonian'],
+      'Guinea Pig': ['guinea pig', 'cavy', 'pig', 'rodent', 'guinea'],
+      'Parrot': ['parrot', 'macaw', 'cockatoo', 'african grey', 'amazon', 'psittacine'],
+      'Hedgehog': ['hedgehog', 'spike', 'quill', 'hedge'],
+      'Ferret': ['ferret', 'weasel', 'playful', 'mustelid'],
+      'Chinchilla': ['chinchilla', 'dust bath', 'soft', 'chinchilla'],
+      'Frog': ['frog', 'toad', 'amphibian', 'pond', 'amphibian'],
+      'Tarantula': ['tarantula', 'spider', 'arachnid', 'web', 'arachnid'],
+      'Axolotl': ['axolotl', 'salamander', 'aquatic', 'amphibian'],
+      'Mouse': ['mouse', 'mice', 'rodent', 'small', 'murine'],
+      'Goat': ['goat', 'farm', 'hoof', 'mountain', 'caprine'],
     };
     
     // Find the most relevant pet type
