@@ -116,31 +116,23 @@ class FeedProvider with ChangeNotifier {
             List<RedditPost> redditPosts = [];
           
             if (_selectedPetType == 'All') {
-              // For "All" category - fetch 30 general pet posts (pet hub style)
+              // For "All" category - fetch popular pet posts from top subreddits
               if (kDebugMode) {
-                print('FeedProvider: Fetching 30 general pet posts for "All" category');
+                print('FeedProvider: Fetching popular pet posts for "All" category');
               }
               
-              // Professional general pet subreddits for startup feed - focus on education and diversity
-              List<String> generalPetSubreddits = [
-                'pets', 'petcare', 'petadvice', 'pethealth', 'petfood',
-                'petbehavior', 'petnews', 'petcommunity', 'veterinary',
-                'dogtraining', 'catcare', 'hamstercare', 'birdcare',
-                'aquariums', 'reptiles', 'rabbitcare', 'guineapigcare',
-                'parrots', 'snakes', 'lizards', 'hedgehogs', 'ferrets'
+              // Focus on the most popular and relevant pet subreddits
+              List<String> topPetSubreddits = [
+                'pets', 'dogtraining', 'catcare', 'hamstercare', 'aquariums',
+                'reptiles', 'rabbitcare', 'parrots'
               ];
               
-              // Shuffle subreddits for variety
-              generalPetSubreddits.shuffle();
-              
-              // Fetch 30 posts from general pet subreddits
-              int postsPerSubreddit = (30 / generalPetSubreddits.length).ceil();
-              
-              for (String subreddit in generalPetSubreddits.take(8)) { // Use first 8 subreddits for better diversity
+              // Fetch from top subreddits for better quality content
+              for (String subreddit in topPetSubreddits) {
                 try {
                   final posts = await apiService.fetchRedditPosts(
                     subreddit: subreddit,
-                    limit: postsPerSubreddit + 5, // Fetch more posts for better variety
+                    limit: 15, // Get more posts per subreddit for better selection
                   );
                   
                   // Intelligently assign pet type based on content
@@ -151,7 +143,7 @@ class FeedProvider with ChangeNotifier {
                   redditPosts.addAll(posts);
                   
                   if (kDebugMode) {
-                    print('FeedProvider: Fetched ${posts.length} posts from r/$subreddit for general pets');
+                    print('FeedProvider: Fetched ${posts.length} posts from r/$subreddit');
                   }
                 } catch (e) {
                   if (kDebugMode) {
@@ -160,11 +152,8 @@ class FeedProvider with ChangeNotifier {
                 }
               }
               
-              // Shuffle for variety
-              redditPosts.shuffle();
-              
               if (kDebugMode) {
-                print('FeedProvider: Total general pet posts for "All" category: ${redditPosts.length}');
+                print('FeedProvider: Total posts for "All" category: ${redditPosts.length}');
               }
             } else {
               // For specific pet types - fetch only when that category is clicked
@@ -266,12 +255,12 @@ class FeedProvider with ChangeNotifier {
                 print('FeedProvider: Fetching from ${subreddits.length} subreddits: $subreddits');
               }
               
-              // Fetch 25 posts from each subreddit for specific pet types
+              // Fetch posts from each subreddit for specific pet types
               for (String subreddit in subreddits) {
                 try {
                   final posts = await apiService.fetchRedditPosts(
                     subreddit: subreddit,
-                    limit: 30, // Increased from 25 for more variety
+                    limit: 20, // Reduced to avoid duplicates
                   );
                   
                   // Assign the specific pet type
@@ -315,15 +304,20 @@ class FeedProvider with ChangeNotifier {
       // FILTER INAPPROPRIATE CONTENT
       allPosts = _filterInappropriateContent(allPosts);
       
-      // CREATE BALANCED ASSORTMENT
+      // SIMPLE MAIN FEED - show most relevant posts without over-aggressive balancing
       if (_selectedPetType == 'All') {
-        allPosts = _createBalancedAssortment(allPosts);
+        // For main feed, just show the most recent and relevant posts
+        // Sort by date and take top posts
+        allPosts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        allPosts = allPosts.take(30).toList(); // Show top 30 posts
         if (kDebugMode) {
-          print('FeedProvider: Created balanced assortment with ${allPosts.length} posts');
+          print('FeedProvider: Main feed showing ${allPosts.length} most recent posts');
         }
       } else {
-        // For specific pet types, still filter but don't balance
-        allPosts = _filterInappropriateContent(allPosts);
+        // For specific pet types, keep as is
+        if (kDebugMode) {
+          print('FeedProvider: Specific pet type feed with ${allPosts.length} posts');
+        }
       }
 
       // Sort all posts by creation date (newest first)
@@ -439,15 +433,14 @@ class FeedProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Filter out inappropriate content
+  // Filter out inappropriate content - simplified for main feed
   List<Post> _filterInappropriateContent(List<Post> posts) {
+    // Only filter explicit sexual/racist content, allow curse words
     final inappropriateKeywords = [
       'testicles', 'testicle', 'balls', 'ball', 'penis', 'dick', 'cock',
-      'vagina', 'pussy', 'sex', 'sexual', 'mating', 'breeding', 'fuck',
-      'shit', 'piss', 'pissed', 'pissing', 'fucking', 'ass', 'asshole',
-      'dickhead', 'cock', 'cunt', 'whore', 'slut', 'bitch', 'bastard',
+      'vagina', 'pussy', 'sex', 'sexual', 'mating', 'breeding',
       'nude', 'naked', 'nudity', 'porn', 'pornographic', 'explicit',
-      'inappropriate', 'nsfw', 'adult', 'mature', 'sexual content'
+      'nsfw', 'sexual content', 'racist', 'racism', 'hate speech'
     ];
 
     return posts.where((post) {
@@ -464,18 +457,18 @@ class FeedProvider with ChangeNotifier {
         }
       }
       
-      // Check for excessive repetition of the same topic (less aggressive)
+      // Only filter obvious spam (very repetitive content)
       final words = (title + ' ' + content).toLowerCase().split(' ');
       final wordCount = <String, int>{};
       for (final word in words) {
-        if (word.length > 4) { // Only count words longer than 4 characters
+        if (word.length > 5) { // Only count longer words
           wordCount[word] = (wordCount[word] ?? 0) + 1;
         }
       }
       
-      // If any word appears more than 8 times, it might be spam (increased threshold)
+      // If any word appears more than 15 times, it might be spam
       for (final entry in wordCount.entries) {
-        if (entry.value > 8) {
+        if (entry.value > 15) {
           if (kDebugMode) {
             print('FeedProvider: Filtered out post with repetitive word: ${entry.key}');
           }
