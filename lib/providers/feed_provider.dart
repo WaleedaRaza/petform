@@ -121,18 +121,22 @@ class FeedProvider with ChangeNotifier {
                 print('FeedProvider: Fetching popular pet posts for "All" category');
               }
               
-              // Focus on the most popular and relevant pet subreddits
+              // Prioritize most common pets: Dogs, Cats, Fish, then others
               List<String> topPetSubreddits = [
-                'pets', 'dogtraining', 'catcare', 'hamstercare', 'aquariums',
-                'reptiles', 'rabbitcare', 'parrots'
+                'dogtraining', 'catcare', 'aquariums', // Most common pets first
+                'pets', 'hamstercare', 'reptiles', 'rabbitcare', 'parrots' // Others
               ];
               
-              // Fetch from top subreddits for better quality content
-              for (String subreddit in topPetSubreddits) {
+              // Fetch from top subreddits with priority weighting
+              for (int i = 0; i < topPetSubreddits.length; i++) {
+                String subreddit = topPetSubreddits[i];
                 try {
+                  // Give more posts to dogs/cats/fish (most common pets)
+                  int limit = (i < 3) ? 20 : 10; // More posts for top 3
+                  
                   final posts = await apiService.fetchRedditPosts(
                     subreddit: subreddit,
-                    limit: 15, // Get more posts per subreddit for better selection
+                    limit: limit,
                   );
                   
                   // Intelligently assign pet type based on content
@@ -143,7 +147,7 @@ class FeedProvider with ChangeNotifier {
                   redditPosts.addAll(posts);
                   
                   if (kDebugMode) {
-                    print('FeedProvider: Fetched ${posts.length} posts from r/$subreddit');
+                    print('FeedProvider: Fetched ${posts.length} posts from r/$subreddit (priority ${i + 1})');
                   }
                 } catch (e) {
                   if (kDebugMode) {
@@ -151,6 +155,9 @@ class FeedProvider with ChangeNotifier {
                   }
                 }
               }
+              
+              // Shuffle posts to mix different pet types
+              redditPosts.shuffle();
               
               if (kDebugMode) {
                 print('FeedProvider: Total posts for "All" category: ${redditPosts.length}');
@@ -609,10 +616,10 @@ class FeedProvider with ChangeNotifier {
     
     // Define pet type keywords with more comprehensive terms
     final petTypeKeywords = {
-      'Dog': ['dog', 'puppy', 'puppies', 'canine', 'hound', 'breed', 'leash', 'walk', 'bark', 'woof', 'beagle', 'dachshund', 'rescue', 'house train', 'training', 'obedience'],
-      'Cat': ['cat', 'kitten', 'kittens', 'feline', 'meow', 'purr', 'litter', 'scratch', 'kitty', 'tabby', 'siamese'],
+      'Dog': ['dog', 'puppy', 'puppies', 'canine', 'hound', 'breed', 'leash', 'walk', 'bark', 'woof', 'beagle', 'dachshund', 'rescue', 'house train', 'training', 'obedience', 'dogtraining', 'puppy101', 'dogcare', 'dogadvice'],
+      'Cat': ['cat', 'kitten', 'kittens', 'feline', 'meow', 'purr', 'litter', 'scratch', 'kitty', 'tabby', 'siamese', 'catcare', 'catbehavior', 'catadvice'],
       'Bird': ['bird', 'parrot', 'cockatiel', 'budgie', 'canary', 'finch', 'wing', 'feather', 'cage', 'avian', 'flying'],
-      'Fish': ['fish', 'aquarium', 'tank', 'water', 'swim', 'guppy', 'betta', 'goldfish', 'tropical', 'aquatic', 'underwater'],
+              'Fish': ['fish', 'aquarium', 'tank', 'water', 'swim', 'guppy', 'betta', 'goldfish', 'tropical', 'aquatic', 'underwater', 'aquariums', 'fishcare', 'fishadvice'],
       'Rabbit': ['rabbit', 'bunny', 'bunnies', 'hare', 'hop', 'carrot', 'hutch', 'lagomorph'],
       'Hamster': ['hamster', 'gerbil', 'mouse', 'rodent', 'wheel', 'cage', 'small pet'],
       'Snake': ['snake', 'python', 'boa', 'reptile', 'scale', 'slither', 'terrarium', 'serpent'],
