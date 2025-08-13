@@ -176,7 +176,16 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       extendBody: true,
-      body: Stack(
+      body: Builder(
+        builder: (context) {
+          final mq = MediaQuery.of(context);
+          final kbOpen = mq.viewInsets.bottom > 0;
+          final double liftFraction = 100.0 / mq.size.height;
+          return AnimatedSlide(
+            offset: Offset(0, (kbOpen && _selectedIndex == 1) ? -liftFraction : 0.0),
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOut,
+            child: Stack(
         children: [
           const VideoBackground(
             videoPath: 'lib/assets/animation2.mp4',
@@ -209,6 +218,9 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ],
+      ),
+          );
+        },
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
