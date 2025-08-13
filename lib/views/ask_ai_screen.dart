@@ -739,7 +739,6 @@ class _AskAiScreenState extends State<AskAiScreen> {
                   ],
                 ),
               ),
-              ),
             ),
           ),
         );
