@@ -16,7 +16,8 @@ import 'welcome_screen.dart';
 import 'pet_profile_creation_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final int? initialIndex;
+  const HomeScreen({super.key, this.initialIndex});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -39,6 +40,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Set initial index if provided
+    if (widget.initialIndex != null) {
+      _selectedIndex = widget.initialIndex!;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeAppState();
       _measureStatusBar();

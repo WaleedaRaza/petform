@@ -102,10 +102,10 @@ class _AskAiFullscreenPageState extends State<AskAiFullscreenPage> {
                 BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
               ],
               onTap: (index) {
-                if (index == 1) return;
-                // Return to home; let user select other tabs there
+                if (index == 1) return; // Stay on Ask AI
+                // Navigate to HomeScreen with the selected tab
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  MaterialPageRoute(builder: (_) => HomeScreen(initialIndex: index)),
                   (route) => false,
                 );
               },
