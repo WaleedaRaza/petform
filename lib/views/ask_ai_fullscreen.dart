@@ -99,13 +99,14 @@ class _AskAiFullscreenPageState extends State<AskAiFullscreenPage> {
               ],
               onTap: (index) {
                 if (index == 1) return; // Stay on Ask AI
-                // Replace current route with HomeScreen showing the selected tab (no animation)
-                Navigator.of(context).pushReplacement(
+                // Clear navigation stack and go to HomeScreen with selected tab (no animation)
+                Navigator.of(context).pushAndRemoveUntil(
                   PageRouteBuilder(
                     pageBuilder: (context, animation, secondaryAnimation) => HomeScreen(initialIndex: index),
                     transitionDuration: Duration.zero,
                     reverseTransitionDuration: Duration.zero,
                   ),
+                  (route) => false,
                 );
               },
             ),

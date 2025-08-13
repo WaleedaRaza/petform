@@ -242,7 +242,11 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: (index) {
           if (index == 1) {
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AskAiFullscreenPage()),
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) => const AskAiFullscreenPage(),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
             );
             return;
           }
