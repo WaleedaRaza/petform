@@ -597,164 +597,161 @@ class _AskAiScreenState extends State<AskAiScreen> {
             ),
             duration: const Duration(milliseconds: 160),
             curve: Curves.easeOut,
-            child: AnimatedSlide(
-              offset: Offset(0, MediaQuery.of(context).viewInsets.bottom > 0 ? -(100.0 / mq.size.height) : 0.0),
-              duration: const Duration(milliseconds: 160),
-              curve: Curves.easeOut,
-              child: SafeArea(
+            child: SafeArea(
                 bottom: false,
                 child: Column(
-                children: [
-              // Header with title and clear button
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    Text(
-                      'Ask PetPal AI',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => aiProvider.clearChat(),
-                      tooltip: 'Clear Chat',
-                    ),
-                  ],
-                ),
-              ),
-              const QueryTypeDropdown(),
-              const PetSelector(),
-              const QuickActions(),
-              Expanded(
-                child: aiProvider.messages.isEmpty
-                    ? const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
-                            SizedBox(height: 16),
-                            Text(
-                              'Start a conversation with PetPal!',
-                              style: TextStyle(fontSize: 18, color: Colors.grey),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Select a pet for personalized advice',
-                              style: TextStyle(fontSize: 14, color: Colors.grey),
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              '💡 Tip: Use the quick action buttons above for specific advice',
-                              style: TextStyle(fontSize: 12, color: Colors.grey),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        itemCount: aiProvider.messages.length,
-                        itemBuilder: (context, index) {
-                          return MessageBubble(message: aiProvider.messages[index]);
-                        },
-                      ),
-              ),
-              // INPUT BAR (part of Column so it moves with everything)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: Container(
-                  key: _inputBarKey,
-                  padding: const EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade900.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade700, width: 1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          focusNode: _inputFocusNode,
-                          controller: _textController,
-                          style: const TextStyle(color: Colors.white, fontSize: 16),
-                          decoration: InputDecoration(
-                            hintText: 'Ask anything about your pet...',
-                            hintStyle: TextStyle(color: Colors.grey.shade400),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey.shade600),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey.shade600),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey.shade800.withOpacity(0.5),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          ),
-                          maxLines: null,
-                          textInputAction: TextInputAction.send,
-                          onSubmitted: (value) async {
-                            if (value.trim().isNotEmpty) {
-                              await aiProvider.sendMessage(value, context);
-                              _textController.clear();
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.blue.shade600,
-                              Colors.purple.shade600,
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: aiProvider.isLoading
-                            ? const Padding(
-                                padding: EdgeInsets.all(12.0),
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
-                                ),
-                              )
-                            : IconButton(
-                                icon: const Icon(Icons.send, color: Colors.white),
-                                onPressed: () async {
-                                  if (_textController.text.trim().isNotEmpty) {
-                                    await aiProvider.sendMessage(_textController.text, context);
-                                    _textController.clear();
-                                  }
-                                },
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
-                ),
-              ],
-            ),
+                   children: [
+                     // Header with title and clear button
+                     Padding(
+                       padding: const EdgeInsets.all(16.0),
+                       child: Row(
+                         children: [
+                           Text(
+                             'Ask PetPal AI',
+                             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                               fontWeight: FontWeight.bold,
+                             ),
+                           ),
+                           const Spacer(),
+                           IconButton(
+                             icon: const Icon(Icons.delete),
+                             onPressed: () => aiProvider.clearChat(),
+                             tooltip: 'Clear Chat',
+                           ),
+                         ],
+                       ),
+                     ),
+                     const QueryTypeDropdown(),
+                     const PetSelector(),
+                     const QuickActions(),
+                     Expanded(
+                       child: aiProvider.messages.isEmpty
+                           ? const Center(
+                               child: Column(
+                                 mainAxisAlignment: MainAxisAlignment.center,
+                                 children: [
+                                   Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
+                                   SizedBox(height: 16),
+                                   Text(
+                                     'Start a conversation with PetPal!',
+                                     style: TextStyle(fontSize: 18, color: Colors.grey),
+                                   ),
+                                   SizedBox(height: 8),
+                                   Text(
+                                     'Select a pet for personalized advice',
+                                     style: TextStyle(fontSize: 14, color: Colors.grey),
+                                   ),
+                                   SizedBox(height: 16),
+                                   Text(
+                                     '💡 Tip: Use the quick action buttons above for specific advice',
+                                     style: TextStyle(fontSize: 12, color: Colors.grey),
+                                     textAlign: TextAlign.center,
+                                   ),
+                                 ],
+                               ),
+                             )
+                           : ListView.builder(
+                               padding: const EdgeInsets.only(bottom: 8),
+                               itemCount: aiProvider.messages.length,
+                               itemBuilder: (context, index) {
+                                 return MessageBubble(message: aiProvider.messages[index]);
+                               },
+                             ),
+                     ),
+                     // INPUT BAR (part of Column so it moves with everything)
+                     Padding(
+                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                       child: Container(
+                         key: _inputBarKey,
+                         padding: const EdgeInsets.all(16.0),
+                         decoration: BoxDecoration(
+                           color: Colors.grey.shade900.withOpacity(0.8),
+                           borderRadius: BorderRadius.circular(16),
+                           border: Border.all(color: Colors.grey.shade700, width: 1),
+                           boxShadow: [
+                             BoxShadow(
+                               color: Colors.black.withOpacity(0.3),
+                               blurRadius: 8,
+                               offset: const Offset(0, 2),
+                             ),
+                           ],
+                         ),
+                         child: Row(
+                           children: [
+                             Expanded(
+                               child: TextField(
+                                 focusNode: _inputFocusNode,
+                                 controller: _textController,
+                                 style: const TextStyle(color: Colors.white, fontSize: 16),
+                                 decoration: InputDecoration(
+                                   hintText: 'Ask anything about your pet...',
+                                   hintStyle: TextStyle(color: Colors.grey.shade400),
+                                   border: OutlineInputBorder(
+                                     borderRadius: BorderRadius.circular(12),
+                                     borderSide: BorderSide(color: Colors.grey.shade600),
+                                   ),
+                                   enabledBorder: OutlineInputBorder(
+                                     borderRadius: BorderRadius.circular(12),
+                                     borderSide: BorderSide(color: Colors.grey.shade600),
+                                   ),
+                                   focusedBorder: OutlineInputBorder(
+                                     borderRadius: BorderRadius.circular(12),
+                                     borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+                                   ),
+                                   filled: true,
+                                   fillColor: Colors.grey.shade800.withOpacity(0.5),
+                                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                 ),
+                                 maxLines: null,
+                                 textInputAction: TextInputAction.send,
+                                 onSubmitted: (value) async {
+                                   if (value.trim().isNotEmpty) {
+                                     await aiProvider.sendMessage(value, context);
+                                     _textController.clear();
+                                   }
+                                 },
+                               ),
+                             ),
+                             const SizedBox(width: 12),
+                             Container(
+                               decoration: BoxDecoration(
+                                 gradient: LinearGradient(
+                                   colors: [
+                                     Colors.blue.shade600,
+                                     Colors.purple.shade600,
+                                   ],
+                                 ),
+                                 borderRadius: BorderRadius.circular(12),
+                               ),
+                               child: aiProvider.isLoading
+                                   ? const Padding(
+                                       padding: EdgeInsets.all(12.0),
+                                       child: SizedBox(
+                                         width: 20,
+                                         height: 20,
+                                         child: CircularProgressIndicator(
+                                           strokeWidth: 2,
+                                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                         ),
+                                       ),
+                                     )
+                                   : IconButton(
+                                       icon: const Icon(Icons.send, color: Colors.white),
+                                       onPressed: () async {
+                                         if (_textController.text.trim().isNotEmpty) {
+                                           await aiProvider.sendMessage(_textController.text, context);
+                                           _textController.clear();
+                                         }
+                                       },
+                                     ),
+                             ),
+                           ],
+                         ),
+                       ),
+                     ),
+                   ],
+                 ),
+               ),
           ),
         ),
       ),

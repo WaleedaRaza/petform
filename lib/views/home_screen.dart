@@ -183,9 +183,24 @@ class _HomeScreenState extends State<HomeScreen> {
             child: SizedBox.shrink(),
           ),
           const StatusBar(),
-          Padding(
-            padding: const EdgeInsets.only(top: 225), // Move main content down by 100 pixels
-            child: _pages[_selectedIndex],
+          // Content area under the pinned StatusBar. We slide this up when
+          // keyboard opens on the Ask AI tab so the entire page (title,
+          // dropdowns, list, input) moves together by ~100px.
+          Builder(
+            builder: (context) {
+              final mq = MediaQuery.of(context);
+              final bool kbOpen = mq.viewInsets.bottom > 0;
+              final double liftFraction = 100.0 / mq.size.height;
+              return Padding(
+                padding: const EdgeInsets.only(top: 225),
+                child: AnimatedSlide(
+                  offset: Offset(0, (kbOpen && _selectedIndex == 1) ? -liftFraction : 0.0),
+                  duration: const Duration(milliseconds: 160),
+                  curve: Curves.easeOut,
+                  child: _pages[_selectedIndex],
+                ),
+              );
+            },
           ),
         ],
       ),
