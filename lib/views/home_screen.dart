@@ -191,6 +191,12 @@ class _HomeScreenState extends State<HomeScreen> {
               final mq = MediaQuery.of(context);
               final bool kbOpen = mq.viewInsets.bottom > 0;
               final double liftFraction = 100.0 / mq.size.height;
+              if (kDebugMode) {
+                // Log when keyboard visibility or index changes
+                // to verify shift conditions are met
+                debugPrint(
+                    'HomeScreen: index=$_selectedIndex kbOpen=$kbOpen liftFraction=$liftFraction');
+              }
               return Padding(
                 padding: const EdgeInsets.only(top: 225),
                 child: AnimatedSlide(
