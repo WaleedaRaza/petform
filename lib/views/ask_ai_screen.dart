@@ -588,7 +588,11 @@ class _AskAiScreenState extends State<AskAiScreen> {
                   duration: const Duration(milliseconds: 160),
                   curve: Curves.easeOut,
                 transform: Matrix4.translationValues(0, mq.viewInsets.bottom > 0 ? -160.0 : 0.0, 0),
-                  child: Column(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      bottom: kBottomNavigationBarHeight + mq.padding.bottom + 16,
+                    ),
+                    child: Column(
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -738,6 +742,7 @@ class _AskAiScreenState extends State<AskAiScreen> {
                     ),
                   ],
                 ),
+                  ),
               ),
             ),
           ),
