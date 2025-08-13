@@ -590,10 +590,10 @@ class _AskAiScreenState extends State<AskAiScreen> {
               curve: Curves.easeOut,
               child: SafeArea(
                 bottom: false,
-                child: AnimatedSlide(
-                  offset: Offset(0, mq.viewInsets.bottom > 0 ? -(100.0 / mq.size.height) : 0.0),
+                child: AnimatedContainer(
                   duration: const Duration(milliseconds: 160),
                   curve: Curves.easeOut,
+                  transform: Matrix4.translationValues(0, mq.viewInsets.bottom > 0 ? -100.0 : 0.0, 0),
                   child: Column(
                   children: [
                     Padding(
