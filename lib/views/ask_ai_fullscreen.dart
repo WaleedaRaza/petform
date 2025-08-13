@@ -53,16 +53,12 @@ class _AskAiFullscreenPageState extends State<AskAiFullscreenPage> {
             body: SafeArea(
               child: Stack(
                 children: [
-                  const StatusBar(),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 225),
-                    child: _buildScrollableContent(context, aiProvider),
-                  ),
+                  _buildScrollableContent(context, aiProvider),
                   // Floating input anchored to bottom; only this moves with the keyboard
                   Align(
                     alignment: Alignment.bottomCenter,
                     child: AnimatedPadding(
-                      padding: EdgeInsets.only(bottom: (bottomInset > 0 ? bottomInset : 8) + 8),
+                      padding: EdgeInsets.only(bottom: bottomInset > 0 ? bottomInset + 8 : 8),
                       duration: const Duration(milliseconds: 160),
                       curve: Curves.easeOut,
                       child: Padding(
