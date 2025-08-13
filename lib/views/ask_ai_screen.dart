@@ -593,10 +593,7 @@ class _AskAiScreenState extends State<AskAiScreen> {
           resizeToAvoidBottomInset: false,
           body: AnimatedPadding(
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom
-                  + kBottomNavigationBarHeight
-                  + MediaQuery.of(context).padding.bottom
-                  + 12,
+              bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? 100.0 : 0.0,
             ),
             duration: const Duration(milliseconds: 160),
             curve: Curves.easeOut,
