@@ -9,6 +9,8 @@ import '../services/supabase_service.dart';
 import '../services/supabase_auth_service.dart';
 import 'package:flutter/foundation.dart';
 import '../providers/feed_provider.dart';
+import '../providers/user_provider.dart';
+import '../views/create_post_screen.dart';
 
 class EnhancedPostCard extends StatelessWidget {
   final Post post;
@@ -40,12 +42,23 @@ class EnhancedPostCard extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: InkWell(
             onTap: onTap ?? () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PostDetailScreen(post: post),
-                ),
-              );
+              final currentUsername = _getCurrentUsername(context);
+              final isAuthor = post.postType.toLowerCase() == 'community' && post.author == currentUsername;
+              if (isAuthor) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CreatePostScreen(postToEdit: post),
+                  ),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PostDetailScreen(post: post),
+                  ),
+                );
+              }
             },
             borderRadius: BorderRadius.circular(16),
             child: Column(
@@ -271,8 +284,17 @@ class EnhancedPostCard extends StatelessWidget {
             ),
           ),
           
-          // Delete button (only for community posts by current user)
-          if (post.postType == 'community' && post.author == _getCurrentUserEmail(context))
+          // Edit/Delete buttons (only for community posts by current user)
+          if (post.postType == 'community' && post.author == _getCurrentUsername(context)) ...[
+            IconButton(
+              onPressed: () => _editPost(context, post),
+              icon: const Icon(
+                Icons.edit,
+                color: Colors.grey,
+                size: 20,
+              ),
+              tooltip: 'Edit post',
+            ),
             IconButton(
               onPressed: () => _showDeleteDialog(context, post),
               icon: const Icon(
@@ -281,7 +303,8 @@ class EnhancedPostCard extends StatelessWidget {
                 size: 20,
               ),
               tooltip: 'Delete post',
-          ),
+            ),
+          ],
         ],
       ),
     );
@@ -386,6 +409,13 @@ class EnhancedPostCard extends StatelessWidget {
     return user?.email ?? 'Anonymous';
   }
 
+  String _getCurrentUsername(BuildContext context) {
+    // Prefer the app's display name/username; fallback to email username part
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final email = SupabaseAuthService().currentUser?.email;
+    return userProvider.currentUsername ?? (email != null ? email.split('@').first : 'Anonymous');
+  }
+
   void _showDeleteDialog(BuildContext context, Post post) {
     showDialog(
       context: context,
@@ -412,7 +442,7 @@ class EnhancedPostCard extends StatelessWidget {
 
   Future<void> _deletePost(BuildContext context, Post post) async {
     try {
-      final currentUser = _getCurrentUserEmail(context);
+      final currentUser = _getCurrentUsername(context);
       
       // Use API service to delete post
       await SupabaseService.deletePost(post.id!);
@@ -430,6 +460,15 @@ class EnhancedPostCard extends StatelessWidget {
         );
       }
     }
+  }
+
+  void _editPost(BuildContext context, Post post) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreatePostScreen(postToEdit: post),
+      ),
+    );
   }
 
   void _showImageDialog(BuildContext context, String imageUrl) {

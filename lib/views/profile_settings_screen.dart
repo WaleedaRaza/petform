@@ -20,7 +20,7 @@ import 'post_detail_screen.dart';
 import 'saved_posts_screen.dart';
 import '../services/auth0_service.dart';
 import '../services/supabase_service.dart';
-import 'clerk_test_screen.dart';
+// import 'clerk_test_screen.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -33,14 +33,17 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   final Auth0Service _auth0Service = Auth0Service.instance;
   bool _isLoading = false;
 
-  Future<List<Post>> _loadUserPosts(String email) async {
-    final prefs = await SharedPreferences.getInstance();
-    // Use global posts key to get all posts, then filter by author
-    final posts = jsonDecode(prefs.getString('global_posts') ?? '[]') as List;
-    return posts
-        .map((p) => Post.fromJson(p as Map<String, dynamic>))
-        .where((post) => post.author == email)
-        .toList();
+  Future<List<Post>> _loadUserPosts(String authorName) async {
+    try {
+      final postsData = await SupabaseService.getPosts();
+      final posts = postsData.map((p) => Post.fromJson(p)).toList();
+      return posts.where((post) => post.postType == 'community' && post.author == authorName).toList();
+    } catch (e) {
+      if (kDebugMode) {
+        print('ProfileSettingsScreen._loadUserPosts: Error loading posts: $e');
+      }
+      return [];
+    }
   }
 
   String _formatDate(DateTime date) {
@@ -155,19 +158,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         subtitle: Text(userEmail),
                         onTap: () => _showEditDisplayNameDialog(context),
                       ),
-                      ListTile(
-                        leading: const Icon(Icons.security),
-                        title: const Text('Test Clerk Auth'),
-                        subtitle: const Text('Test Clerk integration'),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ClerkTestScreen(),
-                            ),
-                          );
-                        },
-                      ),
+                      // Removed test Clerk auth button in production
 
                 ],
               ),
@@ -280,7 +271,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   ),
                   const SizedBox(height: 16),
                   FutureBuilder<List<Post>>(
-                        future: _loadUserPosts(userEmail),
+                        future: _loadUserPosts(userDisplayName),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const CircularProgressIndicator();

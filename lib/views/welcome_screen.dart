@@ -93,7 +93,38 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         }
         
         if (kDebugMode) {
-          print('WelcomeScreen: Auth0 user is authenticated and verified, navigating to main app');
+          print('WelcomeScreen: Auth0 user is authenticated and verified, preparing user context');
+        }
+
+        // Ensure UserProvider has a persistent display name/username for this session
+        try {
+          final username = await SupabaseService.getOrCreateUsername(
+            auth0User.email ?? '',
+            auth0User.nickname ?? auth0User.name,
+          );
+          final userProfile = await SupabaseService.getUserProfile();
+          final savedDisplayName = userProfile?['display_name'] ??
+              username ??
+              auth0User.nickname ??
+              auth0User.name ??
+              auth0User.email?.split('@')[0] ??
+              'user';
+          if (mounted) {
+            final userProvider = Provider.of<UserProvider>(context, listen: false);
+            userProvider.setCurrentUser(
+              auth0User.sub,
+              savedDisplayName,
+              auth0User.email ?? '',
+            );
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('WelcomeScreen: Failed to prepare user context: $e');
+          }
+        }
+
+        if (kDebugMode) {
+          print('WelcomeScreen: Navigating to main app');
         }
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/home');

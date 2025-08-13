@@ -54,15 +54,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
         final username = userProvider.currentUsername ?? userEmail.split('@')[0];
 
-        if (widget.postToEdit != null) {
-          // Edit existing post - for now, we'll just create a new post
-          // since editing requires more complex logic
-          await SupabaseService.createPost({
+        if (widget.postToEdit != null && widget.postToEdit!.id != null) {
+          // Edit existing post
+          await SupabaseService.updatePost(widget.postToEdit!.id!, {
             'title': _titleController.text,
             'content': _contentController.text,
             'pet_type': _selectedPetType,
             'author': username,
             'post_type': 'community',
+            'updated_at': DateTime.now().toIso8601String(),
           });
         } else {
           // Create new post

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:math' as math;
 import '../services/ai_service.dart';
 import '../models/pet.dart';
 import '../models/tracking_metric.dart';
@@ -531,11 +532,42 @@ class AskAiScreen extends StatefulWidget {
 
 class _AskAiScreenState extends State<AskAiScreen> {
   final TextEditingController _textController = TextEditingController();
+  late FocusNode _inputFocusNode;
+  bool _isInputFocused = false;
+  final GlobalKey _inputBarKey = GlobalKey();
+  double _inputBarHeight = 64.0;
 
   @override
   void dispose() {
+    _inputFocusNode.removeListener(_handleFocusChange);
+    _inputFocusNode.dispose();
     _textController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _inputFocusNode = FocusNode();
+    _inputFocusNode.addListener(_handleFocusChange);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureInputBar());
+  }
+
+  void _handleFocusChange() {
+    if (mounted) {
+      setState(() {
+        _isInputFocused = _inputFocusNode.hasFocus;
+      });
+      _measureInputBar();
+    }
+  }
+
+  void _measureInputBar() {
+    final box = _inputBarKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box != null) {
+      final h = box.size.height;
+      if (h != _inputBarHeight && mounted) setState(() => _inputBarHeight = h);
+    }
   }
 
   @override
@@ -544,12 +576,34 @@ class _AskAiScreenState extends State<AskAiScreen> {
       create: (context) => AiProvider(),
       builder: (context, child) {
         final aiProvider = Provider.of<AiProvider>(context);
+        final mq = MediaQuery.of(context);
+        final bottomInset = mq.viewInsets.bottom;
+        final safeBottom = mq.padding.bottom;
+        // Legacy variable (unused below) kept for minimal diff visibility
+        final extraLift = _isInputFocused ? (kBottomNavigationBarHeight + safeBottom + 24.0) : 0.0;
+        final double animatedBottomPadding = bottomInset > 0 ? bottomInset + extraLift : 0.0;
+        // New explicit pinned-offset calculation
+        const double nav = kBottomNavigationBarHeight;
+        final double bottomOffset = (bottomInset > 0 ? bottomInset : 0.0) + nav + safeBottom + (_isInputFocused ? 16.0 : 8.0);
+        final double slideUp = -math.min(0.6, bottomOffset / mq.size.height);
         return VideoBackground(
           videoPath: 'lib/assets/animation2.mp4',
           child: Scaffold(
           backgroundColor: Colors.transparent,
-          body: Column(
-            children: [
+          resizeToAvoidBottomInset: false,
+          body: AnimatedPadding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom
+                  + kBottomNavigationBarHeight
+                  + MediaQuery.of(context).padding.bottom
+                  + 12,
+            ),
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOut,
+            child: SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
               // Header with title and clear button
               Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -600,105 +654,110 @@ class _AskAiScreenState extends State<AskAiScreen> {
                         ),
                       )
                     : ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 8),
                         itemCount: aiProvider.messages.length,
                         itemBuilder: (context, index) {
                           return MessageBubble(message: aiProvider.messages[index]);
                         },
                       ),
               ),
-              // DARK THEMED TEXT INPUT AT THE BOTTOM - MOVED UP
-              Container(
-                margin: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 72.0),
-                padding: const EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade900.withOpacity(0.8),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade700, width: 1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _textController,
-                        style: const TextStyle(color: Colors.white, fontSize: 16),
-                        decoration: InputDecoration(
-                          hintText: 'Ask anything about your pet...',
-                          hintStyle: TextStyle(color: Colors.grey.shade400),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade600),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade600),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey.shade800.withOpacity(0.5),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        ),
-                        maxLines: null,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (value) async {
-                          if (value.trim().isNotEmpty) {
-                            await aiProvider.sendMessage(value, context);
-                            _textController.clear();
-                          }
-                        },
+              // INPUT BAR (part of Column so it moves with everything)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: Container(
+                  key: _inputBarKey,
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade900.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade700, width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.blue.shade600,
-                            Colors.purple.shade600,
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: aiProvider.isLoading
-                          ? const Padding(
-                              padding: EdgeInsets.all(12.0),
-                              child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              ),
-                            )
-                          : IconButton(
-                              icon: const Icon(Icons.send, color: Colors.white),
-                              onPressed: () async {
-                                if (_textController.text.trim().isNotEmpty) {
-                                  await aiProvider.sendMessage(_textController.text, context);
-                                  _textController.clear();
-                                }
-                              },
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          focusNode: _inputFocusNode,
+                          controller: _textController,
+                          style: const TextStyle(color: Colors.white, fontSize: 16),
+                          decoration: InputDecoration(
+                            hintText: 'Ask anything about your pet...',
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.shade600),
                             ),
-                    ),
-                  ],
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.shade600),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey.shade800.withOpacity(0.5),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          ),
+                          maxLines: null,
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: (value) async {
+                            if (value.trim().isNotEmpty) {
+                              await aiProvider.sendMessage(value, context);
+                              _textController.clear();
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.blue.shade600,
+                              Colors.purple.shade600,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: aiProvider.isLoading
+                            ? const Padding(
+                                padding: EdgeInsets.all(12.0),
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                ),
+                              )
+                            : IconButton(
+                                icon: const Icon(Icons.send, color: Colors.white),
+                                onPressed: () async {
+                                  if (_textController.text.trim().isNotEmpty) {
+                                    await aiProvider.sendMessage(_textController.text, context);
+                                    _textController.clear();
+                                  }
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              // Add bottom padding to ensure space above navigation
-              const SizedBox(height: 20),
             ],
-            ),
           ),
-        );
+        ),
+      ),
+    ),
+  );
       },
     );
   }

@@ -121,46 +121,71 @@ class FeedProvider with ChangeNotifier {
                 print('FeedProvider: Fetching popular pet posts for "All" category');
               }
               
-              // Prioritize most common pets: Dogs, Cats, Fish, then others
+              // Focus on the BIGGEST, MOST POPULAR pet subreddits for relevance
               List<String> topPetSubreddits = [
-                'dogtraining', 'catcare', 'aquariums', // Most common pets first
-                'pets', 'hamstercare', 'reptiles', 'rabbitcare', 'parrots' // Others
+                'dogs',           // 4.2M members - biggest dog subreddit
+                'cats',           // 3.1M members - biggest cat subreddit  
+                'pets',           // 2.8M members - general pet community
+                'aww',            // 35M members - cute animals (viral content)
+                'aquariums',      // 1.2M members - biggest fish community
+                'parrots',        // 200K members - popular bird subreddit
+                'hamsters',       // 100K members - popular small pet subreddit
+                'rabbits',        // 150K members - popular rabbit subreddit
               ];
               
-              // Fetch from top subreddits with priority weighting
-              for (int i = 0; i < topPetSubreddits.length; i++) {
-                String subreddit = topPetSubreddits[i];
-                try {
-                  // Give more posts to dogs/cats/fish (most common pets)
-                  int limit = (i < 3) ? 20 : 10; // More posts for top 3
-                  
-                  final posts = await apiService.fetchRedditPosts(
-                    subreddit: subreddit,
-                    limit: limit,
-                  );
-                  
-                  // Intelligently assign pet type based on content
-                  for (var post in posts) {
-                    post.petType = _detectPetTypeFromContent(post.title, post.content);
-                  }
-                  
-                  redditPosts.addAll(posts);
-                  
-                  if (kDebugMode) {
-                    print('FeedProvider: Fetched ${posts.length} posts from r/$subreddit (priority ${i + 1})');
-                  }
-                } catch (e) {
-                  if (kDebugMode) {
-                    print('FeedProvider: Error fetching from r/$subreddit: $e');
-                  }
-                }
+              // Fetch from the biggest, most popular subreddits for maximum relevance
+              List<Future<List<RedditPost>>> fetchFutures = [];
+              
+              for (String subreddit in topPetSubreddits) {
+                fetchFutures.add(
+                  apiService.fetchRedditPosts(subreddit: subreddit, limit: 15) // More posts per subreddit
+                    .then((posts) {
+                      // Assign pet type based on subreddit (trust the subreddit for main feed)
+                      for (var post in posts) {
+                        // Use subreddit name as primary pet type indicator
+                        String subredditLower = subreddit.toLowerCase();
+                        if (subredditLower.contains('dog')) {
+                          post.petType = 'Dog';
+                        } else if (subredditLower.contains('cat')) {
+                          post.petType = 'Cat';
+                        } else if (subredditLower.contains('aquarium') || subredditLower.contains('fish')) {
+                          post.petType = 'Fish';
+                        } else if (subredditLower.contains('parrot') || subredditLower.contains('bird')) {
+                          post.petType = 'Bird';
+                        } else if (subredditLower.contains('hamster')) {
+                          post.petType = 'Hamster';
+                        } else if (subredditLower.contains('rabbit') || subredditLower.contains('bunny')) {
+                          post.petType = 'Rabbit';
+                        } else if (subredditLower.contains('aww')) {
+                          // For r/aww, detect based on content since it's mixed
+                          post.petType = _detectPetTypeFromContent(post.title, post.content);
+                        } else {
+                          // For r/pets, detect based on content since it's mixed
+                          post.petType = _detectPetTypeFromContent(post.title, post.content);
+                        }
+                      }
+                      return posts;
+                    })
+                    .catchError((e) {
+                      if (kDebugMode) {
+                        print('FeedProvider: Error fetching from r/$subreddit: $e');
+                      }
+                      return <RedditPost>[];
+                    })
+                );
               }
               
-              // Shuffle posts to mix different pet types
-              redditPosts.shuffle();
+              // Wait for all fetches to complete
+              List<List<RedditPost>> allResults = await Future.wait(fetchFutures);
+              
+              // Flatten all results
+              for (List<RedditPost> posts in allResults) {
+                redditPosts.addAll(posts);
+              }
               
               if (kDebugMode) {
-                print('FeedProvider: Total posts for "All" category: ${redditPosts.length}');
+                print('FeedProvider: Total posts fetched for "All" category: ${redditPosts.length}');
+                print('FeedProvider: Fetched from subreddits: $topPetSubreddits');
               }
             } else {
               // For specific pet types - fetch only when that category is clicked
@@ -311,7 +336,7 @@ class FeedProvider with ChangeNotifier {
       // FILTER INAPPROPRIATE CONTENT
       allPosts = _filterInappropriateContent(allPosts);
       
-      // PRIORITIZE DOGS, CATS, FISH FOR FIRST 10 POSTS, THEN MIX OTHERS
+      // PRIORITIZE DOGS, CATS, FISH FOR FIRST 0-10 POSTS, THEN SHUFFLE OTHERS EQUALLY
       if (_selectedPetType == 'All') {
         // Separate posts by priority
         List<Post> priorityPosts = []; // Dogs, Cats, Fish
@@ -337,16 +362,30 @@ class FeedProvider with ChangeNotifier {
         priorityPosts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         otherPosts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         
-        // Take first 10 from priority posts, then 20 from others
+        // Take first 10 from priority posts (dogs, cats, fish)
         List<Post> finalPosts = [];
         finalPosts.addAll(priorityPosts.take(10));
+        
+        // Shuffle the remaining posts to mix different animal types equally
+        otherPosts.shuffle();
         finalPosts.addAll(otherPosts.take(20));
         
         allPosts = finalPosts;
         
         if (kDebugMode) {
           print('FeedProvider: Main feed - ${priorityPosts.length} priority posts, ${otherPosts.length} other posts');
-          print('FeedProvider: Final feed - ${allPosts.length} posts (10 priority + 20 others)');
+          print('FeedProvider: Final feed - ${allPosts.length} posts (10 priority + 20 shuffled others)');
+          
+          // Debug: Show pet type distribution in final feed
+          Map<String, int> petTypeCount = {};
+          for (Post post in allPosts) {
+            String petType = post.petType?.toLowerCase() ?? 'unknown';
+            petTypeCount[petType] = (petTypeCount[petType] ?? 0) + 1;
+          }
+          print('FeedProvider: Pet type distribution in final feed:');
+          petTypeCount.forEach((petType, count) {
+            print('  $petType: $count posts');
+          });
         }
       } else {
         // For specific pet types, keep as is

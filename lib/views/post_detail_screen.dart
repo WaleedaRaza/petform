@@ -140,10 +140,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   Future<void> _deletePost(Post post) async {
-    final currentUser = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+    final currentUsername = userProvider.currentUsername ?? userEmail.split('@')[0];
     
     // Only allow deletion if the user is the author of the post
-    if (post.author != currentUser) {
+    if (post.author != currentUsername) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('You can only delete your own posts')),
       );
@@ -223,7 +225,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           actions: [
-            if (post.postType == 'community' && post.author == SupabaseAuthService().currentUser?.email) ...[
+            if (post.postType == 'community') ...[
+              if (() {
+                final userProvider = Provider.of<UserProvider>(context, listen: false);
+                final email = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+                final name = userProvider.currentUsername ?? email.split('@')[0];
+                return post.author == name;
+              }()) ...[
               IconButton(
                 icon: const Icon(Icons.edit),
                 onPressed: () {
@@ -240,7 +248,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 icon: const Icon(Icons.delete, color: Colors.red),
                 onPressed: () => _deletePost(post),
                 tooltip: 'Delete post',
-              ),
+              ),],
             ],
           ],
         ),

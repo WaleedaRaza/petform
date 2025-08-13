@@ -1151,12 +1151,12 @@ class SupabaseService {
   
   static Future<void> saveRedditPost(String redditUrl, String title, String petType) async {
     try {
-      final user = client.auth.currentUser;
-      if (user == null) throw Exception('No user logged in');
+      final String? userId = await getCurrentUserId();
+      if (userId == null) throw Exception('No user logged in');
       
       // Use only the most basic columns that definitely exist
       await client.from('posts').upsert({
-        'user_id': user.id,
+        'user_id': userId,
         'title': title,
         'content': redditUrl, // Store URL in content
       });
@@ -1174,13 +1174,13 @@ class SupabaseService {
   
   static Future<void> unsaveRedditPost(String redditUrl) async {
     try {
-      final user = client.auth.currentUser;
-      if (user == null) throw Exception('No user logged in');
+      final String? userId = await getCurrentUserId();
+      if (userId == null) throw Exception('No user logged in');
       
       // Delete by content (which contains the URL)
       await client.from('posts')
           .delete()
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .eq('content', redditUrl);
       
       if (kDebugMode) {
@@ -1196,14 +1196,14 @@ class SupabaseService {
   
   static Future<List<Map<String, dynamic>>> getSavedRedditPosts() async {
     try {
-      final user = client.auth.currentUser;
-      if (user == null) throw Exception('No user logged in');
+      final String? userId = await getCurrentUserId();
+      if (userId == null) throw Exception('No user logged in');
       
       // Get posts where content starts with http (Reddit URLs)
       final response = await client
           .from('posts')
           .select()
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .like('content', 'http%')
           .order('created_at', ascending: false);
       
@@ -1211,7 +1211,7 @@ class SupabaseService {
         print('SupabaseService: Loaded ${response.length} saved Reddit posts');
       }
       
-      return response;
+      return (response as List).cast<Map<String, dynamic>>();
     } catch (e) {
       if (kDebugMode) {
         print('SupabaseService: Error getting saved Reddit posts: $e');
