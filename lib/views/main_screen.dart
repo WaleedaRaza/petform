@@ -45,9 +45,21 @@ class _MainScreenState extends State<MainScreen> {
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: IndexedStack(
-          index: _selectedIndex,
-          children: _pages,
+        body: Builder(
+          builder: (context) {
+            final mq = MediaQuery.of(context);
+            final bool kbOpen = mq.viewInsets.bottom > 0;
+            final double liftFraction = 100.0 / mq.size.height;
+            return AnimatedSlide(
+              offset: Offset(0, (kbOpen && _selectedIndex == 1) ? -liftFraction : 0.0),
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOut,
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: _pages,
+              ),
+            );
+          },
         ),
         bottomNavigationBar: BottomNavigationBar(
           items: const <BottomNavigationBarItem>[
