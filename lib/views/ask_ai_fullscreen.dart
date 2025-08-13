@@ -58,7 +58,7 @@ class _AskAiFullscreenPageState extends State<AskAiFullscreenPage> {
                   Align(
                     alignment: Alignment.bottomCenter,
                     child: AnimatedPadding(
-                      padding: EdgeInsets.only(bottom: bottomInset > 0 ? bottomInset + 8 : 8),
+                      padding: EdgeInsets.only(bottom: bottomInset > 0 ? 80 : 8),
                       duration: const Duration(milliseconds: 160),
                       curve: Curves.easeOut,
                       child: Padding(
