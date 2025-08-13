@@ -8,6 +8,7 @@ import '../widgets/status_bar.dart';
 import '../widgets/video_background.dart';
 import 'community_feed_screen.dart';
 import 'ask_ai_screen.dart';
+import 'ask_ai_fullscreen.dart';
 import 'shopping_screen.dart';
 import 'enhanced_tracking_screen.dart';
 import 'profile_settings_screen.dart';
@@ -218,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ],
-      ),
+          ),
           );
         },
       ),
@@ -234,7 +235,12 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedItemColor: Theme.of(context).colorScheme.secondary,
         unselectedItemColor: Colors.grey,
         onTap: (index) {
-          print('HomeScreen: Navigation tapped, changing to index: $index');
+          if (index == 1) {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AskAiFullscreenPage()),
+            );
+            return;
+          }
           _onItemTapped(index);
         },
         type: BottomNavigationBarType.fixed,
