@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../widgets/video_background.dart';
+import '../widgets/status_bar.dart';
+import 'home_screen.dart';
 import '../providers/app_state_provider.dart';
 import '../models/pet.dart';
 
@@ -51,14 +53,17 @@ class _AskAiFullscreenPageState extends State<AskAiFullscreenPage> {
             body: SafeArea(
               child: Stack(
                 children: [
-                  // Keyboard-aware padding: lift entire page by keyboard height
-                  AnimatedPadding(
-                    padding: EdgeInsets.only(
-                      bottom: bottomInset + safeBottom + 16,
+                  const StatusBar(),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 225),
+                    child: AnimatedPadding(
+                      padding: EdgeInsets.only(
+                        bottom: bottomInset + safeBottom + kBottomNavigationBarHeight + 16,
+                      ),
+                      duration: const Duration(milliseconds: 160),
+                      curve: Curves.easeOut,
+                      child: _buildContent(context, aiProvider),
                     ),
-                    duration: const Duration(milliseconds: 160),
-                    curve: Curves.easeOut,
-                    child: _buildContent(context, aiProvider),
                   ),
                   // Diagnostics overlay (temporary)
                   Positioned(
@@ -78,6 +83,26 @@ class _AskAiFullscreenPageState extends State<AskAiFullscreenPage> {
                   ),
                 ],
               ),
+            ),
+            bottomNavigationBar: BottomNavigationBar(
+              currentIndex: 1,
+              selectedItemColor: Colors.orange,
+              unselectedItemColor: Colors.grey,
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.feed), label: 'Feed'),
+                BottomNavigationBarItem(icon: Icon(Icons.question_answer), label: 'Ask AI'),
+                BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Shopping'),
+                BottomNavigationBarItem(icon: Icon(Icons.track_changes), label: 'Tracking'),
+                BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+              ],
+              onTap: (index) {
+                if (index == 1) return;
+                // Return to home; let user select other tabs there
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  (route) => false,
+                );
+              },
             ),
           ),
         );
