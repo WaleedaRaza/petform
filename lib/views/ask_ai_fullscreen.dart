@@ -56,13 +56,19 @@ class _AskAiFullscreenPageState extends State<AskAiFullscreenPage> {
                   const StatusBar(),
                   Padding(
                     padding: const EdgeInsets.only(top: 225),
+                    child: _buildScrollableContent(context, aiProvider),
+                  ),
+                  // Floating input anchored to bottom; only this moves with the keyboard
+                  Align(
+                    alignment: Alignment.bottomCenter,
                     child: AnimatedPadding(
-                      padding: EdgeInsets.only(
-                        bottom: bottomInset + safeBottom + kBottomNavigationBarHeight + 16,
-                      ),
+                      padding: EdgeInsets.only(bottom: (bottomInset > 0 ? bottomInset : 8) + 8),
                       duration: const Duration(milliseconds: 160),
                       curve: Curves.easeOut,
-                      child: _buildContent(context, aiProvider),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _buildInputRow(context, aiProvider),
+                      ),
                     ),
                   ),
                   // Diagnostics overlay (temporary)
@@ -110,7 +116,7 @@ class _AskAiFullscreenPageState extends State<AskAiFullscreenPage> {
     );
   }
 
-  Widget _buildContent(BuildContext context, AiProvider aiProvider) {
+  Widget _buildScrollableContent(BuildContext context, AiProvider aiProvider) {
     final appState = Provider.of<AppStateProvider>(context, listen: false);
     return Column(
       children: [
@@ -163,84 +169,81 @@ class _AskAiFullscreenPageState extends State<AskAiFullscreenPage> {
               }
               return ListView.builder(
                 controller: _scrollController,
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: 96),
                 itemCount: provider.messages.length,
                 itemBuilder: (context, index) => MessageBubble(message: provider.messages[index]),
               );
             },
           ),
         ),
+      ],
+    );
+  }
 
-        // Input
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _textController,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                  decoration: InputDecoration(
-                    hintText: 'Ask anything about your pet...',
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade600),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade600),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey.shade800.withOpacity(0.5),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                  maxLines: null,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (value) async {
-                    if (value.trim().isEmpty) return;
-                    await aiProvider.sendMessage(value, context);
-                    _textController.clear();
-                  },
-                ),
+  Widget _buildInputRow(BuildContext context, AiProvider aiProvider) {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _textController,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+            decoration: InputDecoration(
+              hintText: 'Ask anything about your pet...',
+              hintStyle: TextStyle(color: Colors.grey.shade400),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade600),
               ),
-              const SizedBox(width: 12),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [
-                    Colors.blue.shade600,
-                    Colors.purple.shade600,
-                  ]),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Consumer<AiProvider>(
-                  builder: (_, provider, __) => provider.isLoading
-                      ? const Padding(
-                          padding: EdgeInsets.all(12.0),
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
-                          ),
-                        )
-                      : IconButton(
-                          icon: const Icon(Icons.send, color: Colors.white),
-                          onPressed: () async {
-                            if (_textController.text.trim().isEmpty) return;
-                            await aiProvider.sendMessage(_textController.text, context);
-                            _textController.clear();
-                          },
-                        ),
-                ),
-              )
-            ],
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade600),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+              ),
+              filled: true,
+              fillColor: Colors.grey.shade800.withOpacity(0.5),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            maxLines: null,
+            textInputAction: TextInputAction.send,
+            onSubmitted: (value) async {
+              if (value.trim().isEmpty) return;
+              await aiProvider.sendMessage(value, context);
+              _textController.clear();
+            },
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(width: 12),
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [
+              Colors.blue.shade600,
+              Colors.purple.shade600,
+            ]),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Consumer<AiProvider>(
+            builder: (_, provider, __) => provider.isLoading
+                ? const Padding(
+                    padding: EdgeInsets.all(12.0),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                    ),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.send, color: Colors.white),
+                    onPressed: () async {
+                      if (_textController.text.trim().isEmpty) return;
+                      await aiProvider.sendMessage(_textController.text, context);
+                      _textController.clear();
+                    },
+                  ),
+          ),
+        )
       ],
     );
   }
