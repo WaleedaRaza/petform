@@ -582,18 +582,12 @@ class _AskAiScreenState extends State<AskAiScreen> {
           child: Scaffold(
             backgroundColor: Colors.transparent,
             resizeToAvoidBottomInset: false,
-            body: AnimatedPadding(
-              padding: EdgeInsets.only(
-                bottom: kBottomNavigationBarHeight + mq.padding.bottom + 12,
-              ),
-              duration: const Duration(milliseconds: 160),
-              curve: Curves.easeOut,
-              child: SafeArea(
+            body: SafeArea(
                 bottom: false,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 160),
                   curve: Curves.easeOut,
-                  transform: Matrix4.translationValues(0, mq.viewInsets.bottom > 0 ? -100.0 : 0.0, 0),
+                transform: Matrix4.translationValues(0, mq.viewInsets.bottom > 0 ? -160.0 : 0.0, 0),
                   child: Column(
                   children: [
                     Padding(
