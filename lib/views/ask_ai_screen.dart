@@ -591,7 +591,7 @@ class _AskAiScreenState extends State<AskAiScreen> {
               child: SafeArea(
                 bottom: false,
                 child: AnimatedSlide(
-                  offset: Offset(0, MediaQuery.of(context).viewInsets.bottom > 0 ? -(100.0 / mq.size.height) : 0.0),
+                  offset: Offset(0, mq.viewInsets.bottom > 0 ? -(100.0 / mq.size.height) : 0.0),
                   duration: const Duration(milliseconds: 160),
                   curve: Curves.easeOut,
                   child: Column(
