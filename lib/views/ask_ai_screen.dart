@@ -593,17 +593,17 @@ class _AskAiScreenState extends State<AskAiScreen> {
           resizeToAvoidBottomInset: false,
           body: AnimatedPadding(
             padding: EdgeInsets.only(
-              bottom:
-                  (MediaQuery.of(context).viewInsets.bottom > 0 ? 100.0 : 0.0) +
-                  kBottomNavigationBarHeight +
-                  MediaQuery.of(context).padding.bottom +
-                  12,
+              bottom: kBottomNavigationBarHeight + MediaQuery.of(context).padding.bottom + 12,
             ),
             duration: const Duration(milliseconds: 160),
             curve: Curves.easeOut,
-            child: SafeArea(
-              bottom: false,
-              child: Column(
+            child: AnimatedSlide(
+              offset: Offset(0, MediaQuery.of(context).viewInsets.bottom > 0 ? -(100.0 / mq.size.height) : 0.0),
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOut,
+              child: SafeArea(
+                bottom: false,
+                child: Column(
                 children: [
               // Header with title and clear button
               Padding(
@@ -752,8 +752,9 @@ class _AskAiScreenState extends State<AskAiScreen> {
                     ],
                   ),
                 ),
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
