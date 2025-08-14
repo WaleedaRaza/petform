@@ -8,7 +8,6 @@ import '../widgets/status_bar.dart';
 import '../widgets/video_background.dart';
 import 'community_feed_screen.dart';
 import 'ask_ai_screen.dart';
-import 'ask_ai_fullscreen.dart';
 import 'shopping_screen.dart';
 import 'enhanced_tracking_screen.dart';
 import 'profile_settings_screen.dart';
@@ -239,19 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
         currentIndex: _selectedIndex,
         selectedItemColor: Theme.of(context).colorScheme.secondary,
         unselectedItemColor: Colors.grey,
-        onTap: (index) {
-          if (index == 1) {
-            Navigator.of(context).push(
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => const AskAiFullscreenPage(),
-                transitionDuration: Duration.zero,
-                reverseTransitionDuration: Duration.zero,
-              ),
-            );
-            return;
-          }
-          _onItemTapped(index);
-        },
+        onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
       ),
 
