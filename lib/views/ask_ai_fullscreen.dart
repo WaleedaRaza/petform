@@ -5,6 +5,7 @@ import '../widgets/video_background.dart';
 import '../widgets/status_bar.dart';
 import 'home_screen.dart';
 import '../providers/app_state_provider.dart';
+import '../providers/user_provider.dart';
 import '../models/pet.dart';
 
 // Reuse provider and message/quick action widgets from the existing Ask AI screen
