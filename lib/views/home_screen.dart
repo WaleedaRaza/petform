@@ -30,9 +30,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static final List<Widget> _pages = <Widget>[
     const CommunityFeedScreen(),
-    const AskAiScreen(),
     const ShoppingScreen(),
     const EnhancedTrackingScreen(),
+    const AskAiScreen(),
     const ProfileSettingsScreen(),
   ];
 
@@ -138,9 +138,17 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       await Auth0Service.instance.signOut();
 
-      // Clear user provider
+      // Clear user provider and app state
       final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final appStateProvider = Provider.of<AppStateProvider>(context, listen: false);
+      
       userProvider.clearCurrentUser();
+      await appStateProvider.clearAllUserData(); // Critical: Clear cached data
+      
+      // Reset initialization state so next user gets fresh initialization
+      setState(() {
+        _isInitialized = false;
+      });
 
       if (!mounted) return;
       
@@ -187,19 +195,18 @@ class _HomeScreenState extends State<HomeScreen> {
           final kbOpen = mq.viewInsets.bottom > 0;
           final double liftFraction = 100.0 / mq.size.height;
           return AnimatedSlide(
-            offset: Offset(0, (kbOpen && _selectedIndex == 1) ? -liftFraction : 0.0),
+            offset: Offset(0, (kbOpen && _selectedIndex == 3) ? -liftFraction : 0.0),
             duration: const Duration(milliseconds: 160),
             curve: Curves.easeOut,
             child: Stack(
         children: [
           const VideoBackground(
-            videoPath: 'lib/assets/animation2.mp4',
+            videoPath: 'lib/assets/backdrop2.mp4',
             child: SizedBox.shrink(),
           ),
-          const StatusBar(),
-          // Content area under the pinned StatusBar. We slide this up when
-          // keyboard opens on the Ask AI tab so the entire page (title,
-          // dropdowns, list, input) moves together by ~100px.
+          // Hide StatusBar on Ask AI tab
+          if (_selectedIndex != 3) const StatusBar(),
+          // Content area - no top padding for Ask AI tab
           Builder(
             builder: (context) {
               final mq = MediaQuery.of(context);
@@ -212,9 +219,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     'HomeScreen: index=$_selectedIndex kbOpen=$kbOpen liftFraction=$liftFraction');
               }
               return Padding(
-                padding: const EdgeInsets.only(top: 225),
+                padding: EdgeInsets.only(top: _selectedIndex == 3 ? 0 : 225),
                 child: AnimatedSlide(
-                  offset: Offset(0, (kbOpen && _selectedIndex == 1) ? -liftFraction : 0.0),
+                  offset: Offset(0, (kbOpen && _selectedIndex == 3) ? -liftFraction : 0.0),
                   duration: const Duration(milliseconds: 160),
                   curve: Curves.easeOut,
                   child: _pages[_selectedIndex],
@@ -230,10 +237,10 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.feed), label: 'Feed'),
-          BottomNavigationBarItem(icon: Icon(Icons.question_answer), label: 'Ask AI'),
           BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Shopping'),
           BottomNavigationBarItem(icon: Icon(Icons.track_changes), label: 'Tracking'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(icon: Icon(Icons.question_answer), label: 'Ask AI'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Theme.of(context).colorScheme.secondary,

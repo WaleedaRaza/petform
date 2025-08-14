@@ -20,6 +20,7 @@ import 'post_detail_screen.dart';
 import 'saved_posts_screen.dart';
 import '../services/auth0_service.dart';
 import '../services/supabase_service.dart';
+import 'user_detail_screen.dart';
 // import 'clerk_test_screen.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
@@ -69,11 +70,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final userDisplayName = userProvider.currentUsername ?? userEmail; // Use stored username
 
     return VideoBackground(
-      videoPath: 'lib/assets/animation2.mp4',
+      videoPath: 'lib/assets/backdrop2.mp4',
       child: Scaffold(
         backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.only(
+          left: 16.0,
+          right: 16.0,
+          top: 16.0,
+          bottom: 100.0, // Extra padding for bottom navigation
+        ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -89,48 +95,68 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           ),
           // User Info Section
           Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Theme.of(context).colorScheme.secondary,
-                            child: Text(
-                              userDisplayName.isNotEmpty ? userDisplayName[0].toUpperCase() : 'U',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                              ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                                  userDisplayName,
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'Pet Owner',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[400],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+            child: InkWell(
+              onTap: () async {
+                final userId = await SupabaseService.getCurrentUserId();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UserDetailScreen(
+                      username: userDisplayName,
+                      userId: userId,
+                    ),
                   ),
-                ],
+                );
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundColor: Theme.of(context).colorScheme.secondary,
+                              child: Text(
+                                userDisplayName.isNotEmpty ? userDisplayName[0].toUpperCase() : 'U',
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                                ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                    userDisplayName,
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'Pet Owner • Tap to view profile',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Colors.grey[400],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: Colors.grey,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

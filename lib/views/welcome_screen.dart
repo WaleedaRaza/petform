@@ -4,6 +4,7 @@ import '../widgets/video_background.dart';
 import '../services/auth0_service.dart';
 import '../services/supabase_service.dart';
 import '../providers/user_provider.dart';
+import '../providers/app_state_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:app_links/app_links.dart';
 import 'dart:async';
@@ -111,11 +112,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               'user';
           if (mounted) {
             final userProvider = Provider.of<UserProvider>(context, listen: false);
+            final appStateProvider = Provider.of<AppStateProvider>(context, listen: false);
+            
             userProvider.setCurrentUser(
               auth0User.sub,
               savedDisplayName,
               auth0User.email ?? '',
             );
+            // Refresh app state for user (clears old data and loads new)
+            await appStateProvider.refreshForNewUser();
           }
         } catch (e) {
           if (kDebugMode) {
@@ -170,13 +175,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       final userProfile = await SupabaseService.getUserProfile();
       final savedDisplayName = userProfile?['display_name'] ?? username ?? result.user.nickname ?? result.user.name ?? result.user.email?.split('@')[0] ?? 'user';
       
-      // Update UserProvider with the authenticated user and saved display name
+      // Clear any cached data from previous user and set new user
       final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final appStateProvider = Provider.of<AppStateProvider>(context, listen: false);
+      
       userProvider.setCurrentUser(
         result.user.sub,
         savedDisplayName,
         result.user.email ?? '',
       );
+      // Refresh app state for new user (clears old data and loads new)
+      await appStateProvider.refreshForNewUser();
 
       if (kDebugMode) {
         print('Auth0 login/signup successful');
@@ -241,7 +250,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     return VideoBackground(
-      videoPath: 'lib/assets/animation.mp4',
+      videoPath: 'lib/assets/backdrop1.mp4',
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(

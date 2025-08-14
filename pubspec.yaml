@@ -46,6 +46,9 @@ flutter:
     - lib/assets/animation2.mp4
     - lib/assets/petform_backdrop.png
     - lib/assets/animation.mp4
+    - lib/assets/backdrop1.mp4
+    - lib/assets/backdrop2.mp4
+    - lib/assets/backdrop3.mp4
     - lib/assets/reddit.png
 
 # Add flutter_launcher_icons for app icon generation

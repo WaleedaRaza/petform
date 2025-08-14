@@ -13,6 +13,7 @@ import '../services/supabase_auth_service.dart';
 import '../services/supabase_service.dart';
 import '../widgets/video_background.dart';
 import 'create_post_screen.dart';
+import 'user_detail_screen.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final Post post;
@@ -217,7 +218,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final isReddit = post.postType == 'reddit';
     final redditPost = isReddit && post is RedditPost ? post as RedditPost : null;
     return VideoBackground(
-      videoPath: 'lib/assets/animation2.mp4',
+      videoPath: 'lib/assets/backdrop2.mp4',
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
@@ -279,6 +280,82 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   'r/${redditPost.subreddit}',
                   style: TextStyle(color: Colors.orange[300], fontSize: 14),
                 ),
+              const SizedBox(height: 16),
+            ] else if (post.postType == 'community') ...[
+              // Community post author info
+              GestureDetector(
+                onTap: () async {
+                  try {
+                    final userId = await SupabaseService.getUserIdByUsername(post.author);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => UserDetailScreen(
+                          username: post.author,
+                          userId: userId,
+                        ),
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Could not load user profile: $e')),
+                    );
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Theme.of(context).colorScheme.secondary,
+                        child: Text(
+                          post.author.isNotEmpty ? post.author[0].toUpperCase() : '?',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              post.author,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Theme.of(context).colorScheme.secondary,
+                              ),
+                            ),
+                            Text(
+                              'Community Member • Tap to view profile',
+                              style: TextStyle(
+                                color: Colors.grey[400],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 16),
             ],
             if (post.imageUrl != null && post.imageUrl!.isNotEmpty)

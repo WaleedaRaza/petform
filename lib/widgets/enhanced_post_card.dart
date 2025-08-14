@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart';
 import '../providers/feed_provider.dart';
 import '../providers/user_provider.dart';
 import '../views/create_post_screen.dart';
+import '../views/user_detail_screen.dart';
 
 class EnhancedPostCard extends StatelessWidget {
   final Post post;
@@ -42,23 +43,13 @@ class EnhancedPostCard extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: InkWell(
             onTap: onTap ?? () {
-              final currentUsername = _getCurrentUsername(context);
-              final isAuthor = post.postType.toLowerCase() == 'community' && post.author == currentUsername;
-              if (isAuthor) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CreatePostScreen(postToEdit: post),
-                  ),
-                );
-              } else {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => PostDetailScreen(post: post),
-                  ),
-                );
-              }
+              // Always go to PostDetailScreen first - edit options are there
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PostDetailScreen(post: post),
+                ),
+              );
             },
             borderRadius: BorderRadius.circular(16),
             child: Column(
@@ -199,14 +190,40 @@ class EnhancedPostCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  post.author,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                GestureDetector(
+                  onTap: () async {
+                    // Only make community post authors clickable (not Reddit posts)
+                    if (post.postType.toLowerCase() == 'community') {
+                      try {
+                        final userId = await SupabaseService.getUserIdByUsername(post.author);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => UserDetailScreen(
+                              username: post.author,
+                              userId: userId,
+                            ),
+                          ),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Could not load user profile: $e')),
+                        );
+                      }
+                    }
+                  },
+                  child: Text(
+                    post.author,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: post.postType.toLowerCase() == 'community' 
+                          ? Theme.of(context).colorScheme.secondary
+                          : null,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 Row(
                   children: [

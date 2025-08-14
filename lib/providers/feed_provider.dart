@@ -394,8 +394,49 @@ class FeedProvider with ChangeNotifier {
         }
       }
 
-      // Sort all posts by creation date (newest first)
-      allPosts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      // Better integration of community posts for "All" feed
+      if (_selectedPetType == 'All' && _selectedPostType == 'All') {
+        // Separate community and Reddit posts
+        List<Post> communityPosts = allPosts.where((post) => post.postType == 'community').toList();
+        List<Post> redditPosts = allPosts.where((post) => post.postType == 'reddit').toList();
+        
+        if (communityPosts.isNotEmpty && redditPosts.isNotEmpty) {
+          // Sort each type by creation date
+          communityPosts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          redditPosts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          
+          // Smart mixing: insert community posts at strategic positions
+          List<Post> mixedPosts = [];
+          int communityIndex = 0;
+          int redditIndex = 0;
+          
+          // Insert pattern: 3 Reddit posts, then 1 community post (if available)
+          while (redditIndex < redditPosts.length || communityIndex < communityPosts.length) {
+            // Add up to 3 Reddit posts
+            for (int i = 0; i < 3 && redditIndex < redditPosts.length; i++) {
+              mixedPosts.add(redditPosts[redditIndex++]);
+            }
+            
+            // Add 1 community post if available (but not overwhelming)
+            if (communityIndex < communityPosts.length && 
+                communityIndex < 5) { // Limit to max 5 community posts in feed
+              mixedPosts.add(communityPosts[communityIndex++]);
+            }
+          }
+          
+          allPosts = mixedPosts;
+          
+          if (kDebugMode) {
+            print('FeedProvider: Mixed feed - ${communityPosts.length} community posts integrated with ${redditPosts.length} Reddit posts');
+          }
+        } else {
+          // If only one type, just sort by date
+          allPosts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        }
+      } else {
+        // For specific pet types or post types, sort by creation date
+        allPosts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      }
 
       _posts = allPosts;
       notifyListeners();

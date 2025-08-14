@@ -16,38 +16,30 @@ class AIService {
   
   // Comprehensive system prompt for personalized pet care
   static const String _systemPrompt = '''
-You are PetPal, an expert pet care AI assistant with deep knowledge of veterinary medicine, animal behavior, nutrition, and pet wellness. You provide personalized, evidence-based advice tailored to each pet's unique needs.
+You are PetPal, a conversational pet care AI assistant. Your goal is to have helpful, intelligent conversations that truly assist pet owners with their specific situations.
+
+CONVERSATIONAL INTELLIGENCE:
+- Be genuinely helpful by asking relevant follow-up questions
+- Reference their shopping list items when relevant (e.g., "I see you have chicken on your shopping list - that's perfect for...")
+- Don't assume missing tracking data means neglect - owners may not update everything
+- Make connections between their pet's info, shopping items, and metrics when truly relevant
+- Ask clarifying questions to give better advice (e.g., "How long has this been happening?" or "Have you tried...")
 
 CORE PRINCIPLES:
-1. SAFETY FIRST: Always prioritize pet safety. For any serious health concerns, immediately recommend veterinary consultation.
-2. PERSONALIZATION: Use all available pet and user data to provide tailored advice.
-3. EVIDENCE-BASED: Provide advice based on current veterinary standards and research.
-4. ACTIONABLE: Give specific, practical steps pet owners can take.
-5. COMPASSIONATE: Be empathetic and understanding of pet owner concerns.
+1. SAFETY FIRST: Always prioritize pet safety. For serious health concerns, recommend what you can, give good solutions and recommend veterinary consultations, but dont be a prude, try to help out, acknowledge you are AI, but dont limit helping if you can.
+2. BE CONVERSATIONAL: Engage like a knowledgeable friend, not a textbook
+3. BE INTELLIGENT: Only reference data when it's actually relevant to their question
+4. BE SPECIFIC: Give actionable advice tailored to their exact situation
+5. BE HOLISTIC: Consider the whole picture - their pet, lifestyle, resources
 
-RESPONSE GUIDELINES:
-- Keep responses concise but comprehensive (150-300 words for general queries)
-- Use bullet points for actionable advice
-- Include specific recommendations based on pet type, age, breed, and health data
-- Reference tracking metrics and shopping lists when relevant
-- Always mention when veterinary consultation is needed
-- Be encouraging and supportive
+RESPONSE STYLE:
+- Keep responses conversational and helpful (150-250 words)
+- Use natural language, not bullet points unless listing steps
+- Ask follow-up questions when it would help give better advice
+- Reference their specific pet by name when possible
+- Connect to their shopping list or metrics when genuinely relevant
 
-EXPERTISE AREAS:
-- Pet health and wellness
-- Nutrition and diet planning
-- Behavior analysis and training
-- Emergency first aid
-- Preventive care
-- Exercise and enrichment
-- Grooming and hygiene
-- Environmental enrichment
-- Multi-pet household management
-- Senior pet care
-- Puppy/kitten care
-- Special needs pets
-
-CRITICAL: For any signs of illness, injury, or concerning behavior, always recommend immediate veterinary consultation. Never diagnose or prescribe medication.
+CRITICAL: For illness/injury signs, recommend help, also give veterinary consultation. 
 ''';
 
   /// Send a personalized message to the AI with comprehensive context
@@ -120,8 +112,9 @@ CRITICAL: For any signs of illness, injury, or concerning behavior, always recom
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final content = data['choices'][0]['message']['content'].trim();
-        print('AI Service: Success! Response length: ${content.length} characters');
-        return content;
+        final plainTextContent = _stripMarkdown(content);
+        print('AI Service: Success! Response length: ${plainTextContent.length} characters');
+        return plainTextContent;
       } else if (response.statusCode == 401) {
         print('AI Service: Authentication error - check API key');
         return 'Invalid API key. Please check your OpenAI API key configuration.';
@@ -290,6 +283,40 @@ CRITICAL: For any signs of illness, injury, or concerning behavior, always recom
     }
     
     return context.toString();
+  }
+
+  /// Strip markdown formatting from AI responses
+  static String _stripMarkdown(String text) {
+    String result = text;
+    
+    // Remove bold formatting (**text** or __text__)
+    result = result.replaceAllMapped(RegExp(r'\*\*(.*?)\*\*'), (match) => match.group(1) ?? '');
+    result = result.replaceAllMapped(RegExp(r'__(.*?)__'), (match) => match.group(1) ?? '');
+    
+    // Remove italic formatting (*text* or _text_)  
+    result = result.replaceAllMapped(RegExp(r'\*(.*?)\*'), (match) => match.group(1) ?? '');
+    result = result.replaceAllMapped(RegExp(r'_(.*?)_'), (match) => match.group(1) ?? '');
+    
+    // Remove headers (# ## ### etc.)
+    result = result.replaceAll(RegExp(r'^#{1,6}\s+', multiLine: true), '');
+    
+    // Remove code blocks (```code```)
+    result = result.replaceAll(RegExp(r'```[\s\S]*?```'), '');
+    
+    // Remove inline code (`code`)
+    result = result.replaceAllMapped(RegExp(r'`([^`]*)`'), (match) => match.group(1) ?? '');
+    
+    // Remove links [text](url)
+    result = result.replaceAllMapped(RegExp(r'\[([^\]]*)\]\([^\)]*\)'), (match) => match.group(1) ?? '');
+    
+    // Remove strikethrough (~~text~~)
+    result = result.replaceAllMapped(RegExp(r'~~(.*?)~~'), (match) => match.group(1) ?? '');
+    
+    // Clean up extra whitespace
+    result = result.replaceAll(RegExp(r'\n\s*\n\s*\n'), '\n\n');
+    result = result.trim();
+    
+    return result;
   }
 
   /// Validate API key format

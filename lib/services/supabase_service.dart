@@ -347,9 +347,36 @@ class SupabaseService {
     }
   }
   
-  // Legacy method for backward compatibility
+  // Get Auth0 user UUID mapping - FIXED TO USE BULLETPROOF FUNCTION
   static Future<String?> getAuth0UserUUID() async {
-    return await getCurrentUserId();
+    try {
+      final auth0User = Auth0Service.instance.currentUser;
+      if (auth0User == null) return null;
+      
+      if (kDebugMode) {
+        print('SupabaseService.getAuth0UserUUID: Getting mapping for Auth0 user: ${auth0User.sub}');
+      }
+      
+      // CRITICAL FIX: Use the bulletproof function to create/get user mapping
+      final result = await client.rpc('get_or_create_supabase_user_for_auth0', params: {
+        'p_auth0_user_id': auth0User.sub,
+        'p_auth0_email': auth0User.email ?? '',
+        'p_auth0_name': auth0User.name,
+        'p_auth0_nickname': auth0User.nickname,
+        'p_auth0_picture': auth0User.pictureUrl?.toString(),
+      });
+      
+      if (kDebugMode) {
+        print('SupabaseService.getAuth0UserUUID: Bulletproof mapping result: $result');
+      }
+      
+      return result?.toString();
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService.getAuth0UserUUID: Error getting Auth0 mapping: $e');
+      }
+      return null;
+    }
   }
   
   static Stream<AuthState> get authStateChanges => client.auth.onAuthStateChange;
@@ -457,27 +484,61 @@ class SupabaseService {
   
   static Future<List<Map<String, dynamic>>> getPets() async {
     try {
+      if (kDebugMode) {
+        print('SupabaseService.getPets: Starting to get pets...');
+      }
+      
       final supabaseUser = client.auth.currentUser;
+      final auth0User = Auth0Service.instance.currentUser;
       String? userId;
+      
+      if (kDebugMode) {
+        print('SupabaseService.getPets: Supabase user: ${supabaseUser?.id}');
+        print('SupabaseService.getPets: Auth0 user: ${auth0User?.sub}');
+      }
       
       if (supabaseUser != null) {
         userId = supabaseUser.id;
+        if (kDebugMode) {
+          print('SupabaseService.getPets: Using Supabase user ID: $userId');
+        }
       } else {
         // For Auth0 users, get the UUID mapping
         userId = await getAuth0UserUUID();
+        if (kDebugMode) {
+          print('SupabaseService.getPets: Got Auth0 mapped user ID: $userId');
+        }
       }
       
-      if (userId == null) throw Exception('No user logged in');
+      if (userId == null) {
+        if (kDebugMode) {
+          print('SupabaseService.getPets: ERROR - No user logged in');
+        }
+        throw Exception('No user logged in');
+      }
+      
+      if (kDebugMode) {
+        print('SupabaseService.getPets: Querying pets table for user_id: $userId');
+      }
       
       final response = await client
           .from('pets')
           .select()
           .eq('user_id', userId)
           .order('created_at', ascending: false);
+          
+      if (kDebugMode) {
+        print('SupabaseService.getPets: Query returned ${response.length} pets');
+        if (response.isNotEmpty) {
+          print('SupabaseService.getPets: First pet: ${response.first}');
+        }
+      }
+      
       return response;
     } catch (e) {
       if (kDebugMode) {
         print('SupabaseService: Error getting pets: $e');
+        print('SupabaseService: Stack trace: ${StackTrace.current}');
       }
       rethrow;
     }
@@ -1217,6 +1278,207 @@ class SupabaseService {
         print('SupabaseService: Error getting saved Reddit posts: $e');
       }
       rethrow;
+    }
+  }
+
+  // ============================================================================
+  // FOLLOW SYSTEM METHODS
+  // ============================================================================
+
+  /// Follow a user
+  static Future<void> followUser(String userIdToFollow) async {
+    try {
+      if (kDebugMode) {
+        print('SupabaseService: Attempting to follow user $userIdToFollow');
+        final supabaseUser = client.auth.currentUser;
+        final auth0User = Auth0Service.instance.currentUser;
+        print('SupabaseService: Supabase user: ${supabaseUser?.id}');
+        print('SupabaseService: Auth0 user: ${auth0User?.sub}');
+      }
+      
+      final userId = await getCurrentUserId();
+      if (kDebugMode) {
+        print('SupabaseService: getCurrentUserId returned: $userId');
+      }
+      
+      if (userId == null) throw Exception('No user logged in');
+      
+      if (userId == userIdToFollow) {
+        throw Exception('Cannot follow yourself');
+      }
+
+      await client.from('follows').insert({
+        'follower_id': userId,
+        'following_id': userIdToFollow,
+      });
+
+      if (kDebugMode) {
+        print('SupabaseService: Successfully followed user $userIdToFollow');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error following user: $e');
+      }
+      rethrow;
+    }
+  }
+
+  /// Unfollow a user
+  static Future<void> unfollowUser(String userIdToUnfollow) async {
+    try {
+      final userId = await getCurrentUserId();
+      if (userId == null) throw Exception('No user logged in');
+
+      await client
+          .from('follows')
+          .delete()
+          .eq('follower_id', userId)
+          .eq('following_id', userIdToUnfollow);
+
+      if (kDebugMode) {
+        print('SupabaseService: Successfully unfollowed user $userIdToUnfollow');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error unfollowing user: $e');
+      }
+      rethrow;
+    }
+  }
+
+  /// Check if current user is following another user
+  static Future<bool> isFollowing(String userIdToCheck) async {
+    try {
+      final userId = await getCurrentUserId();
+      if (userId == null) return false;
+
+      final response = await client
+          .from('follows')
+          .select('id')
+          .eq('follower_id', userId)
+          .eq('following_id', userIdToCheck)
+          .maybeSingle();
+
+      return response != null;
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error checking follow status: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Get follower count for a user
+  static Future<int> getFollowerCount(String userId) async {
+    try {
+      final response = await client
+          .from('profiles')
+          .select('followers_count')
+          .eq('id', userId)
+          .single();
+
+      return response['followers_count'] ?? 0;
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error getting follower count: $e');
+      }
+      return 0;
+    }
+  }
+
+  /// Get following count for a user
+  static Future<int> getFollowingCount(String userId) async {
+    try {
+      final response = await client
+          .from('profiles')
+          .select('following_count')
+          .eq('id', userId)
+          .single();
+
+      return response['following_count'] ?? 0;
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error getting following count: $e');
+      }
+      return 0;
+    }
+  }
+
+  /// Get user ID by username/display name
+  static Future<String?> getUserIdByUsername(String username) async {
+    try {
+      final response = await client
+          .from('profiles')
+          .select('id')
+          .eq('display_name', username)
+          .maybeSingle();
+
+      return response?['id'];
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error getting user ID by username: $e');
+      }
+      return null;
+    }
+  }
+
+  // ============================================================================
+  // PUBLIC PROFILE DATA METHODS
+  // ============================================================================
+
+  /// Get pets by user ID (public method for viewing other users' pets)
+  static Future<List<Map<String, dynamic>>> getPetsByUserId(String userId) async {
+    try {
+      final response = await client
+          .from('pets')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      if (kDebugMode) {
+        print('SupabaseService: Retrieved ${response.length} pets for user $userId');
+      }
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error getting pets by user ID: $e');
+      }
+      return [];
+    }
+  }
+
+  /// Get shopping items by user ID (public method for viewing other users' shopping lists)
+  static Future<List<ShoppingItem>> getShoppingItemsByUserId(String userId) async {
+    try {
+      if (kDebugMode) {
+        print('SupabaseService: Attempting to get shopping items for user ID: $userId');
+      }
+      
+      final response = await client
+          .from('shopping_items')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      if (kDebugMode) {
+        print('SupabaseService: Raw response: $response');
+      }
+
+      final items = response.map((item) => _dbToShoppingItem(item)).toList();
+      
+      if (kDebugMode) {
+        print('SupabaseService: Retrieved ${items.length} shopping items for user $userId');
+        if (items.isNotEmpty) {
+          print('SupabaseService: First item: ${items.first.name}');
+        }
+      }
+      return items;
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error getting shopping items by user ID: $e');
+        print('SupabaseService: Stack trace: ${StackTrace.current}');
+      }
+      return [];
     }
   }
 } 

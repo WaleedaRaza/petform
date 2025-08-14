@@ -91,7 +91,7 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
 
     if (pets.isEmpty) {
       return VideoBackground(
-        videoPath: 'lib/assets/animation2.mp4',
+        videoPath: 'lib/assets/backdrop2.mp4',
         child: Scaffold(
           backgroundColor: Colors.transparent,
           body: _buildNoPetsView(),
@@ -104,7 +104,7 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
       body: Stack(
         children: [
           VideoBackground(
-            videoPath: 'lib/assets/animation2.mp4',
+            videoPath: 'lib/assets/backdrop2.mp4',
             child: Container(),
           ),
           Column(
@@ -231,7 +231,7 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 80),
+      padding: const EdgeInsets.only(bottom: 100),
       itemCount: filteredMetrics.length,
       itemBuilder: (context, index) {
         final metric = filteredMetrics[index];

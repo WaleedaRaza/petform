@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/shopping_item.dart';
 
 class ShoppingItemCard extends StatelessWidget {
   final ShoppingItem item;
   final VoidCallback? onTap;
   final VoidCallback? onAddToList;
+  final VoidCallback? onToggleComplete;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const ShoppingItemCard({
     super.key,
     required this.item,
     this.onTap,
     this.onAddToList,
+    this.onToggleComplete,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -191,6 +198,38 @@ class ShoppingItemCard extends StatelessWidget {
                         ),
                     ],
                   ),
+                  
+                  // URL display for custom items
+                  if (item.chewyUrl != null && item.chewyUrl!.isNotEmpty && item.store == 'Custom')
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: InkWell(
+                        onTap: () async {
+                          final url = Uri.parse(item.chewyUrl!);
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        child: Row(
+                          children: [
+                            const Icon(Icons.link, size: 16, color: Colors.blue),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                item.chewyUrl!,
+                                style: const TextStyle(
+                                  color: Colors.blue,
+                                  fontSize: 12,
+                                  decoration: TextDecoration.underline,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),

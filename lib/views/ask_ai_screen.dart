@@ -532,6 +532,7 @@ class AskAiScreen extends StatefulWidget {
 
 class _AskAiScreenState extends State<AskAiScreen> {
   final TextEditingController _textController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   late FocusNode _inputFocusNode;
   bool _isInputFocused = false;
   final GlobalKey _inputBarKey = GlobalKey();
@@ -542,6 +543,7 @@ class _AskAiScreenState extends State<AskAiScreen> {
     _inputFocusNode.removeListener(_handleFocusChange);
     _inputFocusNode.dispose();
     _textController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -578,21 +580,21 @@ class _AskAiScreenState extends State<AskAiScreen> {
         final aiProvider = Provider.of<AiProvider>(context);
         final mq = MediaQuery.of(context);
         return VideoBackground(
-          videoPath: 'lib/assets/animation2.mp4',
+          videoPath: 'lib/assets/backdrop3.mp4',
           child: Scaffold(
             backgroundColor: Colors.transparent,
-            resizeToAvoidBottomInset: false,
-            body: SafeArea(
-                bottom: false,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 160),
-                  curve: Curves.easeOut,
-                transform: Matrix4.translationValues(0, mq.viewInsets.bottom > 0 ? -160.0 : 0.0, 0),
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      bottom: kBottomNavigationBarHeight + mq.padding.bottom + 16,
-                    ),
-                    child: Column(
+            resizeToAvoidBottomInset: true, // Allow keyboard to resize content
+          body: GestureDetector(
+            onTap: () {
+              // Dismiss keyboard when tapping outside
+              FocusScope.of(context).unfocus();
+            },
+            child: SafeArea(
+              bottom: false,
+              child: Stack(
+                children: [
+                  // Main content (static)
+                  Column(
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -643,106 +645,133 @@ class _AskAiScreenState extends State<AskAiScreen> {
                               ),
                             )
                           : ListView.builder(
-                              padding: const EdgeInsets.only(bottom: 8),
+                              controller: _scrollController,
+                              padding: const EdgeInsets.only(bottom: 140), // Extra space for floating input and dock
                               itemCount: aiProvider.messages.length,
                               itemBuilder: (context, index) {
                                 return MessageBubble(message: aiProvider.messages[index]);
                               },
                             ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                      child: Container(
-                        key: _inputBarKey,
-                        padding: const EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade900.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.grey.shade700, width: 1),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                  ],
+                ),
+                    // Floating input bar (moves with keyboard)
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: AnimatedPadding(
+                        padding: EdgeInsets.only(
+                          bottom: mq.viewInsets.bottom > 0 ? 80 : kBottomNavigationBarHeight + 24,
+                          left: 16,
+                          right: 16,
                         ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                focusNode: _inputFocusNode,
-                                controller: _textController,
-                                style: const TextStyle(color: Colors.white, fontSize: 16),
-                                decoration: InputDecoration(
-                                  hintText: 'Ask anything about your pet...',
-                                  hintStyle: TextStyle(color: Colors.grey.shade400),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.grey.shade600),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.grey.shade600),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.grey.shade800.withOpacity(0.5),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                ),
-                                maxLines: null,
-                                textInputAction: TextInputAction.send,
-                                onSubmitted: (value) async {
-                                  if (value.trim().isNotEmpty) {
-                                    await aiProvider.sendMessage(value, context);
-                                    _textController.clear();
-                                  }
-                                },
+                        duration: const Duration(milliseconds: 160),
+                        curve: Curves.easeOut,
+                        child: Container(
+                          key: _inputBarKey,
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade900.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey.shade700, width: 1),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.blue.shade600,
-                                    Colors.purple.shade600,
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: aiProvider.isLoading
-                                  ? const Padding(
-                                      padding: EdgeInsets.all(12.0),
-                                      child: SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                        ),
-                                      ),
-                                    )
-                                  : IconButton(
-                                      icon: const Icon(Icons.send, color: Colors.white),
-                                      onPressed: () async {
-                                        if (_textController.text.trim().isNotEmpty) {
-                                          await aiProvider.sendMessage(_textController.text, context);
-                                          _textController.clear();
-                                        }
-                                      },
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  focusNode: _inputFocusNode,
+                                  controller: _textController,
+                                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                                  decoration: InputDecoration(
+                                    hintText: 'Ask anything about your pet...',
+                                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(color: Colors.grey.shade600),
                                     ),
-                            ),
-                          ],
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(color: Colors.grey.shade600),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+                                    ),
+                                    filled: true,
+                                    fillColor: Colors.grey.shade800.withOpacity(0.5),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  ),
+                                  maxLines: null,
+                                  textInputAction: TextInputAction.send,
+                                  onSubmitted: (value) async {
+                                    if (value.trim().isNotEmpty) {
+                                      _textController.clear(); // Clear immediately
+                                      FocusScope.of(context).unfocus(); // Dismiss keyboard
+                                      await aiProvider.sendMessage(value, context);
+                                    }
+                                  },
+                                  onTap: () {
+                                    // Scroll to bottom when input is tapped
+                                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                                      if (_scrollController.hasClients) {
+                                        _scrollController.animateTo(
+                                          _scrollController.position.maxScrollExtent,
+                                          duration: const Duration(milliseconds: 300),
+                                          curve: Curves.easeOut,
+                                        );
+                                      }
+                                    });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.blue.shade600,
+                                      Colors.purple.shade600,
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: aiProvider.isLoading
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(12.0),
+                                        child: SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                          ),
+                                        ),
+                                      )
+                                    : IconButton(
+                                        icon: const Icon(Icons.send, color: Colors.white),
+                                        onPressed: () async {
+                                          if (_textController.text.trim().isNotEmpty) {
+                                            final message = _textController.text.trim();
+                                            _textController.clear(); // Clear immediately
+                                            FocusScope.of(context).unfocus(); // Dismiss keyboard
+                                            await aiProvider.sendMessage(message, context);
+                                          }
+                                        },
+                                      ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-                  ),
               ),
             ),
           ),

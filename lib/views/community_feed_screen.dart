@@ -188,7 +188,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
           body: Stack(
             children: [
               VideoBackground(
-                videoPath: 'lib/assets/animation2.mp4',
+                videoPath: 'lib/assets/backdrop2.mp4',
                 child: Column(
                   children: [
                     // Feed content
@@ -267,7 +267,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                                           post: feedProvider.posts[index],
                                         );
                                       },
-                                      padding: const EdgeInsets.only(top: 4, bottom: 16),
+                                      padding: const EdgeInsets.only(top: 4, bottom: 100),
                                     ),
                         ),
                       ],

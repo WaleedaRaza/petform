@@ -126,15 +126,25 @@ class AppStateProvider with ChangeNotifier {
   // Pet management
   Future<void> _loadPets() async {
     try {
+      if (kDebugMode) {
+        print('AppStateProvider._loadPets: Starting to load pets...');
+        final currentUserId = await SupabaseService.getCurrentUserId();
+        print('AppStateProvider._loadPets: Current user ID: $currentUserId');
+      }
+      
       final pets = await SupabaseService.getPets();
       _pets = pets.map((p) => Pet.fromJson(p)).toList();
       
       if (kDebugMode) {
         print('AppStateProvider._loadPets: Loaded ${_pets.length} pets from Supabase');
+        if (_pets.isNotEmpty) {
+          print('AppStateProvider._loadPets: Pet names: ${_pets.map((p) => p.name).join(", ")}');
+        }
       }
     } catch (e) {
       if (kDebugMode) {
         print('AppStateProvider: Error loading pets: $e');
+        print('AppStateProvider: Stack trace: ${StackTrace.current}');
       }
       rethrow;
     }
@@ -748,10 +758,30 @@ class AppStateProvider with ChangeNotifier {
       _posts.clear();
       _trackingMetrics.clear();
       _shoppingItems.clear();
-        notifyListeners();
+      _savedRedditUrls.clear();
+      notifyListeners();
     } catch (e) {
       if (kDebugMode) {
         print('AppStateProvider: Error clearing user data: $e');
+      }
+      rethrow;
+    }
+  }
+
+  // Force refresh user data (for account switching)
+  Future<void> refreshForNewUser() async {
+    try {
+      if (kDebugMode) {
+        print('AppStateProvider: Refreshing data for new user');
+      }
+      await clearAllUserData();
+      await initialize();
+      if (kDebugMode) {
+        print('AppStateProvider: Data refresh complete - ${_pets.length} pets, ${_shoppingItems.length} shopping items');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('AppStateProvider: Error refreshing for new user: $e');
       }
       rethrow;
     }

@@ -56,9 +56,10 @@ class _ShoppingScreenState extends State<ShoppingScreen>
     return Consumer<AppStateProvider>(
       builder: (context, appState, child) {
         return VideoBackground(
-          videoPath: 'lib/assets/animation2.mp4',
+          videoPath: 'lib/assets/backdrop2.mp4',
           child: Scaffold(
       backgroundColor: Colors.transparent,
+
       body: Column(
             children: [
               // Header with title
@@ -67,11 +68,30 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Shopping',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    // Title and Add Custom Item Button on same row
+                    Row(
+                      children: [
+                        Text(
+                          'Shopping',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        ElevatedButton.icon(
+                          onPressed: () => _showAddCustomItemDialog(appState),
+                          icon: const Icon(Icons.add),
+                          label: const Text('Add Custom Item'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).colorScheme.secondary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     // Pet type filter dropdown
@@ -196,7 +216,12 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                   ),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                    bottom: 100, // Extra padding for bottom navigation
+                  ),
                   itemCount: myList.length,
                   itemBuilder: (context, index) {
                     return _buildShoppingListItem(myList[index], appState);
@@ -212,11 +237,16 @@ class _ShoppingScreenState extends State<ShoppingScreen>
         ? ShoppingService.getAllProducts()
         : ShoppingService.getProductsForPet(_selectedPetType);
     return ListView.builder(
-          padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: 100, // Extra padding for bottom navigation
+      ),
       itemCount: allProducts.length,
-                  itemBuilder: (context, index) {
+      itemBuilder: (context, index) {
         return _buildSuggestionCard(allProducts[index], appState);
-                  },
+      },
     );
   }
 
@@ -256,21 +286,63 @@ class _ShoppingScreenState extends State<ShoppingScreen>
             decoration: item.isCompleted ? TextDecoration.lineThrough : null,
                                 ),
                               ),
-        subtitle: Text(
-          '${item.brand ?? ''} • \$${item.estimatedCost.toStringAsFixed(2)}',
-          style: TextStyle(color: Colors.grey[600]),
-                                  ),
-        trailing: IconButton(
-          onPressed: () => appState.removeShoppingItem(item.id),
-          icon: const Icon(Icons.delete, color: Colors.red),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${item.brand ?? ''} • \$${item.estimatedCost.toStringAsFixed(2)}',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: _getCategoryColor(item.category).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _getCategoryColor(item.category).withOpacity(0.3),
+                ),
+              ),
+              child: Text(
+                item.category,
+                style: TextStyle(
+                  color: _getCategoryColor(item.category),
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              onPressed: () => _showEditItemDialog(appState, item),
+              icon: const Icon(Icons.edit, color: Colors.blue),
+              tooltip: 'Edit item',
+            ),
+            IconButton(
+              onPressed: () => appState.removeShoppingItem(item.id),
+              icon: const Icon(Icons.delete, color: Colors.red),
+              tooltip: 'Delete item',
+            ),
+          ],
         ),
         onTap: () async {
-          // Open web link if available
+          // Open web link if available (custom URL or Chewy URL)
           String urlString;
           if (item.chewyUrl != null && item.chewyUrl!.isNotEmpty && !item.chewyUrl!.endsWith('/dp/')) {
+            // Use custom URL or valid Chewy URL
             urlString = item.chewyUrl!;
+          } else if (item.store == 'Custom') {
+            // For custom items without URL, don't search Chewy
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('No URL provided for this custom item')),
+            );
+            return;
           } else {
-            // If URL is incomplete or missing, search for the product on Chewy
+            // If URL is incomplete or missing for Chewy items, search for the product on Chewy
             final searchQuery = Uri.encodeComponent(item.name);
             urlString = 'https://www.chewy.com/s?query=$searchQuery';
           }
@@ -280,7 +352,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
             await launchUrl(url, mode: LaunchMode.externalApplication);
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Could not open link')),
+              const SnackBar(content: Text('Could not open link')),
             );
           }
         },
@@ -812,7 +884,12 @@ class _ShoppingScreenState extends State<ShoppingScreen>
     }
     
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: 100, // Extra padding for bottom navigation
+      ),
       itemCount: searchResults.length,
       itemBuilder: (context, index) {
         return _buildSuggestionCard(searchResults[index], appState);
@@ -967,6 +1044,350 @@ class _ShoppingScreenState extends State<ShoppingScreen>
         return Icons.home;
       default:
         return Icons.shopping_cart;
+    }
+  }
+
+  void _showAddCustomItemDialog(AppStateProvider appState) {
+    final nameController = TextEditingController();
+    final brandController = TextEditingController();
+    final priceController = TextEditingController();
+    final notesController = TextEditingController();
+    final urlController = TextEditingController(); // New URL field
+    String selectedCategory = 'Food';
+    int quantity = 1;
+
+    final categories = ['Food', 'Toys', 'Beds', 'Accessories', 'Grooming', 'Treats', 'Hygiene', 'Equipment', 'Housing'];
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Add Custom Item'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Item Name *',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: brandController,
+                  decoration: const InputDecoration(
+                    labelText: 'Brand',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: selectedCategory,
+                        decoration: const InputDecoration(
+                          labelText: 'Category',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: categories.map((cat) => DropdownMenuItem(
+                          value: cat,
+                          child: Text(cat),
+                        )).toList(),
+                        onChanged: (value) => setState(() => selectedCategory = value!),
+                      ),
+                    ),
+                    // Priority field removed per user request
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: priceController,
+                        decoration: const InputDecoration(
+                          labelText: 'Estimated Price',
+                          border: OutlineInputBorder(),
+                          prefixText: '\$',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Quantity', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          Row(
+                            children: [
+                              IconButton(
+                                onPressed: quantity > 1 ? () => setState(() => quantity--) : null,
+                                icon: const Icon(Icons.remove),
+                              ),
+                              Text('$quantity', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              IconButton(
+                                onPressed: () => setState(() => quantity++),
+                                icon: const Icon(Icons.add),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: urlController,
+                  decoration: const InputDecoration(
+                    labelText: 'Product URL (Optional)',
+                    border: OutlineInputBorder(),
+                    hintText: 'https://example.com/product',
+                    prefixIcon: Icon(Icons.link),
+                  ),
+                  keyboardType: TextInputType.url,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: notesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Notes',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (nameController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter an item name')),
+                  );
+                  return;
+                }
+
+                final customItem = ShoppingItem(
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  name: nameController.text.trim(),
+                  category: selectedCategory,
+                  priority: 'Medium', // Default priority since field was removed
+                  estimatedCost: double.tryParse(priceController.text) ?? 0.0,
+                  brand: brandController.text.trim().isNotEmpty ? brandController.text.trim() : null,
+                  store: 'Custom',
+                  quantity: quantity,
+                  notes: notesController.text.trim().isNotEmpty ? notesController.text.trim() : null,
+                  chewyUrl: urlController.text.trim().isNotEmpty ? urlController.text.trim() : null, // Store custom URL in chewyUrl field
+                );
+
+                appState.addShoppingItem(customItem);
+                Navigator.pop(context);
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Added "${customItem.name}" to shopping list')),
+                );
+              },
+              child: const Text('Add Item'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditItemDialog(AppStateProvider appState, ShoppingItem item) {
+    final nameController = TextEditingController(text: item.name);
+    final brandController = TextEditingController(text: item.brand ?? '');
+    final priceController = TextEditingController(text: item.estimatedCost.toString());
+    final notesController = TextEditingController(text: item.notes ?? '');
+    final urlController = TextEditingController(text: item.chewyUrl ?? '');
+    String selectedCategory = item.category;
+    int quantity = item.quantity;
+
+    final categories = ['Food', 'Toys', 'Beds', 'Accessories', 'Grooming', 'Treats', 'Hygiene', 'Equipment', 'Housing'];
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Edit Item'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Item Name *',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: brandController,
+                  decoration: const InputDecoration(
+                    labelText: 'Brand',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: selectedCategory,
+                  decoration: const InputDecoration(
+                    labelText: 'Category',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: categories.map((cat) => DropdownMenuItem(
+                    value: cat,
+                    child: Text(cat),
+                  )).toList(),
+                  onChanged: (value) => setState(() => selectedCategory = value!),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: priceController,
+                        decoration: const InputDecoration(
+                          labelText: 'Estimated Price',
+                          border: OutlineInputBorder(),
+                          prefixText: '\$',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Quantity', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          Row(
+                            children: [
+                              IconButton(
+                                onPressed: quantity > 1 ? () => setState(() => quantity--) : null,
+                                icon: const Icon(Icons.remove),
+                              ),
+                              Text('$quantity', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              IconButton(
+                                onPressed: () => setState(() => quantity++),
+                                icon: const Icon(Icons.add),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: urlController,
+                  decoration: const InputDecoration(
+                    labelText: 'Product URL (Optional)',
+                    border: OutlineInputBorder(),
+                    hintText: 'https://example.com/product',
+                    prefixIcon: Icon(Icons.link),
+                  ),
+                  keyboardType: TextInputType.url,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: notesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Notes',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (nameController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter an item name')),
+                  );
+                  return;
+                }
+
+                final updatedItem = ShoppingItem(
+                  id: item.id, // Keep same ID
+                  name: nameController.text.trim(),
+                  category: selectedCategory,
+                  priority: item.priority, // Keep existing priority
+                  estimatedCost: double.tryParse(priceController.text) ?? 0.0,
+                  brand: brandController.text.trim().isNotEmpty ? brandController.text.trim() : null,
+                  store: item.store, // Keep existing store
+                  quantity: quantity,
+                  notes: notesController.text.trim().isNotEmpty ? notesController.text.trim() : null,
+                  chewyUrl: urlController.text.trim().isNotEmpty ? urlController.text.trim() : null,
+                  isCompleted: item.isCompleted, // Keep completion status
+                  createdAt: item.createdAt, // Keep original creation date
+                  completedAt: item.completedAt, // Keep completion date
+                  tags: item.tags, // Keep existing tags
+                  imageUrl: item.imageUrl, // Keep existing image
+                  rating: item.rating, // Keep existing rating
+                  reviewCount: item.reviewCount, // Keep existing review count
+                  inStock: item.inStock, // Keep existing stock status
+                  autoShip: item.autoShip, // Keep existing auto ship
+                  freeShipping: item.freeShipping, // Keep existing free shipping
+                );
+
+                appState.updateShoppingItem(updatedItem.id, updatedItem);
+                Navigator.pop(context);
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Updated "${updatedItem.name}"')),
+                );
+              },
+              child: const Text('Update Item'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getCategoryColor(String category) {
+    switch (category.toLowerCase()) {
+      case 'food':
+        return Colors.green;
+      case 'toys':
+        return Colors.purple;
+      case 'beds':
+        return Colors.blue;
+      case 'accessories':
+        return Colors.orange;
+      case 'grooming':
+        return Colors.pink;
+      case 'treats':
+        return Colors.amber;
+      case 'hygiene':
+        return Colors.teal;
+      case 'equipment':
+        return Colors.brown;
+      case 'housing':
+        return Colors.indigo;
+      default:
+        return Colors.grey;
     }
   }
 } 
