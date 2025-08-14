@@ -134,7 +134,38 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/home');
         }
-      } else { // Added else block
+      } else { 
+        // CRITICAL FIX: Force clear all local data when no Auth0 user exists
+        if (kDebugMode) {
+          print('WelcomeScreen: No Auth0 user found, FORCE CLEARING all local data');
+        }
+        
+        // Force clear all local state and cached data
+        try {
+          final userProvider = Provider.of<UserProvider>(context, listen: false);
+          final appStateProvider = Provider.of<AppStateProvider>(context, listen: false);
+          
+          // Clear user provider
+          userProvider.clearCurrentUser();
+          
+          // Force clear all app state data
+          await appStateProvider.clearAllUserData();
+          
+          // Force clear Auth0 local state
+          await _auth0Service.forceClearAllData();
+          
+          // Force clear any local storage
+          await SupabaseService.clearAllLocalData();
+          
+          if (kDebugMode) {
+            print('WelcomeScreen: All local data cleared successfully');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('WelcomeScreen: Error clearing local data: $e');
+          }
+        }
+        
         if (kDebugMode) {
           print('WelcomeScreen: No Auth0 user found, staying on welcome screen');
         }

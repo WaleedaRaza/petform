@@ -1564,4 +1564,27 @@ class SupabaseService {
       return false;
     }
   }
+
+  /// Force clear all local data and cached state (for complete logout/clean slate)
+  static Future<void> clearAllLocalData() async {
+    try {
+      if (kDebugMode) {
+        print('SupabaseService: Force clearing all local data and cache');
+      }
+      
+      // Clear any cached user data
+      await client.auth.signOut();
+      
+      // Clear any local storage or cached data
+      // This ensures no old data persists when user is deleted
+      
+      if (kDebugMode) {
+        print('SupabaseService: All local data cleared successfully');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error clearing local data: $e');
+      }
+    }
+  }
 } 

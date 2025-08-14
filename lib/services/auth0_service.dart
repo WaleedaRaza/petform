@@ -268,4 +268,38 @@ class Auth0Service {
       // Don't rethrow - we want to continue even if Auth0 logout fails
     }
   }
+
+  /// Force clear all local data and cached state (for complete clean slate)
+  Future<void> forceClearAllData() async {
+    try {
+      if (kDebugMode) {
+        print('Auth0Service: Force clearing ALL local data and cached state');
+      }
+      
+      // Clear all local variables
+      _credentials = null;
+      _userProfile = null;
+      
+      // Clear all token storage
+      await ClerkTokenService.clearAll();
+      
+      // Force clear any remaining session data
+      try {
+        await _auth0.webAuthentication(scheme: 'com.waleedraza.petform').logout();
+      } catch (e) {
+        // Ignore logout errors, just clear local data
+        if (kDebugMode) {
+          print('Auth0Service: Logout error during force clear (ignored): $e');
+        }
+      }
+      
+      if (kDebugMode) {
+        print('Auth0Service: All local data and cached state cleared successfully');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Auth0Service: Error during force clear: $e');
+      }
+    }
+  }
 } 
