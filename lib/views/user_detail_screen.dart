@@ -180,7 +180,7 @@ class _UserDetailScreenState extends State<UserDetailScreen>
   @override
   Widget build(BuildContext context) {
     return VideoBackground(
-      videoPath: 'lib/assets/backdrop2.mp4',
+      videoPath: 'assets/backdrop2.mp4',
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(

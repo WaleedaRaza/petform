@@ -91,7 +91,7 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
 
     if (pets.isEmpty) {
       return VideoBackground(
-        videoPath: 'lib/assets/backdrop2.mp4',
+        videoPath: 'assets/backdrop2.mp4',
         child: Scaffold(
           backgroundColor: Colors.transparent,
           body: _buildNoPetsView(),
@@ -104,7 +104,7 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
       body: Stack(
         children: [
           VideoBackground(
-            videoPath: 'lib/assets/backdrop2.mp4',
+            videoPath: 'assets/backdrop2.mp4',
             child: Container(),
           ),
           Column(

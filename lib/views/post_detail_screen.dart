@@ -218,7 +218,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final isReddit = post.postType == 'reddit';
     final redditPost = isReddit && post is RedditPost ? post as RedditPost : null;
     return VideoBackground(
-      videoPath: 'lib/assets/backdrop2.mp4',
+      videoPath: 'assets/backdrop2.mp4',
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
@@ -262,7 +262,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             if (isReddit) ...[
               Row(
                 children: [
-                  Image.asset('lib/assets/reddit.png', width: 32, height: 32),
+                  Image.asset('assets/reddit.png', width: 32, height: 32),
                   const SizedBox(width: 8),
                   Text(
                     'Reddit Post',
@@ -382,7 +382,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Image.asset(
-                                'lib/assets/reddit.png',
+                                'assets/reddit.png',
                                 width: 48,
                                 height: 48,
                                 fit: BoxFit.contain,
@@ -432,7 +432,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       throw 'Could not launch $url';
                     }
                   },
-                  icon: Image.asset('lib/assets/reddit.png', width: 20, height: 20),
+                  icon: Image.asset('assets/reddit.png', width: 20, height: 20),
                   label: const Text('View on Reddit'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,

@@ -201,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Stack(
         children: [
           const VideoBackground(
-            videoPath: 'lib/assets/backdrop2.mp4',
+            videoPath: 'assets/backdrop2.mp4',
             child: SizedBox.shrink(),
           ),
           // Hide StatusBar on Ask AI tab

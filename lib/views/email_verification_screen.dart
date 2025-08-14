@@ -66,7 +66,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   @override
   Widget build(BuildContext context) {
     return VideoBackground(
-      videoPath: 'lib/assets/backdrop2.mp4',
+      videoPath: 'assets/backdrop2.mp4',
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(

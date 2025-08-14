@@ -152,7 +152,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           await appStateProvider.clearAllUserData();
           
           // Force clear Auth0 local state
-          await _auth0Service.forceClearAllData();
+          await Auth0Service.instance.forceClearAllData();
           
           // Force clear any local storage
           await SupabaseService.clearAllLocalData();
@@ -281,7 +281,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     return VideoBackground(
-      videoPath: 'lib/assets/backdrop1.mp4',
+      videoPath: 'assets/backdrop1.mp4',
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(

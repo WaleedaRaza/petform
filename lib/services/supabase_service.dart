@@ -546,6 +546,9 @@ class SupabaseService {
   
   static Future<Map<String, dynamic>?> createPet(Map<String, dynamic> petData) async {
     try {
+      // CRITICAL: Set Auth0 user context for RLS policies
+      await _ensureAuth0Context();
+      
       final supabaseUser = client.auth.currentUser;
       String? userId;
       
@@ -1585,6 +1588,39 @@ class SupabaseService {
       if (kDebugMode) {
         print('SupabaseService: Error clearing local data: $e');
       }
+    }
+  }
+
+  /// Set Auth0 user context for RLS policies (CRITICAL for Auth0 users)
+  static Future<void> setAuth0UserContext() async {
+    try {
+      final auth0User = Auth0Service.instance.currentUser;
+      if (auth0User?.sub != null) {
+        if (kDebugMode) {
+          print('SupabaseService: Setting Auth0 user context: ${auth0User!.sub}');
+        }
+        
+        // Call our SQL function to set the user context
+        await client.rpc('set_auth0_user_context', params: {
+          'p_auth0_user_id': auth0User.sub,
+        });
+        
+        if (kDebugMode) {
+          print('SupabaseService: Auth0 user context set successfully');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error setting Auth0 user context: $e');
+      }
+    }
+  }
+
+  /// Helper method to ensure Auth0 context is set before database operations
+  static Future<void> _ensureAuth0Context() async {
+    // Only set context if we're using Auth0 (not Supabase auth)
+    if (client.auth.currentUser == null) {
+      await setAuth0UserContext();
     }
   }
 } 

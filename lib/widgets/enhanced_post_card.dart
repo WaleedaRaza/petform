@@ -149,7 +149,7 @@ class EnhancedPostCard extends StatelessWidget {
                 backgroundColor: _getPetTypeColor(),
                 child: post.postType.toLowerCase() == 'reddit' 
                   ? Image.asset(
-                      'lib/assets/reddit.png',
+                      'assets/reddit.png',
                       width: 24,
                       height: 24,
                       fit: BoxFit.contain,
