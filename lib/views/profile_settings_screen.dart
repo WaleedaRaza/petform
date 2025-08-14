@@ -566,20 +566,39 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                 
                                 if (confirm == true) {
                                   try {
-                                    final appState = Provider.of<AppStateProvider>(context, listen: false);
-                                    await appState.clearAllUserData();
-                                    setState(() {}); // Refresh the UI
-                                    if (!mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('All data has been reset')),
-                                    );
+                                    setState(() {
+                                      _isLoading = true;
+                                    });
+                                    
+                                    // ACTUALLY DELETE DATA FROM SUPABASE
+                                    final success = await SupabaseService.resetUserData();
+                                    
+                                    if (success) {
+                                      // Clear local cache too
+                                      final appState = Provider.of<AppStateProvider>(context, listen: false);
+                                      await appState.clearAllUserData();
+                                      
+                                      setState(() {}); // Refresh the UI
+                                      if (!mounted) return;
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('All data has been reset from database')),
+                                      );
+                                    } else {
+                                      throw Exception('Failed to reset data in database');
+                                    }
                                   } catch (e) {
                                     if (!mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('Reset failed: $e')),
                                     );
+                                  } finally {
+                                    if (mounted) {
+                                      setState(() {
+                                        _isLoading = false;
+                                      });
+                                    }
                                   }
-                        }
+                                }
                       },
                     ),
                   ),
@@ -612,24 +631,53 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           ),
                         );
                         
-                        if (confirm == true) {
-                          try {
-                                // Auth0 account deletion would be handled through Auth0 dashboard
-        if (kDebugMode) {
-          print('ProfileSettingsScreen: Account deletion should be handled through Auth0 dashboard');
-        }
-                            if (!mounted) return;
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-                            );
-                          } catch (e) {
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Delete account failed: $e')),
-                            );
-                          }
-                        }
+                                                    if (confirm == true) {
+                              try {
+                                setState(() {
+                                  _isLoading = true;
+                                });
+                                
+                                // ACTUALLY DELETE THE ACCOUNT AND DATA
+                                final success = await SupabaseService.deleteAuth0UserAccount();
+                                
+                                if (success) {
+                                  if (kDebugMode) {
+                                    print('ProfileSettingsScreen: Account deleted successfully');
+                                  }
+                                  
+                                  // Clear local state
+                                  final userProvider = Provider.of<UserProvider>(context, listen: false);
+                                  final appStateProvider = Provider.of<AppStateProvider>(context, listen: false);
+                                  
+                                  userProvider.clearCurrentUser();
+                                  await appStateProvider.clearAllUserData();
+                                  
+                                  if (!mounted) return;
+                                  
+                                  // Sign out from Auth0
+                                  await Auth0Service.instance.signOut();
+                                  
+                                  // Navigate to welcome screen
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+                                  );
+                                } else {
+                                  throw Exception('Failed to delete account');
+                                }
+                              } catch (e) {
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Delete account failed: $e')),
+                                );
+                              } finally {
+                                if (mounted) {
+                                  setState(() {
+                                    _isLoading = false;
+                                  });
+                                }
+                              }
+                            }
                       },
                     ),
                   ),

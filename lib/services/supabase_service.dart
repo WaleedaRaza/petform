@@ -1481,4 +1481,87 @@ class SupabaseService {
       return [];
     }
   }
+
+  // ============================================================================
+  // ACCOUNT DELETION AND DATA RESET METHODS
+  // ============================================================================
+
+  /// Delete current user's data completely (calls our new SQL function)
+  static Future<bool> deleteCurrentUserData() async {
+    try {
+      if (kDebugMode) {
+        print('SupabaseService: Attempting to delete current user data');
+      }
+      
+      // Call our new SQL function that handles all deletion
+      final result = await client.rpc('delete_current_user_data');
+      
+      if (kDebugMode) {
+        print('SupabaseService: Delete user data result: $result');
+      }
+      
+      return result == true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error deleting user data: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Delete Auth0 user account completely
+  static Future<bool> deleteAuth0UserAccount() async {
+    try {
+      if (kDebugMode) {
+        print('SupabaseService: Attempting to delete Auth0 user account');
+      }
+      
+      final auth0User = Auth0Service.instance.currentUser;
+      if (auth0User == null) {
+        if (kDebugMode) {
+          print('SupabaseService: No Auth0 user to delete');
+        }
+        return false;
+      }
+      
+      // Call our new SQL function for complete user deletion
+      final result = await client.rpc('delete_user_completely', params: {
+        'p_auth0_user_id': auth0User.sub,
+      });
+      
+      if (kDebugMode) {
+        print('SupabaseService: Delete Auth0 account result: $result');
+      }
+      
+      return result == true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error deleting Auth0 account: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Reset all data for current user (keeps account, clears data)
+  static Future<bool> resetUserData() async {
+    try {
+      if (kDebugMode) {
+        print('SupabaseService: Attempting to reset user data');
+      }
+      
+      // Call our new SQL function that handles data reset
+      final result = await client.rpc('delete_current_user_data');
+      
+      if (kDebugMode) {
+        print('SupabaseService: Reset user data result: $result');
+      }
+      
+      return result == true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error resetting user data: $e');
+      }
+      return false;
+    }
+  }
 } 

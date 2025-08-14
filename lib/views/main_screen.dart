@@ -39,7 +39,7 @@ class _MainScreenState extends State<MainScreen> {
     return Container(
       decoration: const BoxDecoration(
         image: DecorationImage(
-          image: AssetImage('lib/assets/petform_backdrop.png'),
+          image: AssetImage('assets/petform_backdrop.png'),
           fit: BoxFit.cover,
         ),
       ),
