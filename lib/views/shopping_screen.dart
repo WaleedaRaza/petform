@@ -53,6 +53,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
 
   @override
   Widget build(BuildContext context) {
+    print('SHOPPING SCREEN BUILDING!');
     return Consumer<AppStateProvider>(
       builder: (context, appState, child) {
                 return VideoBackground(
@@ -78,40 +79,20 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                           ),
                         ),
                         const Spacer(),
-                        Container(
-                          color: Colors.red, // TEST: Make button obvious
-                          child: ElevatedButton(
-                            onPressed: () {
-                              print('BUTTON TAPPED!');
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('BUTTON WORKING!')),
-                              );
-                              _showQuickAddBottomSheet(appState);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                                                      child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.add, color: Colors.white, size: 18),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Add Item',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
+                                                TextButton(
+                          onPressed: () {
+                            print('BUTTON TAPPED!');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('BUTTON WORKING!')),
+                            );
+                            _showQuickAddBottomSheet(appState);
+                          },
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           ),
+                          child: const Text('ADD ITEM'),
                         ),
                       ],
                     ),
