@@ -63,30 +63,6 @@ class _ShoppingScreenState extends State<ShoppingScreen>
 
                         body: Column(
               children: [
-                // TEST BUTTON AT TOP
-                Container(
-                  width: double.infinity,
-                  height: 60,
-                  color: Colors.green,
-                  child: GestureDetector(
-                    onTap: () {
-                      print('TOP TEST BUTTON TAPPED!');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('TOP BUTTON WORKING!')),
-                      );
-                    },
-                    child: const Center(
-                      child: Text(
-                        'TOP TEST BUTTON - TAP ME',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
                 // Header with title
                 Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -104,23 +80,49 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                         ),
                                                 const Spacer(),
                         Container(
-                          width: 100,
-                          height: 50,
-                          color: Colors.red,
-                          child: GestureDetector(
-                            onTap: () {
-                              print('BUTTON TAPPED!');
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('BUTTON WORKING!')),
-                              );
-                              _showQuickAddBottomSheet(appState);
-                            },
-                            child: const Center(
-                              child: Text(
-                                'ADD ITEM',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF6C63FF), Color(0xFF4CAF50)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(25),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(25),
+                              onTap: () {
+                                print('BUTTON TAPPED!');
+                                _showQuickAddBottomSheet(appState);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.add_shopping_cart,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'ADD ITEM',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -1413,11 +1415,47 @@ class _ShoppingScreenState extends State<ShoppingScreen>
     }
   }
 
+  // Helper method to build beautiful input fields
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required String hint,
+    bool isRequired = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF2A2A2A),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[700]!),
+      ),
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(
+            color: isRequired ? Colors.red[400] : Colors.grey[400],
+            fontWeight: isRequired ? FontWeight.bold : FontWeight.normal,
+          ),
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey[600]),
+          prefixIcon: Icon(icon, color: Colors.grey[400]),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.all(16),
+        ),
+        autofocus: isRequired,
+      ),
+    );
+  }
+
   // COMPLETELY NEW APPROACH: Quick Add Bottom Sheet
   void _showQuickAddBottomSheet(AppStateProvider appState) {
     print('FUNCTION CALLED!');
     final nameController = TextEditingController();
     final categoryController = TextEditingController();
+    final priceController = TextEditingController();
+    final linkController = TextEditingController();
     
     print('About to show bottom sheet...');
     showModalBottomSheet(
@@ -1425,13 +1463,20 @@ class _ShoppingScreenState extends State<ShoppingScreen>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
+        initialChildSize: 0.8,
+        minChildSize: 0.6,
+        maxChildSize: 0.95,
         builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E1E1E),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.5),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
+              ),
+            ],
           ),
           child: Column(
             children: [
@@ -1441,23 +1486,37 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[400],
+                  color: Colors.grey[600],
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               
               // Header
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(24),
                 child: Row(
                   children: [
-                    const Icon(Icons.shopping_cart, color: Colors.orange, size: 28),
-                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6C63FF), Color(0xFF4CAF50)],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.add_shopping_cart,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
                     const Text(
-                      'Quick Add Item',
+                      'Add Shopping Item',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
                   ],
@@ -1468,45 +1527,43 @@ class _ShoppingScreenState extends State<ShoppingScreen>
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Column(
                     children: [
                       // Name field
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: TextField(
-                          controller: nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Item Name *',
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.all(16),
-                            hintText: 'Enter item name...',
-                          ),
-                          autofocus: true,
-                        ),
+                      _buildInputField(
+                        controller: nameController,
+                        label: 'Item Name *',
+                        icon: Icons.shopping_bag,
+                        hint: 'Enter item name...',
+                        isRequired: true,
                       ),
                       const SizedBox(height: 20),
                       
                       // Category field
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: TextField(
-                          controller: categoryController,
-                          decoration: const InputDecoration(
-                            labelText: 'Category',
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.all(16),
-                            hintText: 'Food, Toys, etc.',
-                          ),
-                        ),
+                      _buildInputField(
+                        controller: categoryController,
+                        label: 'Category',
+                        icon: Icons.category,
+                        hint: 'Food, Toys, Medicine...',
+                      ),
+                      const SizedBox(height: 20),
+                      
+                      // Price field
+                      _buildInputField(
+                        controller: priceController,
+                        label: 'Price (Optional)',
+                        icon: Icons.attach_money,
+                        hint: 'e.g., \$29.99',
+                      ),
+                      const SizedBox(height: 20),
+                      
+                      // Link field
+                      _buildInputField(
+                        controller: linkController,
+                        label: 'Link (Optional)',
+                        icon: Icons.link,
+                        hint: 'https://...',
                       ),
                       const SizedBox(height: 30),
                     ],
@@ -1516,86 +1573,115 @@ class _ShoppingScreenState extends State<ShoppingScreen>
               
               // Action buttons
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(24),
                 child: Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey[600]!),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(fontSize: 16),
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (nameController.text.trim().isEmpty) {
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF6C63FF), Color(0xFF4CAF50)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF6C63FF).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (nameController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please enter an item name'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            // Parse price if provided
+                            double? estimatedCost;
+                            if (priceController.text.trim().isNotEmpty) {
+                              final priceText = priceController.text.trim().replaceAll(RegExp(r'[^\d.]'), '');
+                              if (priceText.isNotEmpty) {
+                                estimatedCost = double.tryParse(priceText);
+                              }
+                            }
+
+                            // Create shopping item
+                            final customItem = ShoppingItem(
+                              id: DateTime.now().millisecondsSinceEpoch.toString(),
+                              name: nameController.text.trim(),
+                              category: categoryController.text.trim().isNotEmpty ? categoryController.text.trim() : 'Other',
+                              priority: 'Medium',
+                              estimatedCost: estimatedCost ?? 0.0,
+                              brand: null,
+                              store: 'Custom',
+                              quantity: 1,
+                              notes: linkController.text.trim().isNotEmpty ? 'Link: ${linkController.text.trim()}' : null,
+                              chewyUrl: linkController.text.trim().isNotEmpty ? linkController.text.trim() : null,
+                              isCompleted: false,
+                              createdAt: DateTime.now(),
+                              completedAt: null,
+                              tags: [],
+                              imageUrl: null,
+                              rating: null,
+                              reviewCount: null,
+                              inStock: null,
+                              autoShip: null,
+                              freeShipping: null,
+                            );
+
+                            // Add to shopping list
+                            appState.addShoppingItem(customItem);
+                            Navigator.pop(context);
+                            
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Please enter an item name'),
-                                backgroundColor: Colors.red,
+                              SnackBar(
+                                content: Text('✅ Added "${customItem.name}" to shopping list'),
+                                backgroundColor: Colors.green,
                               ),
                             );
-                            return;
-                          }
-
-                          // Create shopping item
-                          final customItem = ShoppingItem(
-                            id: DateTime.now().millisecondsSinceEpoch.toString(),
-                            name: nameController.text.trim(),
-                            category: categoryController.text.trim().isNotEmpty ? categoryController.text.trim() : 'Other',
-                            priority: 'Medium',
-                            estimatedCost: 0.0,
-                            brand: null,
-                            store: 'Custom',
-                            quantity: 1,
-                            notes: null,
-                            chewyUrl: null,
-                            isCompleted: false,
-                            createdAt: DateTime.now(),
-                            completedAt: null,
-                            tags: [],
-                            imageUrl: null,
-                            rating: null,
-                            reviewCount: null,
-                            inStock: null,
-                            autoShip: null,
-                            freeShipping: null,
-                          );
-
-                          // Add to shopping list
-                          appState.addShoppingItem(customItem);
-                          Navigator.pop(context);
-                          
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('✅ Added "${customItem.name}" to shopping list'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                        ),
-                        child: const Text(
-                          'Add Item',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                          child: const Text(
+                            'Add Item',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
