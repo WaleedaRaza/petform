@@ -79,7 +79,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                         ),
                         const Spacer(),
                         ElevatedButton.icon(
-                          onPressed: () => _showAddCustomItemDialog(appState),
+                          onPressed: () => _showSimpleAddItemDialog(appState),
                           icon: const Icon(Icons.add),
                           label: const Text('Add Custom Item'),
                           style: ElevatedButton.styleFrom(
@@ -1389,5 +1389,88 @@ class _ShoppingScreenState extends State<ShoppingScreen>
       default:
         return Colors.grey;
     }
+  }
+
+  // NEW SIMPLE ADD ITEM DIALOG - NO COMPLEX LOGIC
+  void _showSimpleAddItemDialog(AppStateProvider appState) {
+    final nameController = TextEditingController();
+    final categoryController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Custom Item'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: 'Item Name *',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: categoryController,
+              decoration: const InputDecoration(
+                labelText: 'Category',
+                border: OutlineInputBorder(),
+                hintText: 'Food, Toys, etc.',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (nameController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please enter an item name')),
+                );
+                return;
+              }
+
+              // Create simple shopping item
+              final customItem = ShoppingItem(
+                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                name: nameController.text.trim(),
+                category: categoryController.text.trim().isNotEmpty ? categoryController.text.trim() : 'Other',
+                priority: 'Medium',
+                estimatedCost: 0.0,
+                brand: null,
+                store: 'Custom',
+                quantity: 1,
+                notes: null,
+                chewyUrl: null,
+                isCompleted: false,
+                createdAt: DateTime.now(),
+                completedAt: null,
+                tags: [],
+                imageUrl: null,
+                rating: null,
+                reviewCount: null,
+                inStock: null,
+                autoShip: null,
+                freeShipping: null,
+              );
+
+              // Add to shopping list
+              appState.addShoppingItem(customItem);
+              Navigator.pop(context);
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Added "${customItem.name}" to shopping list')),
+              );
+            },
+            child: const Text('Add Item'),
+          ),
+        ],
+      ),
+    );
   }
 } 
