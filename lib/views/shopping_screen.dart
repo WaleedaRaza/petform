@@ -1496,20 +1496,32 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                                             // Name field
                       Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2A2A2A),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[700]!),
+                          color: const Color(0xFF1A1A1A),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: TextField(
                           controller: nameController,
-                          style: const TextStyle(color: Colors.white),
+                          style: const TextStyle(color: Colors.white, fontSize: 16),
                           decoration: InputDecoration(
                             labelText: 'Item Name *',
-                            labelStyle: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+                            labelStyle: const TextStyle(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.all(16),
+                            contentPadding: const EdgeInsets.all(20),
                             hintText: 'Enter item name...',
-                            hintStyle: TextStyle(color: Colors.grey[600]),
+                            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                            prefixIcon: const Icon(Icons.shopping_bag, color: Colors.orange, size: 20),
                           ),
                           autofocus: true,
                         ),
@@ -1519,20 +1531,32 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                                             // Category field
                       Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2A2A2A),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[700]!),
+                          color: const Color(0xFF1A1A1A),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.teal.withOpacity(0.3)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: TextField(
                           controller: categoryController,
-                          style: const TextStyle(color: Colors.white),
+                          style: const TextStyle(color: Colors.white, fontSize: 16),
                           decoration: InputDecoration(
                             labelText: 'Category',
-                            labelStyle: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+                            labelStyle: const TextStyle(
+                              color: Colors.teal,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.all(16),
+                            contentPadding: const EdgeInsets.all(20),
                             hintText: 'Food, Toys, etc.',
-                            hintStyle: TextStyle(color: Colors.grey[600]),
+                            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                            prefixIcon: const Icon(Icons.category, color: Colors.teal, size: 20),
                           ),
                         ),
                       ),
@@ -1541,20 +1565,32 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                       // Price field
                       Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2A2A2A),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[700]!),
+                          color: const Color(0xFF1A1A1A),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.pink.withOpacity(0.3)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: TextField(
                           controller: priceController,
-                          style: const TextStyle(color: Colors.white),
+                          style: const TextStyle(color: Colors.white, fontSize: 16),
                           decoration: InputDecoration(
                             labelText: 'Price (Optional)',
-                            labelStyle: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+                            labelStyle: const TextStyle(
+                              color: Colors.pink,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.all(16),
+                            contentPadding: const EdgeInsets.all(20),
                             hintText: 'e.g., \$29.99',
-                            hintStyle: TextStyle(color: Colors.grey[600]),
+                            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                            prefixIcon: const Icon(Icons.attach_money, color: Colors.pink, size: 20),
                           ),
                           keyboardType: TextInputType.number,
                         ),
@@ -1564,20 +1600,32 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                       // Link field
                       Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2A2A2A),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[700]!),
+                          color: const Color(0xFF1A1A1A),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.purple.withOpacity(0.3)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: TextField(
                           controller: linkController,
-                          style: const TextStyle(color: Colors.white),
+                          style: const TextStyle(color: Colors.white, fontSize: 16),
                           decoration: InputDecoration(
                             labelText: 'Link (Optional)',
-                            labelStyle: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+                            labelStyle: const TextStyle(
+                              color: Colors.purple,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.all(16),
+                            contentPadding: const EdgeInsets.all(20),
                             hintText: 'https://...',
-                            hintStyle: TextStyle(color: Colors.grey[600]),
+                            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                            prefixIcon: const Icon(Icons.link, color: Colors.purple, size: 20),
                           ),
                           keyboardType: TextInputType.url,
                         ),
@@ -1597,14 +1645,19 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                       child: OutlinedButton(
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding: const EdgeInsets.symmetric(vertical: 18),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                           ),
+                          side: const BorderSide(color: Colors.grey, width: 1.5),
                         ),
                         child: const Text(
                           'Cancel',
-                          style: TextStyle(fontSize: 16),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey,
+                          ),
                         ),
                       ),
                     ),
@@ -1668,10 +1721,12 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding: const EdgeInsets.symmetric(vertical: 18),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                           ),
+                          elevation: 4,
+                          shadowColor: Colors.orange.withOpacity(0.3),
                         ),
                         child: const Text(
                           'Add Item',
