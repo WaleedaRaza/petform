@@ -1503,11 +1503,11 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                         child: TextField(
                           controller: nameController,
                           style: const TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Item Name *',
-                            labelStyle: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+                            labelStyle: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.all(16),
+                            contentPadding: const EdgeInsets.all(16),
                             hintText: 'Enter item name...',
                             hintStyle: TextStyle(color: Colors.grey[600]),
                           ),
@@ -1526,11 +1526,11 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                         child: TextField(
                           controller: categoryController,
                           style: const TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Category',
-                            labelStyle: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+                            labelStyle: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.all(16),
+                            contentPadding: const EdgeInsets.all(16),
                             hintText: 'Food, Toys, etc.',
                             hintStyle: TextStyle(color: Colors.grey[600]),
                           ),
@@ -1548,11 +1548,11 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                         child: TextField(
                           controller: priceController,
                           style: const TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Price (Optional)',
-                            labelStyle: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+                            labelStyle: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.all(16),
+                            contentPadding: const EdgeInsets.all(16),
                             hintText: 'e.g., \$29.99',
                             hintStyle: TextStyle(color: Colors.grey[600]),
                           ),
@@ -1571,11 +1571,11 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                         child: TextField(
                           controller: linkController,
                           style: const TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Link (Optional)',
-                            labelStyle: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+                            labelStyle: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.all(16),
+                            contentPadding: const EdgeInsets.all(16),
                             hintText: 'https://...',
                             hintStyle: TextStyle(color: Colors.grey[600]),
                           ),
