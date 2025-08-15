@@ -56,7 +56,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
     return Consumer<AppStateProvider>(
       builder: (context, appState, child) {
                 return VideoBackground(
-          videoPath: 'assets/backdrop2.mp4',
+          videoPath: 'lib/assets/backdrop2.mp4',
           child: Scaffold(
             backgroundColor: Colors.transparent,
 
@@ -83,35 +83,36 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                             color: Theme.of(context).colorScheme.secondary,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(8),
-                              onTap: () {
-                                print('BUTTON TAPPED!');
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('BUTTON WORKING!')),
-                                );
-                                _showQuickAddBottomSheet(appState);
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.add, color: Colors.white, size: 18),
-                                    const SizedBox(width: 6),
-                                    const Text(
-                                      'Add Item',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              print('BUTTON TAPPED!');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('BUTTON WORKING!')),
+                              );
+                              _showQuickAddBottomSheet(appState);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.secondary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
                               ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.add, color: Colors.white, size: 18),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  'Add Item',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
