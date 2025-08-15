@@ -207,10 +207,7 @@ class BackdropWrapper extends StatelessWidget {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          image: DecorationImage(
-            color: Colors.black,
-            fit: BoxFit.cover,
-          ),
+          color: Colors.black,
         ),
         child: child,
       ),

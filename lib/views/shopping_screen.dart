@@ -79,10 +79,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                         ),
                         const Spacer(),
                         Container(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.secondary,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                          color: Colors.red, // TEST: Make button obvious
                           child: ElevatedButton(
                             onPressed: () {
                               print('BUTTON TAPPED!');
@@ -92,19 +89,19 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                               _showQuickAddBottomSheet(appState);
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).colorScheme.secondary,
+                              backgroundColor: Colors.orange,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            child: Row(
+                                                      child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.add, color: Colors.white, size: 18),
-                                const SizedBox(width: 6),
-                                const Text(
+                                Icon(Icons.add, color: Colors.white, size: 18),
+                                SizedBox(width: 8),
+                                Text(
                                   'Add Item',
                                   style: TextStyle(
                                     color: Colors.white,

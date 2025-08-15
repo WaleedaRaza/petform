@@ -38,10 +38,7 @@ class _MainScreenState extends State<MainScreen> {
 
     return Container(
       decoration: const BoxDecoration(
-        image: DecorationImage(
-          color: Colors.black,
-          fit: BoxFit.cover,
-        ),
+        color: Colors.black,
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
