@@ -87,7 +87,13 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                             color: Colors.transparent,
                             child: InkWell(
                               borderRadius: BorderRadius.circular(8),
-                              onTap: () => _showQuickAddBottomSheet(appState),
+                              onTap: () {
+                                print('BUTTON TAPPED!');
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('BUTTON WORKING!')),
+                                );
+                                _showQuickAddBottomSheet(appState);
+                              },
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 child: Row(
@@ -1398,9 +1404,11 @@ class _ShoppingScreenState extends State<ShoppingScreen>
 
   // COMPLETELY NEW APPROACH: Quick Add Bottom Sheet
   void _showQuickAddBottomSheet(AppStateProvider appState) {
+    print('FUNCTION CALLED!');
     final nameController = TextEditingController();
     final categoryController = TextEditingController();
     
+    print('About to show bottom sheet...');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
