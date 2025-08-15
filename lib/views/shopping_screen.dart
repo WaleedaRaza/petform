@@ -55,11 +55,17 @@ class _ShoppingScreenState extends State<ShoppingScreen>
   Widget build(BuildContext context) {
     return Consumer<AppStateProvider>(
       builder: (context, appState, child) {
-        return VideoBackground(
+                return VideoBackground(
           videoPath: 'assets/backdrop2.mp4',
           child: Scaffold(
             backgroundColor: Colors.transparent,
-
+            floatingActionButton: FloatingActionButton.extended(
+              onPressed: () => _showQuickAddBottomSheet(appState),
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add),
+              label: const Text('Add Item'),
+            ),
             body: Column(
             children: [
               // Header with title
@@ -78,38 +84,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                           ),
                         ),
                         const Spacer(),
-                        GestureDetector(
-                          onTap: () => _showQuickAddBottomSheet(appState),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.orange,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.orange.withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.add_circle, color: Colors.white, size: 20),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Quick Add',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+
                       ],
                     ),
                     const SizedBox(height: 12),
