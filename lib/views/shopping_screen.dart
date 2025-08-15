@@ -59,13 +59,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
           videoPath: 'assets/backdrop2.mp4',
           child: Scaffold(
             backgroundColor: Colors.transparent,
-            floatingActionButton: FloatingActionButton.extended(
-              onPressed: () => _showQuickAddBottomSheet(appState),
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.add),
-              label: const Text('Add Item'),
-            ),
+
             body: Column(
             children: [
               // Header with title
@@ -84,7 +78,37 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                           ),
                         ),
                         const Spacer(),
-
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.secondary,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(8),
+                              onTap: () => _showQuickAddBottomSheet(appState),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.add, color: Colors.white, size: 18),
+                                    const SizedBox(width: 6),
+                                    const Text(
+                                      'Add Item',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
