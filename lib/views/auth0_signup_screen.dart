@@ -134,7 +134,7 @@ class _Auth0SignupScreenState extends State<Auth0SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return VideoBackground(
-      videoPath: 'assets/backdrop1.mp4',
+      videoPath: 'lib/assets/backdrop1.mp4',
       child: Scaffold(
         backgroundColor: Colors.transparent,
                             appBar: AppBar(

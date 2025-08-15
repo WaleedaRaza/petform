@@ -65,14 +65,9 @@ class _VideoBackgroundState extends State<VideoBackground> {
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
-      // Fallback to static background if video fails to load
+      // Show black background if video fails to load
       return Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/petform_backdrop.png'),
-            fit: BoxFit.cover,
-          ),
-        ),
+        color: Colors.black,
         child: widget.child,
       );
     }

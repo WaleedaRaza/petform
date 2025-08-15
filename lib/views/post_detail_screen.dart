@@ -218,7 +218,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final isReddit = post.postType == 'reddit';
     final redditPost = isReddit && post is RedditPost ? post as RedditPost : null;
     return VideoBackground(
-      videoPath: 'assets/backdrop2.mp4',
+      videoPath: 'lib/assets/backdrop2.mp4',
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(

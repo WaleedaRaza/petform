@@ -47,7 +47,7 @@ class _AskAiFullscreenPageState extends State<AskAiFullscreenPage> {
         });
 
         return VideoBackground(
-          videoPath: 'assets/backdrop2.mp4',
+          videoPath: 'lib/assets/backdrop2.mp4',
           child: Scaffold(
             backgroundColor: Colors.transparent,
             resizeToAvoidBottomInset: true,

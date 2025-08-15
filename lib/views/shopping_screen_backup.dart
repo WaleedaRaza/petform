@@ -58,7 +58,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
     return Consumer<AppStateProvider>(
       builder: (context, appState, child) {
         return VideoBackground(
-          videoPath: 'assets/backdrop2.mp4',
+          videoPath: 'lib/assets/backdrop2.mp4',
           child: Scaffold(
             backgroundColor: Colors.transparent,
             floatingActionButton: FloatingActionButton(

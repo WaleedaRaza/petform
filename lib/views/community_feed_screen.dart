@@ -188,7 +188,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
           body: Stack(
             children: [
               VideoBackground(
-                videoPath: 'assets/backdrop2.mp4',
+                videoPath: 'lib/assets/backdrop2.mp4',
                 child: Column(
                   children: [
                     // Feed content

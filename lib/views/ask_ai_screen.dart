@@ -580,7 +580,7 @@ class _AskAiScreenState extends State<AskAiScreen> {
         final aiProvider = Provider.of<AiProvider>(context);
         final mq = MediaQuery.of(context);
         return VideoBackground(
-          videoPath: 'assets/backdrop3.mp4',
+          videoPath: 'lib/assets/backdrop3.mp4',
           child: Scaffold(
             backgroundColor: Colors.transparent,
             resizeToAvoidBottomInset: true, // Allow keyboard to resize content

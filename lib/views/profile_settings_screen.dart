@@ -70,7 +70,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final userDisplayName = userProvider.currentUsername ?? userEmail; // Use stored username
 
     return VideoBackground(
-      videoPath: 'assets/backdrop2.mp4',
+      videoPath: 'lib/assets/backdrop2.mp4',
       child: Scaffold(
         backgroundColor: Colors.transparent,
       body: SingleChildScrollView(

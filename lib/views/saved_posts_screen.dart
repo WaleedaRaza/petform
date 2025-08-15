@@ -35,7 +35,7 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
   @override
   Widget build(BuildContext context) {
     return VideoBackground(
-      videoPath: 'assets/backdrop2.mp4',
+      videoPath: 'lib/assets/backdrop2.mp4',
       child: Scaffold(
         backgroundColor: Colors.transparent,
       appBar: AppBar(

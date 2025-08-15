@@ -281,7 +281,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     return VideoBackground(
-      videoPath: 'assets/backdrop1.mp4',
+      videoPath: 'lib/assets/backdrop1.mp4',
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
