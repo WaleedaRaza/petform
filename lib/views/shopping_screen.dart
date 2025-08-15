@@ -61,11 +61,35 @@ class _ShoppingScreenState extends State<ShoppingScreen>
           child: Scaffold(
             backgroundColor: Colors.transparent,
 
-            body: Column(
-            children: [
-              // Header with title
-              Padding(
-                padding: const EdgeInsets.all(16.0),
+                        body: Column(
+              children: [
+                // TEST BUTTON AT TOP
+                Container(
+                  width: double.infinity,
+                  height: 60,
+                  color: Colors.green,
+                  child: GestureDetector(
+                    onTap: () {
+                      print('TOP TEST BUTTON TAPPED!');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('TOP BUTTON WORKING!')),
+                      );
+                    },
+                    child: const Center(
+                      child: Text(
+                        'TOP TEST BUTTON - TAP ME',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // Header with title
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -78,21 +102,29 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const Spacer(),
-                                                TextButton(
-                          onPressed: () {
-                            print('BUTTON TAPPED!');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('BUTTON WORKING!')),
-                            );
-                            _showQuickAddBottomSheet(appState);
-                          },
-                          style: TextButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                                const Spacer(),
+                        Container(
+                          width: 100,
+                          height: 50,
+                          color: Colors.red,
+                          child: GestureDetector(
+                            onTap: () {
+                              print('BUTTON TAPPED!');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('BUTTON WORKING!')),
+                              );
+                              _showQuickAddBottomSheet(appState);
+                            },
+                            child: const Center(
+                              child: Text(
+                                'ADD ITEM',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ),
-                          child: const Text('ADD ITEM'),
                         ),
                       ],
                     ),
