@@ -546,17 +546,27 @@ class SupabaseService {
   
   static Future<Map<String, dynamic>?> createPet(Map<String, dynamic> petData) async {
     try {
-      // CRITICAL: Set Auth0 user context for RLS policies
-      await _ensureAuth0Context();
+      if (kDebugMode) {
+        print('SupabaseService: Starting pet creation...');
+      }
       
       final supabaseUser = client.auth.currentUser;
       String? userId;
       
       if (supabaseUser != null) {
         userId = supabaseUser.id;
+        if (kDebugMode) {
+          print('SupabaseService: Using Supabase user ID: $userId');
+        }
       } else {
         // For Auth0 users, get the UUID mapping
+        if (kDebugMode) {
+          print('SupabaseService: Getting Auth0 user UUID...');
+        }
         userId = await getAuth0UserUUID();
+        if (kDebugMode) {
+          print('SupabaseService: Got Auth0 user UUID: $userId');
+        }
       }
       
       if (userId == null) throw Exception('No user logged in');
@@ -1591,36 +1601,5 @@ class SupabaseService {
     }
   }
 
-  /// Set Auth0 user context for RLS policies (CRITICAL for Auth0 users)
-  static Future<void> setAuth0UserContext() async {
-    try {
-      final auth0User = Auth0Service.instance.currentUser;
-      if (auth0User?.sub != null) {
-        if (kDebugMode) {
-          print('SupabaseService: Setting Auth0 user context: ${auth0User!.sub}');
-        }
-        
-        // Call our SQL function to set the user context
-        await client.rpc('set_auth0_user_context', params: {
-          'p_auth0_user_id': auth0User.sub,
-        });
-        
-        if (kDebugMode) {
-          print('SupabaseService: Auth0 user context set successfully');
-        }
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('SupabaseService: Error setting Auth0 user context: $e');
-      }
-    }
-  }
 
-  /// Helper method to ensure Auth0 context is set before database operations
-  static Future<void> _ensureAuth0Context() async {
-    // Only set context if we're using Auth0 (not Supabase auth)
-    if (client.auth.currentUser == null) {
-      await setAuth0UserContext();
-    }
-  }
 } 
