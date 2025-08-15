@@ -78,16 +78,35 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                           ),
                         ),
                         const Spacer(),
-                        ElevatedButton.icon(
-                          onPressed: () => _showSimpleAddItemDialog(appState),
-                          icon: const Icon(Icons.add),
-                          label: const Text('Add Custom Item'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.secondary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                        GestureDetector(
+                          onTap: () => _showQuickAddBottomSheet(appState),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.orange.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.add_circle, color: Colors.white, size: 20),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Quick Add',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -1378,85 +1397,197 @@ class _ShoppingScreenState extends State<ShoppingScreen>
     }
   }
 
-  // Simple Add Item Dialog - Working version
-  void _showSimpleAddItemDialog(AppStateProvider appState) {
+  // COMPLETELY NEW APPROACH: Quick Add Bottom Sheet
+  void _showQuickAddBottomSheet(AppStateProvider appState) {
     final nameController = TextEditingController();
     final categoryController = TextEditingController();
     
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Custom Item'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Item Name *',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: categoryController,
-              decoration: const InputDecoration(
-                labelText: 'Category',
-                border: OutlineInputBorder(),
-                hintText: 'Food, Toys, etc.',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
           ),
-          ElevatedButton(
-            onPressed: () {
-              if (nameController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please enter an item name')),
-                );
-                return;
-              }
-
-              // Create simple shopping item
-              final customItem = ShoppingItem(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
-                name: nameController.text.trim(),
-                category: categoryController.text.trim().isNotEmpty ? categoryController.text.trim() : 'Other',
-                priority: 'Medium',
-                estimatedCost: 0.0,
-                brand: null,
-                store: 'Custom',
-                quantity: 1,
-                notes: null,
-                chewyUrl: null,
-                isCompleted: false,
-                createdAt: DateTime.now(),
-                completedAt: null,
-                tags: [],
-                imageUrl: null,
-                rating: null,
-                reviewCount: null,
-                inStock: null,
-                autoShip: null,
-                freeShipping: null,
-              );
-
-              // Add to shopping list
-              appState.addShoppingItem(customItem);
-              Navigator.pop(context);
+          child: Column(
+            children: [
+              // Drag handle
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
               
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Added "${customItem.name}" to shopping list')),
-              );
-            },
-            child: const Text('Add Item'),
+              // Header
+              Container(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    const Icon(Icons.shopping_cart, color: Colors.orange, size: 28),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Quick Add Item',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Form fields
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      // Name field
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: TextField(
+                          controller: nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Item Name *',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.all(16),
+                            hintText: 'Enter item name...',
+                          ),
+                          autofocus: true,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      
+                      // Category field
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: TextField(
+                          controller: categoryController,
+                          decoration: const InputDecoration(
+                            labelText: 'Category',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.all(16),
+                            hintText: 'Food, Toys, etc.',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Action buttons
+              Container(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (nameController.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please enter an item name'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          // Create shopping item
+                          final customItem = ShoppingItem(
+                            id: DateTime.now().millisecondsSinceEpoch.toString(),
+                            name: nameController.text.trim(),
+                            category: categoryController.text.trim().isNotEmpty ? categoryController.text.trim() : 'Other',
+                            priority: 'Medium',
+                            estimatedCost: 0.0,
+                            brand: null,
+                            store: 'Custom',
+                            quantity: 1,
+                            notes: null,
+                            chewyUrl: null,
+                            isCompleted: false,
+                            createdAt: DateTime.now(),
+                            completedAt: null,
+                            tags: [],
+                            imageUrl: null,
+                            rating: null,
+                            reviewCount: null,
+                            inStock: null,
+                            autoShip: null,
+                            freeShipping: null,
+                          );
+
+                          // Add to shopping list
+                          appState.addShoppingItem(customItem);
+                          Navigator.pop(context);
+                          
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('✅ Added "${customItem.name}" to shopping list'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Add Item',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
