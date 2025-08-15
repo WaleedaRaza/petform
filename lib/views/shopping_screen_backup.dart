@@ -74,30 +74,12 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title and Add Custom Item Button on same row
-                    Row(
-                      children: [
-                        Text(
-                          'Shopping',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const Spacer(),
-                        ElevatedButton.icon(
-                          onPressed: () => _showSimpleAddItemDialog(appState),
-                          icon: const Icon(Icons.add),
-                          label: const Text('Add Custom Item'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.secondary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ],
+                    // Title only - no button here
+                    Text(
+                      'Shopping',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     // Pet type filter dropdown
@@ -1383,85 +1365,139 @@ class _ShoppingScreenState extends State<ShoppingScreen>
     }
   }
 
-  // Simple Add Item Dialog - Working version
-  void _showSimpleAddItemDialog(AppStateProvider appState) {
+  // NEW APPROACH: Bottom Sheet instead of Dialog
+  void _showBottomSheetAddItem(AppStateProvider appState) {
     final nameController = TextEditingController();
     final categoryController = TextEditingController();
     
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Custom Item'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Item Name *',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: categoryController,
-              decoration: const InputDecoration(
-                labelText: 'Category',
-                border: OutlineInputBorder(),
-                hintText: 'Food, Toys, etc.',
-              ),
-            ),
-          ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.6,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (nameController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please enter an item name')),
-                );
-                return;
-              }
-
-              // Create simple shopping item
-              final customItem = ShoppingItem(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
-                name: nameController.text.trim(),
-                category: categoryController.text.trim().isNotEmpty ? categoryController.text.trim() : 'Other',
-                priority: 'Medium',
-                estimatedCost: 0.0,
-                brand: null,
-                store: 'Custom',
-                quantity: 1,
-                notes: null,
-                chewyUrl: null,
-                isCompleted: false,
-                createdAt: DateTime.now(),
-                completedAt: null,
-                tags: [],
-                imageUrl: null,
-                rating: null,
-                reviewCount: null,
-                inStock: null,
-                autoShip: null,
-                freeShipping: null,
-              );
-
-              // Add to shopping list
-              appState.addShoppingItem(customItem);
-              Navigator.pop(context);
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
               
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Added "${customItem.name}" to shopping list')),
-              );
-            },
-            child: const Text('Add Item'),
+              // Title
+              const Text(
+                'Add Shopping Item',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              
+              // Name field
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  labelText: 'Item Name *',
+                  border: const OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                ),
+                autofocus: true,
+              ),
+              const SizedBox(height: 16),
+              
+              // Category field
+              TextField(
+                controller: categoryController,
+                decoration: InputDecoration(
+                  labelText: 'Category',
+                  border: const OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  hintText: 'Food, Toys, etc.',
+                ),
+              ),
+              const SizedBox(height: 30),
+              
+              // Add button
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (nameController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter an item name')),
+                      );
+                      return;
+                    }
+
+                    // Create simple shopping item
+                    final customItem = ShoppingItem(
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      name: nameController.text.trim(),
+                      category: categoryController.text.trim().isNotEmpty ? categoryController.text.trim() : 'Other',
+                      priority: 'Medium',
+                      estimatedCost: 0.0,
+                      brand: null,
+                      store: 'Custom',
+                      quantity: 1,
+                      notes: null,
+                      chewyUrl: null,
+                      isCompleted: false,
+                      createdAt: DateTime.now(),
+                      completedAt: null,
+                      tags: [],
+                      imageUrl: null,
+                      rating: null,
+                      reviewCount: null,
+                      inStock: null,
+                      autoShip: null,
+                      freeShipping: null,
+                    );
+
+                    // Add to shopping list
+                    appState.addShoppingItem(customItem);
+                    Navigator.pop(context);
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Added "${customItem.name}" to shopping list')),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Add Item',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
