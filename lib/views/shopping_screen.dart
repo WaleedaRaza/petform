@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/app_state_provider.dart';
+import '../services/chewy_service.dart';
 import '../models/shopping_item.dart';
 import '../widgets/video_background.dart';
 
@@ -20,12 +23,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
   String _selectedPetType = 'All';
   final List<String> _petTypes = [
     'All',
-    'Dogs',
-    'Cats',
-    'Fish',
-    'Birds',
-    'Reptiles',
-    'Small Animals',
+    ...ChewyService.getAvailablePetTypes(),
   ];
 
 
@@ -61,11 +59,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
           videoPath: 'assets/backdrop2.mp4',
           child: Scaffold(
             backgroundColor: Colors.transparent,
-            floatingActionButton: FloatingActionButton(
-              onPressed: () => _showBottomSheetAddItem(appState),
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-              child: const Icon(Icons.add, color: Colors.white),
-            ),
+
             body: Column(
             children: [
               // Header with title
@@ -239,19 +233,20 @@ class _ShoppingScreenState extends State<ShoppingScreen>
   }
 
   Widget _buildBrowseAllTab(AppStateProvider appState) {
-    // Simple placeholder for now - we'll focus on the working add functionality
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.shopping_bag, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text(
-            'Browse products coming soon',
-            style: TextStyle(fontSize: 18, color: Colors.grey),
-          ),
-        ],
+    final allProducts = _selectedPetType == 'All'
+        ? ChewyService.getAllProducts()
+        : ChewyService.getProductsForPetType(_selectedPetType);
+    return ListView.builder(
+      padding: const EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: 100, // Extra padding for bottom navigation
       ),
+      itemCount: allProducts.length,
+      itemBuilder: (context, index) {
+        return _buildSuggestionCard(allProducts[index], appState);
+      },
     );
   }
 
@@ -421,8 +416,8 @@ class _ShoppingScreenState extends State<ShoppingScreen>
         final categories = ['Food', 'Toys', 'Beds', 'Accessories', 'Grooming', 'Treats', 'Hygiene', 'Equipment', 'Housing'];
         final category = categories[index];
         final items = _selectedPetType == 'All'
-            ? ShoppingService.getSuggestionsByCategory(category)
-            : ShoppingService.getProductsForPet(_selectedPetType).where((item) => item.category.toLowerCase() == category.toLowerCase()).toList();
+            ? ChewyService.getProductsByCategory(category)
+            : ChewyService.getProductsForPetType(_selectedPetType).where((item) => item.category.toLowerCase() == category.toLowerCase()).toList();
         return _buildCategoryCard(category, items, appState);
       },
     );
@@ -858,7 +853,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
   }
 
   Widget _buildSearchResults(AppStateProvider appState) {
-    final searchResults = ShoppingService.searchProducts(_searchQuery);
+            final searchResults = ChewyService.searchProducts(_searchQuery);
     
     if (searchResults.isEmpty) {
       return const Center(
