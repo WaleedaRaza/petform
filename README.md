@@ -14,18 +14,6 @@
 
 ## 📱 Screenshots
 
-<div align="center">
-  <img src="lib/Github_pics/IMG_2445.PNG" width="100" alt="PetForm Screenshot 1">
-  <img src="lib/Github_pics/IMG_2447.PNG" width="100" alt="PetForm Screenshot 2">
-  <img src="lib/Github_pics/IMG_2448.PNG" width="100" alt="PetForm Screenshot 3">
-  <img src="lib/Github_pics/IMG_2449.PNG" width="100" alt="PetForm Screenshot 4">
-  <img src="lib/Github_pics/IMG_2450.PNG" width="100" alt="PetForm Screenshot 5">
-  <img src="lib/Github_pics/IMG_2451.PNG" width="100" alt="PetForm Screenshot 6">
-  <img src="lib/Github_pics/IMG_2452.PNG" width="100" alt="PetForm Screenshot 7">
-  <img src="lib/Github_pics/IMG_2453.PNG" width="100" alt="PetForm Screenshot 8">
-  <img src="lib/Github_pics/IMG_2454.PNG" width="100" alt="PetForm Screenshot 9">
-  <img src="lib/Github_pics/IMG_2455.PNG" width="100" alt="PetForm Screenshot 10">
-</div>
 
 ## 📊 Project Overview
 
