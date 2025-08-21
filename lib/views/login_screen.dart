@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
-import '../services/supabase_auth_service.dart';
+import '../services/auth0_jwt_service.dart';
 import 'home_screen.dart';
 import 'forgot_password_screen.dart';
 import 'email_verification_screen.dart';
@@ -19,47 +19,25 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  String _errorMessage = '';
 
-  void _login() async {
-    if (_emailController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
-      return;
-    }
+  Future<void> _signIn() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
 
-    setState(() => _isLoading = true);
     try {
-      final authService = SupabaseAuthService();
-      await authService.signInWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
+      await Auth0JWTService.instance.signIn();
       
-      // Check if email is verified
-      await authService.reloadUser();
-      
-      if (!mounted) return;
-      
-      if (authService.isEmailVerified()) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
-      } else {
-        // Show email verification screen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const EmailVerificationScreen()),
-        );
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/home');
       }
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed: $e')),
-      );
-    } finally {
-      setState(() => _isLoading = false);
+      setState(() {
+        _errorMessage = 'Login failed: $e';
+        _isLoading = false;
+      });
     }
   }
 
@@ -125,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 20),
             _isLoading
                 ? const CircularProgressIndicator()
-                : RoundedButton(text: 'Log In', onPressed: _login),
+                : RoundedButton(text: 'Log In', onPressed: _signIn),
                       const SizedBox(height: 16),
                       TextButton(
                         onPressed: () {

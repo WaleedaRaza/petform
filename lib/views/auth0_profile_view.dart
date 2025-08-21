@@ -45,10 +45,10 @@ class _Auth0ProfileViewState extends State<Auth0ProfileView> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Profile picture
-              if (widget.user.pictureUrl != null)
+                                if (widget.user.pictureUrl != null)
                 CircleAvatar(
                   radius: 50,
-                  backgroundImage: NetworkImage(widget.user.pictureUrl.toString()),
+                                        backgroundImage: NetworkImage(widget.user.pictureUrl.toString()),
                 )
               else
                 CircleAvatar(

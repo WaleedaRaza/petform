@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/supabase_auth_service.dart';
+import '../services/auth0_jwt_service.dart';
 import '../widgets/video_background.dart';
 import '../widgets/rounded_button.dart';
 import 'login_screen.dart';
@@ -13,9 +13,10 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _emailController = TextEditingController();
-  final SupabaseAuthService _authService = SupabaseAuthService();
+  final Auth0JWTService _authService = Auth0JWTService.instance;
   bool _isLoading = false;
   bool _emailSent = false;
+  String _errorMessage = '';
 
   @override
   void dispose() {
@@ -24,34 +25,29 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> _resetPassword() async {
-    if (_emailController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your email address')),
-      );
-      return;
-    }
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
 
-    setState(() => _isLoading = true);
     try {
-      await _authService.resetPassword(_emailController.text.trim());
-      if (!mounted) return;
-      setState(() => _emailSent = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password reset email sent! Check your inbox.'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      // Auth0 handles password reset through Universal Login
+      await Auth0JWTService.instance.resetPassword(_emailController.text.trim());
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password reset instructions sent to your email'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pop();
+      }
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to send reset email: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      setState(() => _isLoading = false);
+      setState(() {
+        _errorMessage = 'Password reset failed: $e';
+        _isLoading = false;
+      });
     }
   }
 

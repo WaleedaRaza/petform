@@ -5,7 +5,7 @@ import '../models/post.dart';
 import '../services/supabase_service.dart';
 import '../providers/user_provider.dart';
 import '../widgets/video_background.dart';
-import '../services/supabase_auth_service.dart';
+import '../services/auth0_jwt_service.dart';
 
 class CommentScreen extends StatefulWidget {
   final Post post;
@@ -32,8 +32,8 @@ class _CommentScreenState extends State<CommentScreen> {
     setState(() => _isLoading = true);
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
-              await SupabaseService.addComment(
+      final userEmail = Auth0JWTService.instance.currentUserEmail ?? 'Anonymous';
+      await SupabaseService.addComment(
           widget.post.id!,
           _commentController.text,
           userEmail,
@@ -52,16 +52,16 @@ class _CommentScreenState extends State<CommentScreen> {
   }
 
   Future<void> _deleteComment(Comment comment) async {
-    final currentUser = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+            final currentUser = Auth0JWTService.instance.currentUserEmail ?? 'Anonymous';
     
     if (kDebugMode) {
       print('CommentScreen._deleteComment: Comment author: ${comment.author}');
       print('CommentScreen._deleteComment: Current user: $currentUser');
-      print('CommentScreen._deleteComment: Supabase Auth email:  [32m [1m${SupabaseAuthService().currentUser?.email} [0m');
+      print('CommentScreen._deleteComment: Auth0 email: ${Auth0JWTService.instance.currentUserEmail}');
     }
     
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+    final userEmail = Auth0JWTService.instance.currentUserEmail ?? 'Anonymous';
     final currentUsername = userProvider.currentUsername ?? userEmail.split('@')[0];
     
     // Only allow deletion if the user is the author of the comment
@@ -145,7 +145,7 @@ class _CommentScreenState extends State<CommentScreen> {
                     itemBuilder: (context, index) {
                       final comment = post.comments[index];
                       final userProvider = Provider.of<UserProvider>(context, listen: false);
-                      final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+                                              final userEmail = Auth0JWTService.instance.currentUserEmail ?? 'Anonymous';
                       final currentUsername = userProvider.currentUsername ?? userEmail.split('@')[0];
                       final isAuthor = comment.author == currentUsername;
                       
@@ -153,7 +153,7 @@ class _CommentScreenState extends State<CommentScreen> {
                         print('CommentScreen: Comment author: ${comment.author}');
                         print('CommentScreen: Current user: $currentUsername');
                         print('CommentScreen: Is author: $isAuthor');
-                        print('CommentScreen: Supabase Auth email: ${SupabaseAuthService().currentUser?.email}');
+                                                    print('CommentScreen: Auth0 email: ${Auth0JWTService.instance.currentUserEmail}');
                       }
                       
                       return Card(

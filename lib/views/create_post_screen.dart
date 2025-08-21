@@ -7,7 +7,7 @@ import '../widgets/rounded_button.dart';
 import '../widgets/video_background.dart';
 import '../models/pet_types.dart';
 import '../models/post.dart';
-import '../services/supabase_auth_service.dart';
+import '../services/auth0_jwt_service.dart';
 import '../services/supabase_service.dart';
 
 class CreatePostScreen extends StatefulWidget {
@@ -51,7 +51,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       setState(() => _isLoading = true);
       try {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
-        final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+                    final userEmail = Auth0JWTService.instance.currentUserEmail ?? 'Anonymous';
         final username = userProvider.currentUsername ?? userEmail.split('@')[0];
 
         if (widget.postToEdit != null && widget.postToEdit!.id != null) {
@@ -110,122 +110,82 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Pet Type dropdown
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.teal.withOpacity(0.3)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: DropdownButtonFormField<String>(
-                  value: _selectedPetType,
-                  dropdownColor: const Color(0xFF1A1A1A),
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedPetType,
                   decoration: InputDecoration(
-                    labelText: 'Pet Type',
-                    labelStyle: const TextStyle(
-                      color: Colors.teal,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                  labelText: 'Pet Type',
+                    labelStyle: const TextStyle(color: Colors.grey),
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey[700]!),
                     ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.all(20),
-                    prefixIcon: const Icon(Icons.pets, color: Colors.teal, size: 20),
-                  ),
-                  items: _petTypes.map((type) {
-                    return DropdownMenuItem(
-                      value: type, 
-                      child: Text(type, style: const TextStyle(color: Colors.white))
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedPetType = value!;
-                    });
-                  },
-                  validator: (value) => value == null ? 'Please select a pet type' : null,
-                ),
-                              ),
-                const SizedBox(height: 20),
-                // Title field
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey[700]!),
                     ),
-                  ],
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey[600]!),
+                    ),
+                  filled: true,
+                    fillColor: Colors.grey[800],
                 ),
-                child: TextFormField(
-                  controller: _titleController,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  dropdownColor: Colors.grey[800],
+                  style: const TextStyle(color: Colors.white),
+                items: _petTypes.map((type) {
+                  return DropdownMenuItem(value: type, child: Text(type));
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedPetType = value!;
+                  });
+                },
+                validator: (value) => value == null ? 'Please select a pet type' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _titleController,
+                  style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: 'Title',
-                    labelStyle: const TextStyle(
-                      color: Colors.orange,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                  labelText: 'Title',
+                    labelStyle: const TextStyle(color: Colors.grey),
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey[700]!),
                     ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.all(20),
-                    hintText: 'Enter post title...',
-                    hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                    prefixIcon: const Icon(Icons.title, color: Colors.orange, size: 20),
-                  ),
-                  validator: (value) =>
-                      value == null || value.trim().isEmpty ? 'Please enter a title' : null,
-                ),
-                              ),
-                const SizedBox(height: 20),
-                // Content field
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.purple.withOpacity(0.3)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey[700]!),
                     ),
-                  ],
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey[600]!),
+                    ),
+                  filled: true,
+                    fillColor: Colors.grey[800],
                 ),
-                child: TextFormField(
-                  controller: _contentController,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                validator: (value) =>
+                    value == null || value.trim().isEmpty ? 'Please enter a title' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _contentController,
+                  style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: 'Content',
-                    labelStyle: const TextStyle(
-                      color: Colors.purple,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                  labelText: 'Content',
+                    labelStyle: const TextStyle(color: Colors.grey),
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey[700]!),
                     ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.all(20),
-                    hintText: 'Write your post content...',
-                    hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                    prefixIcon: const Icon(Icons.edit_note, color: Colors.purple, size: 20),
-                  ),
-                  maxLines: 5,
-                  validator: (value) =>
-                      value == null || value.trim().isEmpty ? 'Please enter content' : null,
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey[700]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.grey[600]!),
+                    ),
+                  filled: true,
+                    fillColor: Colors.grey[800],
                 ),
-                              ),
-                const SizedBox(height: 20),
-                _isLoading
+                maxLines: 5,
+                validator: (value) =>
+                    value == null || value.trim().isEmpty ? 'Please enter content' : null,
+              ),
+              const SizedBox(height: 16),
+              _isLoading
                   ? const Center(child: CircularProgressIndicator())
                     : RoundedButton(
                         text: widget.postToEdit != null ? 'Update Post' : 'Submit Post',

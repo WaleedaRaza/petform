@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:auth0_flutter/auth0_flutter.dart';
-import '../services/auth0_service.dart';
+import '../services/auth0_jwt_service.dart';
 import '../widgets/rounded_button.dart';
 
 class EmailVerificationRequiredScreen extends StatefulWidget {
@@ -174,13 +174,15 @@ class _EmailVerificationRequiredScreenState extends State<EmailVerificationRequi
       }
 
       // Force a fresh sign in to check verification status
-      final result = await Auth0Service.instance.signIn();
+                final credentials = await Auth0JWTService.instance.signIn();
       
       if (kDebugMode) {
-        print('EmailVerificationRequiredScreen: Email verified: ${result.user.isEmailVerified}');
+        print('EmailVerificationRequiredScreen: Auth0 sign in successful');
+        print('EmailVerificationRequiredScreen: User: ${Auth0JWTService.instance.currentUser?.email}');
+        print('EmailVerificationRequiredScreen: Email verified: ${Auth0JWTService.instance.isEmailVerified}');
       }
 
-      if (result.user.isEmailVerified ?? false) {
+      if (Auth0JWTService.instance.isEmailVerified) {
         if (kDebugMode) {
           print('EmailVerificationRequiredScreen: Email verified, proceeding to app');
         }
@@ -227,7 +229,7 @@ class _EmailVerificationRequiredScreenState extends State<EmailVerificationRequi
 
   Future<void> _signOut() async {
     try {
-      await Auth0Service.instance.signOut();
+      await Auth0JWTService.instance.signOut();
       if (!mounted) return;
       
       Navigator.of(context).pushReplacementNamed('/');

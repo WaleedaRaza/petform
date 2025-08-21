@@ -306,65 +306,24 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Add Entry for ${metric.name}',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        title: Text('Add Entry for ${metric.name}'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: TextField(
-                controller: controller,
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Value',
-                  labelStyle: const TextStyle(
-                    color: Colors.blue,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(20),
-                  hintText: 'Enter value...',
-                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                  prefixIcon: const Icon(Icons.add_chart, color: Colors.blue, size: 20),
-                ),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Value',
+                border: const OutlineInputBorder(),
               ),
             ),
           ],
         ),
         actions: [
-          OutlinedButton(
+          TextButton(
             onPressed: () => Navigator.pop(context),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              side: const BorderSide(color: Colors.grey, width: 1.5),
-            ),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey,
-              ),
-            ),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -374,21 +333,7 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
                 Navigator.pop(context);
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 4,
-              shadowColor: Colors.blue.withOpacity(0.3),
-            ),
-            child: const Text(
-              'Add',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+            child: const Text('Add'),
           ),
         ],
       ),
@@ -406,53 +351,20 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Delete Metric',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          'Are you sure you want to delete "${metric.name}"?',
-          style: const TextStyle(color: Colors.white, fontSize: 16),
-        ),
+        title: const Text('Delete Metric'),
+        content: Text('Are you sure you want to delete "${metric.name}"?'),
         actions: [
-          OutlinedButton(
+          TextButton(
             onPressed: () => Navigator.pop(context),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              side: const BorderSide(color: Colors.grey, width: 1.5),
-            ),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey,
-              ),
-            ),
+            child: const Text('Cancel'),
           ),
-          ElevatedButton(
+          TextButton(
             onPressed: () {
               _deleteMetric(metric);
               Navigator.pop(context);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 4,
-              shadowColor: Colors.red.withOpacity(0.3),
-            ),
-            child: const Text(
-              'Delete',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -495,159 +407,54 @@ class _AddMetricDialogState extends State<_AddMetricDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: const Color(0xFF1E1E1E),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: const Text(
-        'Add Tracking Metric',
-        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-      ),
+      title: const Text('Add Tracking Metric'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Metric Name field
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: TextField(
-                controller: _nameController,
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-                decoration: InputDecoration(
-                  labelText: 'Metric Name',
-                  labelStyle: const TextStyle(
-                    color: Colors.orange,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(20),
-                  hintText: 'e.g., Weight Check, Exercise Time',
-                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                  prefixIcon: const Icon(Icons.track_changes, color: Colors.orange, size: 20),
-                ),
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Metric Name',
+                border: OutlineInputBorder(),
+                hintText: 'e.g., Weight Check, Exercise Time',
               ),
             ),
-            const SizedBox(height: 20),
-            
-            // Frequency dropdown
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.teal.withOpacity(0.3)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              decoration: const InputDecoration(
+                labelText: 'Frequency',
+                border: OutlineInputBorder(),
               ),
-              child: DropdownButtonFormField<String>(
-                dropdownColor: const Color(0xFF1A1A1A),
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-                decoration: InputDecoration(
-                  labelText: 'Frequency',
-                  labelStyle: const TextStyle(
-                    color: Colors.teal,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(20),
-                  prefixIcon: const Icon(Icons.schedule, color: Colors.teal, size: 20),
-                ),
-                value: _selectedFrequency,
-                items: [
-                  DropdownMenuItem(value: 'daily', child: Text('Daily', style: TextStyle(color: Colors.white))),
-                  DropdownMenuItem(value: 'weekly', child: Text('Weekly', style: TextStyle(color: Colors.white))),
-                  DropdownMenuItem(value: 'monthly', child: Text('Monthly', style: TextStyle(color: Colors.white))),
-                ],
-                onChanged: (value) => setState(() => _selectedFrequency = value!),
-              ),
+              value: _selectedFrequency,
+              items: [
+                DropdownMenuItem(value: 'daily', child: Text('Daily')),
+                DropdownMenuItem(value: 'weekly', child: Text('Weekly')),
+                DropdownMenuItem(value: 'monthly', child: Text('Monthly')),
+              ],
+              onChanged: (value) => setState(() => _selectedFrequency = value!),
             ),
-            const SizedBox(height: 20),
-            
-            // Target Value field
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.pink.withOpacity(0.3)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: TextField(
-                controller: _targetValueController,
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Target Value',
-                  labelStyle: const TextStyle(
-                    color: Colors.pink,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(20),
-                  hintText: 'e.g., 50.0',
-                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                  prefixIcon: const Icon(Icons.flag, color: Colors.pink, size: 20),
-                ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _targetValueController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Target Value',
+                border: OutlineInputBorder(),
+                hintText: 'e.g., 50.0',
               ),
             ),
           ],
         ),
       ),
       actions: [
-        OutlinedButton(
+        TextButton(
           onPressed: () => Navigator.pop(context),
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            side: const BorderSide(color: Colors.grey, width: 1.5),
-          ),
-          child: const Text(
-            'Cancel',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey,
-            ),
-          ),
+          child: const Text('Cancel'),
         ),
         ElevatedButton(
           onPressed: _createMetric,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.orange,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            elevation: 4,
-            shadowColor: Colors.orange.withOpacity(0.3),
-          ),
-          child: const Text(
-            'Add',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
+          child: const Text('Add'),
         ),
       ],
     );

@@ -9,7 +9,7 @@ import '../providers/app_state_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/feed_provider.dart';
 import '../services/api_service.dart';
-import '../services/supabase_auth_service.dart';
+import '../services/auth0_jwt_service.dart';
 import '../services/supabase_service.dart';
 import '../widgets/video_background.dart';
 import 'create_post_screen.dart';
@@ -42,7 +42,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       final feedProvider = Provider.of<FeedProvider>(context, listen: false);
       
       // Use SupabaseService for adding comments
-      final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+      final userEmail = Auth0JWTService.instance.currentUserEmail ?? 'Anonymous';
       final username = userProvider.currentUsername ?? userEmail.split('@')[0];
       
       await SupabaseService.createComment(
@@ -78,7 +78,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Future<void> _deleteComment(Comment comment) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+    final userEmail = Auth0JWTService.instance.currentUserEmail ?? 'Anonymous';
     final currentUsername = userProvider.currentUsername ?? userEmail.split('@')[0];
     
     // Only allow deletion if the user is the author of the comment
@@ -142,7 +142,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Future<void> _deletePost(Post post) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+                              final userEmail = Auth0JWTService.instance.currentUserEmail ?? 'Anonymous';
     final currentUsername = userProvider.currentUsername ?? userEmail.split('@')[0];
     
     // Only allow deletion if the user is the author of the post
@@ -229,7 +229,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             if (post.postType == 'community') ...[
               if (() {
                 final userProvider = Provider.of<UserProvider>(context, listen: false);
-                final email = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+                                    final email = Auth0JWTService.instance.currentUserEmail ?? 'Anonymous';
                 final name = userProvider.currentUsername ?? email.split('@')[0];
                 return post.author == name;
               }()) ...[
@@ -467,7 +467,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   else
                     ...post.comments.map((comment) {
                       final userProvider = Provider.of<UserProvider>(context, listen: false);
-                      final userEmail = SupabaseAuthService().currentUser?.email ?? 'Anonymous';
+                      final userEmail = Auth0JWTService.instance.currentUserEmail ?? 'Anonymous';
                       final currentUsername = userProvider.currentUsername ?? userEmail.split('@')[0];
                       final isAuthor = comment.author == currentUsername;
                       

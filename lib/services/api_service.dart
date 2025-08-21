@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/supabase_auth_service.dart';
+import '../services/auth0_jwt_service.dart';
 import '../models/pet.dart';
 import '../models/post.dart';
 import 'package:http/http.dart' as http;
@@ -86,17 +86,17 @@ class ApiService {
     return 'user_$baseKey';
   }
 
-  // Helper method to get current user email from Firebase Auth
+  // Helper method to get current user email from Auth0
   Future<String?> _getCurrentUserEmail() async {
-    final user = SupabaseAuthService().currentUser;
+    final user = Auth0JWTService.instance.currentUser;
     if (user == null) {
       if (kDebugMode) {
-        print('ApiService._getCurrentUserEmail: No Firebase user found');
+        print('ApiService._getCurrentUserEmail: No Auth0 user found');
       }
       return null;
     }
     if (kDebugMode) {
-      print('ApiService._getCurrentUserEmail: Found Firebase user: ${user.email}');
+      print('ApiService._getCurrentUserEmail: Found Auth0 user: ${user.email}');
     }
     return user.email;
   }

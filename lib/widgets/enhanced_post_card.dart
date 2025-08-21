@@ -6,7 +6,7 @@ import '../models/post.dart';
 import '../views/post_detail_screen.dart';
 import '../views/comment_screen.dart';
 import '../services/supabase_service.dart';
-import '../services/supabase_auth_service.dart';
+import '../services/auth0_jwt_service.dart';
 import 'package:flutter/foundation.dart';
 import '../providers/feed_provider.dart';
 import '../providers/user_provider.dart';
@@ -422,14 +422,14 @@ class EnhancedPostCard extends StatelessWidget {
 
   String _getCurrentUserEmail(BuildContext context) {
     // Get current user email from Supabase Auth
-    final user = SupabaseAuthService().currentUser;
+            final user = Auth0JWTService.instance.currentUser;
     return user?.email ?? 'Anonymous';
   }
 
   String _getCurrentUsername(BuildContext context) {
     // Prefer the app's display name/username; fallback to email username part
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final email = SupabaseAuthService().currentUser?.email;
+            final email = Auth0JWTService.instance.currentUserEmail;
     return userProvider.currentUsername ?? (email != null ? email.split('@').first : 'Anonymous');
   }
 

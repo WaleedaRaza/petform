@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/app_state_provider.dart';
-import '../services/auth0_service.dart';
+import '../services/auth0_jwt_service.dart';
 import '../widgets/status_bar.dart';
 import '../widgets/video_background.dart';
 import 'community_feed_screen.dart';
@@ -136,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (kDebugMode) {
         print('HomeScreen: Signing out from Auth0...');
       }
-      await Auth0Service.instance.signOut();
+                await Auth0JWTService.instance.signOut();
 
       // Clear user provider and app state
       final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -170,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
     print('HomeScreen: Building home screen'); // Simple debug print
     
     // Check only Auth0 authentication
-    final auth0User = Auth0Service.instance.currentUser;
+    final auth0User = Auth0JWTService.instance.currentUser;
     final isLoggedIn = auth0User != null;
     
     if (!isLoggedIn) {

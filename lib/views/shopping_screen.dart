@@ -21,6 +21,7 @@ class _ShoppingScreenState extends State<ShoppingScreen>
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedPetType = 'All';
+
   final List<String> _petTypes = [
     'All',
     ...ChewyService.getAvailablePetTypes(),
@@ -60,9 +61,9 @@ class _ShoppingScreenState extends State<ShoppingScreen>
           videoPath: 'lib/assets/backdrop2.mp4',
           child: Scaffold(
             backgroundColor: Colors.transparent,
-
-                        body: Column(
+            body: Column(
               children: [
+
 
                 // Header with title
                 Padding(
@@ -70,109 +71,53 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title and Add Custom Item Button on same row
-                    Row(
-                      children: [
-                        Text(
-                          'Shopping',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                                                const Spacer(),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(28),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Container(
-                            width: 120,
-                            height: 56,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Colors.teal.shade600,
-                                  Colors.pink.shade600,
-                                  Colors.orange.shade600,
-                                ],
-                                stops: const [0.0, 0.5, 1.0],
-                              ),
-                              borderRadius: BorderRadius.circular(28),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.4),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(28),
-                                onTap: () {
-                                  print('BUTTON TAPPED!');
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('BUTTON WORKING!')),
-                                  );
-                                  _showQuickAddBottomSheet(appState);
-                                },
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(Icons.add_shopping_cart, color: Colors.white, size: 24),
-                                    const SizedBox(width: 8),
-                                    const Text(
-                                      'Add Item',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    // Title only - Add button moved to floating action button
+                    Text(
+                      'Shopping',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    // Pet type filter dropdown
+                    // See-through button with white text and border
                     Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: DropdownButtonFormField<String>(
-                        value: _selectedPetType,
-                        decoration: InputDecoration(
-                          labelText: 'Pet Type',
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        ),
-                        dropdownColor: Theme.of(context).colorScheme.surface,
-                        items: _petTypes.map((String type) {
-                          return DropdownMenuItem<String>(
-                            value: type,
-                            child: Text(type),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            _selectedPetType = newValue!;
-                          });
+                      width: double.infinity,
+                      height: 56,
+                      child: RawMaterialButton(
+                        onPressed: () {
+                          print('🔥🔥🔥 RAW MATERIAL BUTTON PRESSED! 🔥🔥🔥');
+                          _showAddItemPage(context, appState);
                         },
+                        fillColor: Colors.transparent,
+                        elevation: 0,
+                        highlightElevation: 0,
+                        splashColor: Colors.white.withOpacity(0.1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: const BorderSide(
+                            color: Colors.white,
+                            width: 2,
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_shopping_cart,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Add Custom Item',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -1432,6 +1377,16 @@ class _ShoppingScreenState extends State<ShoppingScreen>
     }
   }
 
+  // Full-screen Add Item page matching Create Post style
+  void _showAddItemPage(BuildContext context, AppStateProvider appState) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _AddItemPage(appState: appState),
+      ),
+    );
+  }
+
   // COMPLETELY NEW APPROACH: Quick Add Bottom Sheet
   void _showQuickAddBottomSheet(AppStateProvider appState) {
     print('FUNCTION CALLED!');
@@ -1496,136 +1451,88 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                                             // Name field
                       Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1A1A1A),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          color: const Color(0xFF2A2A2A),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[700]!),
                         ),
                         child: TextField(
                           controller: nameController,
                           style: const TextStyle(color: Colors.white, fontSize: 16),
                           decoration: InputDecoration(
                             labelText: 'Item Name *',
-                            labelStyle: const TextStyle(
-                              color: Colors.orange,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
+                            labelStyle: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 16),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.all(20),
                             hintText: 'Enter item name...',
-                            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                            prefixIcon: const Icon(Icons.shopping_bag, color: Colors.orange, size: 20),
+                            hintStyle: TextStyle(color: Colors.grey[600]),
                           ),
                           autofocus: true,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
                       
                                             // Category field
                       Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1A1A1A),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.teal.withOpacity(0.3)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          color: const Color(0xFF2A2A2A),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[700]!),
                         ),
                         child: TextField(
                           controller: categoryController,
                           style: const TextStyle(color: Colors.white, fontSize: 16),
                           decoration: InputDecoration(
                             labelText: 'Category',
-                            labelStyle: const TextStyle(
-                              color: Colors.teal,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
+                            labelStyle: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 16),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.all(20),
                             hintText: 'Food, Toys, etc.',
-                            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                            prefixIcon: const Icon(Icons.category, color: Colors.teal, size: 20),
+                            hintStyle: TextStyle(color: Colors.grey[600]),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
                       
                       // Price field
                       Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1A1A1A),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.pink.withOpacity(0.3)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          color: const Color(0xFF2A2A2A),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[700]!),
                         ),
                         child: TextField(
                           controller: priceController,
                           style: const TextStyle(color: Colors.white, fontSize: 16),
                           decoration: InputDecoration(
                             labelText: 'Price (Optional)',
-                            labelStyle: const TextStyle(
-                              color: Colors.pink,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
+                            labelStyle: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 16),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.all(20),
                             hintText: 'e.g., \$29.99',
-                            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                            prefixIcon: const Icon(Icons.attach_money, color: Colors.pink, size: 20),
+                            hintStyle: TextStyle(color: Colors.grey[600]),
                           ),
                           keyboardType: TextInputType.number,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
                       
                       // Link field
                       Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1A1A1A),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.purple.withOpacity(0.3)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          color: const Color(0xFF2A2A2A),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[700]!),
                         ),
                         child: TextField(
                           controller: linkController,
                           style: const TextStyle(color: Colors.white, fontSize: 16),
                           decoration: InputDecoration(
                             labelText: 'Link (Optional)',
-                            labelStyle: const TextStyle(
-                              color: Colors.purple,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
+                            labelStyle: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 16),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.all(20),
                             hintText: 'https://...',
-                            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                            prefixIcon: const Icon(Icons.link, color: Colors.purple, size: 20),
+                            hintStyle: TextStyle(color: Colors.grey[600]),
                           ),
                           keyboardType: TextInputType.url,
                         ),
@@ -1645,19 +1552,14 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                       child: OutlinedButton(
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          side: const BorderSide(color: Colors.grey, width: 1.5),
                         ),
                         child: const Text(
                           'Cancel',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(fontSize: 16),
                         ),
                       ),
                     ),
@@ -1721,12 +1623,10 @@ class _ShoppingScreenState extends State<ShoppingScreen>
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange,
-                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          elevation: 4,
-                          shadowColor: Colors.orange.withOpacity(0.3),
                         ),
                         child: const Text(
                           'Add Item',
@@ -1744,6 +1644,276 @@ class _ShoppingScreenState extends State<ShoppingScreen>
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// Full-screen Add Item page matching Create Post style
+class _AddItemPage extends StatefulWidget {
+  final AppStateProvider appState;
+
+  const _AddItemPage({required this.appState});
+
+  @override
+  State<_AddItemPage> createState() => _AddItemPageState();
+}
+
+class _AddItemPageState extends State<_AddItemPage> {
+  final _nameController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _linkController = TextEditingController();
+  final _notesController = TextEditingController();
+  String _selectedCategory = 'Food';
+  
+  final List<String> _categories = [
+    'Food', 'Toys', 'Beds', 'Accessories', 'Grooming', 
+    'Treats', 'Hygiene', 'Equipment', 'Housing'
+  ];
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _priceController.dispose();
+    _linkController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return VideoBackground(
+      videoPath: 'lib/assets/backdrop2.mp4',
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: const Text(
+            'Add Custom Item',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Category Dropdown
+            const Text(
+              'Category',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2A2A2A),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedCategory,
+                  dropdownColor: const Color(0xFF2A2A2A),
+                  icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  items: _categories.map((category) {
+                    return DropdownMenuItem(
+                      value: category,
+                      child: Text(category),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedCategory = value!;
+                    });
+                  },
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Item Name
+            _buildTextField(
+              controller: _nameController,
+              label: 'Item Name',
+              hint: 'Enter item name...',
+              required: true,
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Price
+            _buildTextField(
+              controller: _priceController,
+              label: 'Price (Optional)',
+              hint: 'e.g., 29.99',
+              keyboardType: TextInputType.number,
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Link
+            _buildTextField(
+              controller: _linkController,
+              label: 'Link (Optional)',
+              hint: 'https://...',
+              keyboardType: TextInputType.url,
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Notes
+            _buildTextField(
+              controller: _notesController,
+              label: 'Notes',
+              hint: 'Additional details...',
+              maxLines: 2,
+            ),
+            
+            const SizedBox(height: 40),
+            
+            // Submit Button
+            Container(
+              width: double.infinity,
+              height: 56,
+              child: RawMaterialButton(
+                onPressed: _submitItem,
+                fillColor: Colors.white,
+                elevation: 0,
+                highlightElevation: 2,
+                splashColor: Colors.grey.withOpacity(0.2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: const Text(
+                  'Add to Shopping List',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    bool required = false,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          required ? '$label *' : label,
+          style: TextStyle(
+            color: required ? Colors.white : Colors.grey,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF2A2A2A),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.withOpacity(0.3)),
+          ),
+          child: TextField(
+            controller: controller,
+            keyboardType: keyboardType,
+            maxLines: maxLines,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: Colors.grey[600]),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(16),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _submitItem() {
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter an item name'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Parse price if provided
+    double? estimatedCost;
+    if (_priceController.text.trim().isNotEmpty) {
+      final priceText = _priceController.text.trim().replaceAll(RegExp(r'[^\d.]'), '');
+      if (priceText.isNotEmpty) {
+        estimatedCost = double.tryParse(priceText);
+      }
+    }
+
+    // Create shopping item
+    final customItem = ShoppingItem(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: _nameController.text.trim(),
+      category: _selectedCategory,
+      priority: 'Medium',
+      estimatedCost: estimatedCost ?? 0.0,
+      brand: null,
+      store: 'Custom',
+      quantity: 1,
+      notes: _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
+      chewyUrl: _linkController.text.trim().isNotEmpty ? _linkController.text.trim() : null,
+      isCompleted: false,
+      createdAt: DateTime.now(),
+      completedAt: null,
+      tags: [],
+      imageUrl: null,
+      rating: null,
+      reviewCount: null,
+      inStock: null,
+      autoShip: null,
+      freeShipping: null,
+    );
+
+    // Add to shopping list
+    widget.appState.addShoppingItem(customItem);
+    Navigator.pop(context);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('✅ Added "${customItem.name}" to shopping list'),
+        backgroundColor: Colors.green,
       ),
     );
   }

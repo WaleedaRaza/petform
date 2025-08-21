@@ -18,7 +18,7 @@ import 'edit_pet_screen.dart';
 import '../widgets/rounded_button.dart';
 import 'post_detail_screen.dart';
 import 'saved_posts_screen.dart';
-import '../services/auth0_service.dart';
+import '../services/auth0_jwt_service.dart';
 import '../services/supabase_service.dart';
 import 'user_detail_screen.dart';
 // import 'clerk_test_screen.dart';
@@ -31,7 +31,7 @@ class ProfileSettingsScreen extends StatefulWidget {
 }
 
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
-  final Auth0Service _auth0Service = Auth0Service.instance;
+  // Auth0 service replaced with Supabase auth service
   bool _isLoading = false;
 
   Future<List<Post>> _loadUserPosts(String authorName) async {
@@ -65,7 +65,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
-    final currentUser = Auth0Service.instance.currentUser;
+            final currentUser = Auth0JWTService.instance.currentUser;
     final userEmail = currentUser?.email ?? 'N/A';
     final userDisplayName = userProvider.currentUsername ?? userEmail; // Use stored username
 
@@ -507,7 +507,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                           if (kDebugMode) {
                             print('ProfileSettingsScreen: Signing out from Auth0...');
                           }
-                          await Auth0Service.instance.signOut();
+                          await Auth0JWTService.instance.signOut();
 
                           // Clear user provider
                           final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -638,7 +638,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                 });
                                 
                                 // ACTUALLY DELETE THE ACCOUNT AND DATA
-                                final success = await SupabaseService.deleteAuth0UserAccount();
+                                final success = await SupabaseService.deleteCurrentUserAccount();
                                 
                                 if (success) {
                                   if (kDebugMode) {
@@ -654,8 +654,67 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                   
                                   if (!mounted) return;
                                   
-                                  // Sign out from Auth0
-                                  await Auth0Service.instance.signOut();
+                                  // Show Auth0 deletion instructions
+                                  final auth0Result = await Auth0JWTService.instance.deleteAuth0Account();
+                                  
+                                  if (!mounted) return;
+                                  
+                                  // Show simple success dialog
+                                  await showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (context) => AlertDialog(
+                                      title: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.check_circle,
+                                            color: Colors.green,
+                                            size: 28,
+                                          ),
+                                          const SizedBox(width: 12),
+                                          const Text('Account Deleted'),
+                                        ],
+                                      ),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            auth0Result['message'] as String? ?? 'Your Petform account has been completely deleted.',
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            auth0Result['note'] as String? ?? 'You have been signed out and all your data has been permanently removed.',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                            Navigator.pushReplacement(
+                                              context,
+                                              MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+                                            );
+                                          },
+                                          style: TextButton.styleFrom(
+                                            backgroundColor: Colors.green,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                          ),
+                                          child: const Text('Continue'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
                                   
                                   // Navigate to welcome screen
                                   Navigator.pushReplacement(
@@ -1071,8 +1130,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     // Get current display name from user profile
     final userProfile = await SupabaseService.getUserProfile();
     final currentDisplayName = userProfile?['display_name'] ?? 
-                              Auth0Service.instance.currentUser?.nickname ?? 
-                              Auth0Service.instance.currentUser?.name ?? 
+                                                                        Auth0JWTService.instance.currentUsername ??
+        Auth0JWTService.instance.currentDisplayName ??  
                               'User';
     
     final controller = TextEditingController(text: currentDisplayName);

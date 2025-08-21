@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../services/supabase_service.dart';
+import '../services/auth0_jwt_service.dart'; // Added import for Auth0JWTService
 
 class UserProvider with ChangeNotifier {
   String? _currentUserId;
@@ -48,7 +49,7 @@ class UserProvider with ChangeNotifier {
   Future<void> reserveUsername(String username, String userId, String email) async {
     try {
       // Check if user is currently logged in
-      final currentUser = SupabaseService.client.auth.currentUser;
+      final currentUser = Auth0JWTService.instance.currentUser;
       if (currentUser == null) {
         if (kDebugMode) {
           print('UserProvider: No user logged in, skipping profile creation. Email confirmation may be required.');
@@ -134,6 +135,22 @@ class UserProvider with ChangeNotifier {
         print('UserProvider: Error updating profile: $e');
       }
       rethrow;
+    }
+  }
+
+  Future<void> loadCurrentUser() async {
+    try {
+      final currentUser = Auth0JWTService.instance.currentUser;
+      if (currentUser != null) {
+        _currentUserId = currentUser.sub;
+        _currentUsername = currentUser.nickname ?? currentUser.name;
+        _currentEmail = currentUser.email;
+        notifyListeners();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('UserProvider: Error loading current user: $e');
+      }
     }
   }
 }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/video_background.dart';
-import '../services/auth0_service.dart';
+import '../services/auth0_jwt_service.dart';
 import '../services/supabase_service.dart';
+
 import '../providers/user_provider.dart';
 import '../providers/app_state_provider.dart';
 import 'package:provider/provider.dart';
@@ -64,20 +66,20 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     
     try {
       // Check if user is authenticated with Auth0
-      final auth0User = Auth0Service.instance.currentUser;
+      final auth0User = Auth0JWTService.instance.currentUser;
       
       if (kDebugMode) {
         print('WelcomeScreen: Auth0 user: ${auth0User?.email}');
       }
       
-      // If user is authenticated with Auth0, check email verification
+      // If user is authenticated with Auth0, authenticate with Supabase
       if (auth0User != null) {
         if (kDebugMode) {
-          print('WelcomeScreen: Auth0 user is authenticated, checking email verification');
+          print('WelcomeScreen: Supabase user is authenticated, checking email verification');
         }
         
         // Check if email verification is required and user is verified
-        if (Auth0Service.instance.requiresEmailVerification && !Auth0Service.instance.isEmailVerified) {
+        if (!Auth0JWTService.instance.isEmailVerified) {
           if (kDebugMode) {
             print('WelcomeScreen: Email not verified, showing verification required screen');
           }
@@ -86,7 +88,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => EmailVerificationRequiredScreen(user: auth0User!),
+                builder: (context) => EmailVerificationRequiredScreen(user: auth0User),
               ),
             );
           }
@@ -94,11 +96,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         }
         
         if (kDebugMode) {
-          print('WelcomeScreen: Auth0 user is authenticated and verified, preparing user context');
+          print('WelcomeScreen: Auth0 user is authenticated, authenticating with Supabase');
         }
 
-        // Ensure UserProvider has a persistent display name/username for this session
+        // For now, we'll use Auth0 user directly without Supabase authentication
+        // In production, you'd want to create a proper Supabase user mapping
         try {
+          if (kDebugMode) {
+            print('WelcomeScreen: Using Auth0 user directly: ${auth0User.email}');
+          }
+
+          // Create a mock Supabase user ID for now
+          final mockSupabaseUserId = 'auth0_${auth0User.sub}';
+          
           final username = await SupabaseService.getOrCreateUsername(
             auth0User.email ?? '',
             auth0User.nickname ?? auth0User.name,
@@ -115,7 +125,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             final appStateProvider = Provider.of<AppStateProvider>(context, listen: false);
             
             userProvider.setCurrentUser(
-              auth0User.sub,
+              mockSupabaseUserId,
               savedDisplayName,
               auth0User.email ?? '',
             );
@@ -124,8 +134,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           }
         } catch (e) {
           if (kDebugMode) {
-            print('WelcomeScreen: Failed to prepare user context: $e');
+            print('WelcomeScreen: Failed to setup user context: $e');
           }
+          rethrow;
         }
 
         if (kDebugMode) {
@@ -151,8 +162,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           // Force clear all app state data
           await appStateProvider.clearAllUserData();
           
-          // Force clear Auth0 local state
-          await Auth0Service.instance.forceClearAllData();
+                  // Force clear Auth0 local state
+        await Auth0JWTService.instance.signOut();
           
           // Force clear any local storage
           await SupabaseService.clearAllLocalData();
@@ -191,42 +202,58 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         print('WelcomeScreen: Starting Auth0 Universal Login...');
       }
 
-      // Auth0 Universal Login handles both signup and login automatically
-      final result = await Auth0Service.instance.signIn();
+      // Use Auth0 JWT-based authentication
+      final credentials = await Auth0JWTService.instance.signIn();
 
       if (!mounted || _hasNavigated) return;
 
+      // For now, we'll use Auth0 user directly
+      final auth0User = Auth0JWTService.instance.currentUser;
+      if (auth0User == null) {
+        throw Exception('Authentication failed - no Auth0 user found');
+      }
+
+      if (kDebugMode) {
+        print('WelcomeScreen: Auth0 user authenticated: ${auth0User.email}');
+        print('WelcomeScreen: Auth0 user ID: ${auth0User.sub}');
+      }
+
       // Get or create username and load saved display name
       final username = await SupabaseService.getOrCreateUsername(
-        result.user.email ?? '',
-        result.user.nickname ?? result.user.name,
+        auth0User.email ?? '',
+        auth0User.nickname ?? auth0User.name,
       );
       
       // Get user profile to load saved display name
       final userProfile = await SupabaseService.getUserProfile();
-      final savedDisplayName = userProfile?['display_name'] ?? username ?? result.user.nickname ?? result.user.name ?? result.user.email?.split('@')[0] ?? 'user';
+      final savedDisplayName = userProfile?['display_name'] ?? 
+                              username ?? 
+                              auth0User.nickname ?? 
+                              auth0User.name ?? 
+                              auth0User.email?.split('@')[0] ?? 
+                              'user';
       
       // Clear any cached data from previous user and set new user
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final appStateProvider = Provider.of<AppStateProvider>(context, listen: false);
       
       userProvider.setCurrentUser(
-        result.user.sub,
+        'auth0_${auth0User.sub}', // Mock Supabase user ID
         savedDisplayName,
-        result.user.email ?? '',
+        auth0User.email ?? '',
       );
       // Refresh app state for new user (clears old data and loads new)
       await appStateProvider.refreshForNewUser();
 
       if (kDebugMode) {
-        print('Auth0 login/signup successful');
-        print('Auth0 user: ${result.user.email}');
-        print('Auth0 user ID: ${result.user.sub}');
-        print('Email verified: ${result.user.isEmailVerified}');
+        print('Auth0 JWT + Supabase login/signup successful');
+        print('Auth0 user: ${auth0User.email}');
+        print('Auth0 user ID: ${auth0User.sub}');
+        print('Email verified: ${Auth0JWTService.instance.isEmailVerified}');
       }
 
       // Check if email verification is required and enforced
-      if (Auth0Service.instance.requiresEmailVerification && !(result.user.isEmailVerified ?? false)) {
+      if (!Auth0JWTService.instance.isEmailVerified) {
         if (kDebugMode) {
           print('WelcomeScreen: Email not verified, showing verification required screen');
         }
@@ -238,7 +265,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => EmailVerificationRequiredScreen(user: result.user),
+            builder: (context) => EmailVerificationRequiredScreen(user: Auth0JWTService.instance.currentUser!),
           ),
         );
         return;
@@ -253,7 +280,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => Auth0ProfileView(user: result.user),
+          builder: (context) => Auth0ProfileView(user: Auth0JWTService.instance.currentUser!),
         ),
       );
       

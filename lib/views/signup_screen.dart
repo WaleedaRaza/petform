@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
-import '../services/supabase_auth_service.dart';
+import '../services/auth0_jwt_service.dart';
 import 'home_screen.dart';
 import '../widgets/rounded_button.dart';
 import '../widgets/video_background.dart';
@@ -19,6 +19,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
+  String _errorMessage = '';
 
   @override
   void dispose() {
@@ -29,97 +30,23 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  void _signup() async {
-    if (_emailController.text.trim().isEmpty || 
-        _usernameController.text.trim().isEmpty ||
-        _passwordController.text.trim().isEmpty ||
-        _confirmPasswordController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
-      return;
-    }
+  Future<void> _signUp() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
 
-    if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
-      );
-      return;
-    }
-
-    if (_passwordController.text.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password must be at least 6 characters')),
-      );
-      return;
-    }
-
-    // Validate username format
-    final username = _usernameController.text.trim();
-    if (username.length < 3) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Username must be at least 3 characters')),
-      );
-      return;
-    }
-
-    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(username)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Username can only contain letters, numbers, and underscores')),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
     try {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final isUnique = await userProvider.isUsernameUnique(username);
-      if (!isUnique) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Username is already taken. Please choose another.')),
-        );
-        setState(() => _isLoading = false);
-        return;
-      }
-
-      final authService = SupabaseAuthService();
-      final credential = await authService.signUpWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
+      await Auth0JWTService.instance.signIn(); // Auth0 handles signup automatically
       
-      // Since email confirmation is disabled, user should be automatically logged in
-      if (credential.user != null) {
-        // Reserve username and create user profile
-        final userId = credential.user!.id;
-        await userProvider.reserveUsername(username, userId, _emailController.text.trim());
-        
-        if (!mounted) return;
-        
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Welcome to Petform, $username!'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-        
-        // Navigate to main app
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-      } else {
-        throw Exception('Signup failed - no user returned');
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/home');
       }
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Signup failed: $e')),
-      );
-    } finally {
-      setState(() => _isLoading = false);
+      setState(() {
+        _errorMessage = 'Signup failed: $e';
+        _isLoading = false;
+      });
     }
   }
 
@@ -227,7 +154,7 @@ class _SignupScreenState extends State<SignupScreen> {
             const SizedBox(height: 20),
             _isLoading
                 ? const CircularProgressIndicator()
-                : RoundedButton(text: 'Sign Up', onPressed: _signup),
+                : RoundedButton(text: 'Sign Up', onPressed: _signUp),
                     ],
                   ),
                 ),

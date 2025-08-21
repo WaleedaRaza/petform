@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../widgets/video_background.dart';
 import '../widgets/rounded_button.dart';
-import '../services/supabase_auth_service.dart';
+import '../services/auth0_jwt_service.dart';
 import 'login_screen.dart';
 
 class EmailVerificationScreen extends StatefulWidget {
@@ -15,8 +15,9 @@ class EmailVerificationScreen extends StatefulWidget {
 }
 
 class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
-  bool _isResending = false;
-  final _authService = SupabaseAuthService();
+  bool _isLoading = false;
+  String _errorMessage = '';
+  final _authService = Auth0JWTService.instance;
   final _testEmailController = TextEditingController();
 
   @override
@@ -31,35 +32,28 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     super.dispose();
   }
 
-  Future<void> _resendEmail() async {
-    setState(() => _isResending = true);
-    try {
-      if (kDebugMode) {
-        print('EmailVerificationScreen: Attempting to resend email to: ${widget.email}');
-      }
-      
-      await _authService.resendEmailVerification(_testEmailController.text.trim());
+  Future<void> _resendVerificationEmail() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Verification email sent! Check your inbox and spam folder.'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      if (kDebugMode) {
-        print('EmailVerificationScreen: Resend email error: $e');
+    try {
+      await Auth0JWTService.instance.resendEmailVerification();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Verification email sent!'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to resend email: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      setState(() => _isResending = false);
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to send verification email: $e';
+        _isLoading = false;
+      });
     }
   }
 
@@ -215,8 +209,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                     children: [
                       RoundedButton(
                         text: 'Resend Email',
-                        onPressed: _isResending ? null : _resendEmail,
-                        isLoading: _isResending,
+                        onPressed: _isLoading ? null : _resendVerificationEmail,
+                        isLoading: _isLoading,
                       ),
                       
                                               if (kDebugMode) ...[
@@ -284,11 +278,11 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                                         child: ElevatedButton(
                                           onPressed: () async {
                                             try {
-                                              final result = await _authService.testSupabaseConnection();
+                                              await _authService.testSupabaseConnection();
                                               if (!mounted) return;
                                               ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('Connection test: ${result.toString()}'),
+                                                const SnackBar(
+                                                  content: Text('Connection test completed'),
                                                   backgroundColor: Colors.green,
                                                 ),
                                               );
@@ -308,13 +302,13 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: ElevatedButton(
-                          onPressed: () async {
+                                          onPressed: () async {
                                             try {
-                                              final result = await _authService.testEmailSending(_testEmailController.text.trim());
+                                                                                              await _authService.testEmailSending();
                                               if (!mounted) return;
                                               ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('Email test: ${result.toString()}'),
+                                                const SnackBar(
+                                                  content: Text('Email test completed'),
                                                   backgroundColor: Colors.green,
                                                 ),
                                               );
@@ -336,11 +330,11 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                                         child: ElevatedButton(
                                           onPressed: () async {
                                             try {
-                                              final result = await _authService.debugEmailConfirmation(_testEmailController.text.trim());
+                                              await _authService.debugEmailConfirmation();
                                               if (!mounted) return;
                                               ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('Debug confirmation: ${result.toString()}'),
+                                                const SnackBar(
+                                                  content: Text('Debug confirmation completed'),
                                                   backgroundColor: Colors.blue,
                                                 ),
                                               );
@@ -362,12 +356,12 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                                         child: ElevatedButton(
                                           onPressed: () async {
                                             try {
-                                              final result = await _authService.testSMTPConfiguration();
+                                              await _authService.testSMTPConfiguration();
                                               if (!mounted) return;
                                               ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('SMTP Test: ${result.toString()}'),
-                                                  backgroundColor: result['smtp_working'] == true ? Colors.green : Colors.orange,
+                                                const SnackBar(
+                                                  content: Text('SMTP test completed'),
+                                                  backgroundColor: Colors.green,
                                                 ),
                                               );
                                             } catch (e) {
@@ -388,12 +382,12 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                                         child: ElevatedButton(
                                           onPressed: () async {
                                             try {
-                                              final result = await _authService.testSMTPConnection();
+                                              await _authService.testSMTPConnection();
                                               if (!mounted) return;
                                               ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('SMTP Connection: ${result.toString()}'),
-                                                  backgroundColor: result['smtp_working'] == true ? Colors.green : Colors.red,
+                                                const SnackBar(
+                                                  content: Text('SMTP connection test completed'),
+                                                  backgroundColor: Colors.green,
                                                 ),
                                               );
                                             } catch (e) {
@@ -414,14 +408,12 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                                         child: ElevatedButton(
                                           onPressed: () async {
                                             try {
-                                              // Test with the token hash from your email
-                                              const testTokenHash = 'pkce_47e931ac86e06446fa412bc998a9b67bd2606fdc70750b76162cf910';
-                                              final result = await _authService.testTokenHashVerification(testTokenHash);
+                                              await _authService.testTokenHashVerification();
                                               if (!mounted) return;
                                               ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('Token Test: ${result.toString()}'),
-                                                  backgroundColor: result['verification_success'] == true ? Colors.green : Colors.red,
+                                                const SnackBar(
+                                                  content: Text('Token test completed'),
+                                                  backgroundColor: Colors.green,
                                                 ),
                                               );
                                             } catch (e) {
@@ -442,14 +434,12 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                                         child: ElevatedButton(
                                           onPressed: () async {
                                             try {
-                                              // Test with the full URL from your email
-                                              const testUrl = 'https://qpyiugmianjimjfxadcm.supabase.co/auth/v1/verify?token_hash=pkce_47e931ac86e06446fa412bc998a9b67bd2606fdc70750b76162cf910&type=signup&next=com.waleedraza.petform://login-callback';
-                                              final result = await _authService.handleEmailConfirmation(testUrl);
+                                              await _authService.handleEmailConfirmation();
                                               if (!mounted) return;
                                               ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('URL Test: ${result.toString()}'),
-                                                  backgroundColor: result['verification_success'] == true ? Colors.green : Colors.red,
+                                                const SnackBar(
+                                                  content: Text('URL test completed'),
+                                                  backgroundColor: Colors.green,
                                                 ),
                                               );
                                             } catch (e) {

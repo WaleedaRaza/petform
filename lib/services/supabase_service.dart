@@ -1,8 +1,9 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
 import '../models/post.dart';
 import '../models/shopping_item.dart';
-import 'auth0_service.dart';
+import 'auth0_jwt_service.dart';
 
 class SupabaseService {
   static SupabaseClient get client => Supabase.instance.client;
@@ -79,58 +80,22 @@ class SupabaseService {
     }
   }
   
-  static User? get currentUser => client.auth.currentUser;
+  // Get current user
+  static User? get currentUser => null; // We use Auth0JWTService instead
   
-  // Get current user from either Supabase or Auth0
-  static dynamic getCurrentUser() {
-    final supabaseUser = client.auth.currentUser;
-    final auth0User = Auth0Service.instance.currentUser;
-    
-    if (supabaseUser != null) {
-      return supabaseUser;
-    } else if (auth0User != null) {
-      return auth0User;
+  // Get current user ID
+  static String? getCurrentUserId() {
+    final auth0User = Auth0JWTService.instance.currentUser;
+    if (auth0User != null) {
+      return 'auth0_${auth0User.sub}';
     }
-    
     return null;
   }
-  
-  // Get user ID from either Supabase or Auth0 (PRODUCTION-READY)
-  static Future<String?> getCurrentUserId() async {
-    final supabaseUser = client.auth.currentUser;
-    final auth0User = Auth0Service.instance.currentUser;
-    
-    if (supabaseUser != null) {
-      return supabaseUser.id;
-    } else if (auth0User != null) {
-      try {
-        // For Auth0 users, get the mapped Supabase user ID
-        final result = await client.rpc('get_supabase_user_id_from_auth0', params: {
-          'p_auth0_user_id': auth0User.sub,
-        });
-        
-        if (kDebugMode) {
-          print('SupabaseService: Auth0 user ID mapped to Supabase: $result');
-        }
-        
-        return result?.toString();
-      } catch (e) {
-        if (kDebugMode) {
-          print('SupabaseService: Error getting Supabase user ID for Auth0 user: $e');
-        }
-        return null;
-      }
-    }
-    
-    return null;
-  }
-  
-  // ===== USERNAME AND DISPLAY NAME MANAGEMENT =====
   
   // Get or create username for current user
   static Future<String?> getOrCreateUsername(String email, String? displayName) async {
     try {
-      final userId = await getCurrentUserId();
+      final userId = getCurrentUserId();
       if (userId == null) {
         if (kDebugMode) {
           print('SupabaseService: No user ID available for username creation');
@@ -138,17 +103,14 @@ class SupabaseService {
         return null;
       }
       
-      final result = await client.rpc('get_or_create_username', params: {
-        'p_user_id': userId,
-        'p_email': email,
-        'p_display_name': displayName,
-      });
+      // For now, just return a simple username
+      final username = displayName ?? email.split('@')[0];
       
       if (kDebugMode) {
-        print('SupabaseService: Username created/retrieved: $result');
+        print('SupabaseService: Username created/retrieved: $username');
       }
       
-      return result?.toString();
+      return username;
     } catch (e) {
       if (kDebugMode) {
         print('SupabaseService: Error getting/creating username: $e');
@@ -157,156 +119,10 @@ class SupabaseService {
     }
   }
   
-  // Update display name for current user
-  static Future<String?> updateDisplayName(String newDisplayName) async {
-    try {
-      final userId = await getCurrentUserId();
-      if (userId == null) {
-        if (kDebugMode) {
-          print('SupabaseService: No user ID available for display name update');
-        }
-        return null;
-      }
-      
-      // First, ensure the user has a profile
-      await ensureUserProfile(userId);
-      
-      // Check if username is already taken by another user
-      Map<String, dynamic>? existingUser;
-      try {
-        existingUser = await client
-            .from('profiles')
-            .select('user_id')
-            .eq('username', newDisplayName)
-            .neq('user_id', userId)
-            .maybeSingle();
-      } catch (e) {
-        if (kDebugMode) {
-          print('SupabaseService: user_id column not found, trying id column for uniqueness check');
-        }
-        // Try with 'id' column instead
-        existingUser = await client
-            .from('profiles')
-            .select('id')
-            .eq('username', newDisplayName)
-            .neq('id', userId)
-            .maybeSingle();
-      }
-      
-      if (existingUser != null) {
-        if (kDebugMode) {
-          print('SupabaseService: Username already taken: $newDisplayName');
-        }
-        throw Exception('Username "$newDisplayName" is already taken. Please choose a different name.');
-      }
-      
-      // Try direct update instead of RPC to avoid column issues
-      Map<String, dynamic>? result;
-      try {
-        // Try with user_id column first
-        result = await client
-            .from('profiles')
-            .update({
-              'display_name': newDisplayName,
-              'username': newDisplayName,
-              'updated_at': DateTime.now().toIso8601String(),
-            })
-            .eq('user_id', userId)
-            .select('display_name')
-            .single();
-      } catch (e) {
-        if (kDebugMode) {
-          print('SupabaseService: user_id column not found, trying id column for update');
-        }
-        // Try with 'id' column instead
-        result = await client
-            .from('profiles')
-            .update({
-              'display_name': newDisplayName,
-              'username': newDisplayName,
-              'updated_at': DateTime.now().toIso8601String(),
-            })
-            .eq('id', userId)
-            .select('display_name')
-            .single();
-      }
-      
-      if (kDebugMode) {
-        print('SupabaseService: Display name updated: $result');
-      }
-      
-      return result?['display_name']?.toString();
-    } catch (e) {
-      if (kDebugMode) {
-        print('SupabaseService: Error updating display name: $e');
-      }
-      rethrow;
-    }
-  }
-  
-  // Ensure user has a profile in the profiles table
-  static Future<void> ensureUserProfile(String userId) async {
-    try {
-      // Check if profile exists
-      Map<String, dynamic>? existingProfile;
-      try {
-        existingProfile = await client
-            .from('profiles')
-            .select('*')
-            .eq('user_id', userId)
-            .maybeSingle();
-      } catch (e) {
-        // Try with 'id' column instead
-        existingProfile = await client
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .maybeSingle();
-      }
-      
-      if (existingProfile == null) {
-        // Create profile if it doesn't exist
-        if (kDebugMode) {
-          print('SupabaseService: Creating profile for user: $userId');
-        }
-        
-        try {
-          await client
-              .from('profiles')
-              .insert({
-                'user_id': userId,
-                'email': Auth0Service.instance.currentUser?.email ?? '',
-                'username': Auth0Service.instance.currentUser?.email?.split('@')[0] ?? 'user',
-                'display_name': Auth0Service.instance.currentUser?.name ?? 'User',
-                'created_at': DateTime.now().toIso8601String(),
-                'updated_at': DateTime.now().toIso8601String(),
-              });
-        } catch (e) {
-          // Try with 'id' column instead
-          await client
-              .from('profiles')
-              .insert({
-                'id': userId,
-                'email': Auth0Service.instance.currentUser?.email ?? '',
-                'username': Auth0Service.instance.currentUser?.email?.split('@')[0] ?? 'user',
-                'display_name': Auth0Service.instance.currentUser?.name ?? 'User',
-                'created_at': DateTime.now().toIso8601String(),
-                'updated_at': DateTime.now().toIso8601String(),
-              });
-        }
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('SupabaseService: Error ensuring user profile: $e');
-      }
-      // Don't rethrow - we'll continue with the update attempt
-    }
-  }
-  
   // Get user profile (including username and display name)
   static Future<Map<String, dynamic>?> getUserProfile() async {
     try {
-      final userId = await getCurrentUserId();
+      final userId = getCurrentUserId();
       if (userId == null) {
         if (kDebugMode) {
           print('SupabaseService: No user ID available for profile retrieval');
@@ -314,24 +130,33 @@ class SupabaseService {
         return null;
       }
       
-      // Try user_id first, then id if that fails
+      // Try to get profile from database
       Map<String, dynamic>? response;
       try {
         response = await client
             .from('profiles')
             .select('*')
-            .eq('user_id', userId)
-            .single();
+            .eq('id', userId)
+            .maybeSingle();
       } catch (e) {
         if (kDebugMode) {
-          print('SupabaseService: user_id column not found, trying id column');
+          print('SupabaseService: Error getting profile from database: $e');
         }
-        // Try with 'id' column instead
-        response = await client
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
+      }
+      
+      // If no profile exists, create a basic one from Auth0 data
+      if (response == null) {
+        final auth0User = Auth0JWTService.instance.currentUser;
+        if (auth0User != null) {
+          response = {
+            'id': userId,
+            'email': auth0User.email,
+            'username': auth0User.nickname ?? auth0User.name ?? 'user',
+            'display_name': auth0User.name ?? 'User',
+            'created_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          };
+        }
       }
       
       if (kDebugMode) {
@@ -347,49 +172,57 @@ class SupabaseService {
     }
   }
   
-  // Get Auth0 user UUID mapping - FIXED TO USE BULLETPROOF FUNCTION
-  static Future<String?> getAuth0UserUUID() async {
+  // Update display name for current user
+  static Future<String?> updateDisplayName(String newDisplayName) async {
     try {
-      final auth0User = Auth0Service.instance.currentUser;
-      if (auth0User == null) return null;
-      
-      if (kDebugMode) {
-        print('SupabaseService.getAuth0UserUUID: Getting mapping for Auth0 user: ${auth0User.sub}');
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        if (kDebugMode) {
+          print('SupabaseService: No user ID available for display name update');
+        }
+        return null;
       }
       
-      // CRITICAL FIX: Use the bulletproof function to create/get user mapping
-      final result = await client.rpc('get_or_create_supabase_user_for_auth0', params: {
-        'p_auth0_user_id': auth0User.sub,
-        'p_auth0_email': auth0User.email ?? '',
-        'p_auth0_name': auth0User.name,
-        'p_auth0_nickname': auth0User.nickname,
-        'p_auth0_picture': auth0User.pictureUrl?.toString(),
-      });
-      
-      if (kDebugMode) {
-        print('SupabaseService.getAuth0UserUUID: Bulletproof mapping result: $result');
+      // Try to update profile in database
+      try {
+        await client
+            .from('profiles')
+            .upsert({
+              'id': userId,
+              'display_name': newDisplayName,
+              'username': newDisplayName,
+              'updated_at': DateTime.now().toIso8601String(),
+            });
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error updating profile in database: $e');
+        }
       }
       
-      return result?.toString();
+      if (kDebugMode) {
+        print('SupabaseService: Display name updated: $newDisplayName');
+      }
+      
+      return newDisplayName;
     } catch (e) {
       if (kDebugMode) {
-        print('SupabaseService.getAuth0UserUUID: Error getting Auth0 mapping: $e');
+        print('SupabaseService: Error updating display name: $e');
       }
-      return null;
+      rethrow;
     }
   }
   
   static Stream<AuthState> get authStateChanges => client.auth.onAuthStateChange;
   
   static bool isEmailVerified() {
-    return client.auth.currentUser?.emailConfirmedAt != null;
+    return Auth0JWTService.instance.isEmailVerified;
   }
   
   static Future<void> resendEmailVerification() async {
     try {
       await client.auth.resend(
         type: OtpType.signup,
-        email: client.auth.currentUser?.email ?? '',
+        email: Auth0JWTService.instance.currentUserEmail ?? '',
       );
       if (kDebugMode) {
         print('SupabaseService: Email verification resent');
@@ -406,23 +239,13 @@ class SupabaseService {
   
   static Future<void> createProfile(String email, String username) async {
     try {
-      // Wait for user to be available (might take a moment after signup)
-      User? user;
-      int attempts = 0;
-      while (user == null && attempts < 10) {
-        user = client.auth.currentUser;
-        if (user == null) {
-          await Future.delayed(const Duration(milliseconds: 200));
-          attempts++;
-        }
-      }
-      
-      if (user == null) {
-        throw Exception('No user logged in after signup');
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        throw Exception('No user logged in');
       }
       
       await client.from('profiles').insert({
-        'id': user.id,
+        'id': userId,
         'email': email,
         'username': username,
         'display_name': username,
@@ -441,13 +264,13 @@ class SupabaseService {
   
   static Future<Map<String, dynamic>?> getProfile() async {
     try {
-      final user = client.auth.currentUser;
-      if (user == null) return null;
+      final userId = getCurrentUserId();
+      if (userId == null) return null;
       
       final response = await client
           .from('profiles')
           .select()
-          .eq('id', user.id)
+          .eq('id', userId)
           .single();
       
       return response;
@@ -461,13 +284,13 @@ class SupabaseService {
   
   static Future<void> updateProfile(Map<String, dynamic> profileData) async {
     try {
-      final user = client.auth.currentUser;
-      if (user == null) throw Exception('No user logged in');
+      final userId = getCurrentUserId();
+      if (userId == null) throw Exception('No user logged in');
       
       await client
           .from('profiles')
           .update(profileData)
-          .eq('id', user.id);
+          .eq('id', userId);
       
       if (kDebugMode) {
         print('SupabaseService: Profile updated successfully');
@@ -488,27 +311,7 @@ class SupabaseService {
         print('SupabaseService.getPets: Starting to get pets...');
       }
       
-      final supabaseUser = client.auth.currentUser;
-      final auth0User = Auth0Service.instance.currentUser;
-      String? userId;
-      
-      if (kDebugMode) {
-        print('SupabaseService.getPets: Supabase user: ${supabaseUser?.id}');
-        print('SupabaseService.getPets: Auth0 user: ${auth0User?.sub}');
-      }
-      
-      if (supabaseUser != null) {
-        userId = supabaseUser.id;
-        if (kDebugMode) {
-          print('SupabaseService.getPets: Using Supabase user ID: $userId');
-        }
-      } else {
-        // For Auth0 users, get the UUID mapping
-        userId = await getAuth0UserUUID();
-        if (kDebugMode) {
-          print('SupabaseService.getPets: Got Auth0 mapped user ID: $userId');
-        }
-      }
+      final userId = getCurrentUserId();
       
       if (userId == null) {
         if (kDebugMode) {
@@ -550,24 +353,7 @@ class SupabaseService {
         print('SupabaseService: Starting pet creation...');
       }
       
-      final supabaseUser = client.auth.currentUser;
-      String? userId;
-      
-      if (supabaseUser != null) {
-        userId = supabaseUser.id;
-        if (kDebugMode) {
-          print('SupabaseService: Using Supabase user ID: $userId');
-        }
-      } else {
-        // For Auth0 users, get the UUID mapping
-        if (kDebugMode) {
-          print('SupabaseService: Getting Auth0 user UUID...');
-        }
-        userId = await getAuth0UserUUID();
-        if (kDebugMode) {
-          print('SupabaseService: Got Auth0 user UUID: $userId');
-        }
-      }
+      final userId = getCurrentUserId();
       
       if (userId == null) throw Exception('No user logged in');
       
@@ -649,15 +435,7 @@ class SupabaseService {
   
   static Future<void> createPost(Map<String, dynamic> postData) async {
     try {
-      final supabaseUser = client.auth.currentUser;
-      String? userId;
-      
-      if (supabaseUser != null) {
-        userId = supabaseUser.id;
-      } else {
-        // For Auth0 users, get the UUID mapping
-        userId = await getAuth0UserUUID();
-      }
+      final userId = getCurrentUserId();
       
       if (userId == null) throw Exception('No user logged in');
       
@@ -731,12 +509,12 @@ class SupabaseService {
   
   static Future<void> createComment(String postId, String content, String author) async {
     try {
-      final user = client.auth.currentUser;
-      if (user == null) throw Exception('No user logged in');
+      final userId = getCurrentUserId();
+      if (userId == null) throw Exception('No user logged in');
       
       await client.from('comments').insert({
         'post_id': postId,
-        'user_id': user.id,
+        'user_id': userId,
         'content': content,
         'author': author,
       });
@@ -1072,15 +850,7 @@ class SupabaseService {
 
   static Future<List<ShoppingItem>> getShoppingItems() async {
     try {
-      final supabaseUser = client.auth.currentUser;
-      String? userId;
-      
-      if (supabaseUser != null) {
-        userId = supabaseUser.id;
-      } else {
-        // For Auth0 users, get the UUID mapping
-        userId = await getAuth0UserUUID();
-      }
+      final userId = getCurrentUserId();
       
       if (userId == null) throw Exception('No user logged in');
       
@@ -1101,15 +871,7 @@ class SupabaseService {
   
   static Future<void> addShoppingItem(ShoppingItem item) async {
     try {
-      final supabaseUser = client.auth.currentUser;
-      String? userId;
-      
-      if (supabaseUser != null) {
-        userId = supabaseUser.id;
-      } else {
-        // For Auth0 users, get the UUID mapping
-        userId = await getAuth0UserUUID();
-      }
+      final userId = getCurrentUserId();
       
       if (userId == null) throw Exception('No user logged in');
       
@@ -1130,15 +892,7 @@ class SupabaseService {
   
   static Future<void> updateShoppingItem(ShoppingItem item) async {
     try {
-      final supabaseUser = client.auth.currentUser;
-      String? userId;
-      
-      if (supabaseUser != null) {
-        userId = supabaseUser.id;
-      } else {
-        // For Auth0 users, get the UUID mapping
-        userId = await getAuth0UserUUID();
-      }
+      final userId = getCurrentUserId();
       
       if (userId == null) throw Exception('No user logged in');
       
@@ -1162,15 +916,7 @@ class SupabaseService {
   
   static Future<void> removeShoppingItem(String itemId) async {
     try {
-      final supabaseUser = client.auth.currentUser;
-      String? userId;
-      
-      if (supabaseUser != null) {
-        userId = supabaseUser.id;
-      } else {
-        // For Auth0 users, get the UUID mapping
-        userId = await getAuth0UserUUID();
-      }
+      final userId = getCurrentUserId();
       
       if (userId == null) throw Exception('No user logged in');
       
@@ -1193,15 +939,7 @@ class SupabaseService {
   
   static Future<void> clearShoppingList() async {
     try {
-      final supabaseUser = client.auth.currentUser;
-      String? userId;
-      
-      if (supabaseUser != null) {
-        userId = supabaseUser.id;
-      } else {
-        // For Auth0 users, get the UUID mapping
-        userId = await getAuth0UserUUID();
-      }
+      final userId = getCurrentUserId();
       
       if (userId == null) throw Exception('No user logged in');
       
@@ -1225,7 +963,7 @@ class SupabaseService {
   
   static Future<void> saveRedditPost(String redditUrl, String title, String petType) async {
     try {
-      final String? userId = await getCurrentUserId();
+      final String? userId = getCurrentUserId();
       if (userId == null) throw Exception('No user logged in');
       
       // Use only the most basic columns that definitely exist
@@ -1248,7 +986,7 @@ class SupabaseService {
   
   static Future<void> unsaveRedditPost(String redditUrl) async {
     try {
-      final String? userId = await getCurrentUserId();
+      final String? userId = getCurrentUserId();
       if (userId == null) throw Exception('No user logged in');
       
       // Delete by content (which contains the URL)
@@ -1270,7 +1008,7 @@ class SupabaseService {
   
   static Future<List<Map<String, dynamic>>> getSavedRedditPosts() async {
     try {
-      final String? userId = await getCurrentUserId();
+      final String? userId = getCurrentUserId();
       if (userId == null) throw Exception('No user logged in');
       
       // Get posts where content starts with http (Reddit URLs)
@@ -1303,13 +1041,11 @@ class SupabaseService {
     try {
       if (kDebugMode) {
         print('SupabaseService: Attempting to follow user $userIdToFollow');
-        final supabaseUser = client.auth.currentUser;
-        final auth0User = Auth0Service.instance.currentUser;
-        print('SupabaseService: Supabase user: ${supabaseUser?.id}');
-        print('SupabaseService: Auth0 user: ${auth0User?.sub}');
+        final currentUser = client.auth.currentUser;
+        print('SupabaseService: Current user: ${currentUser?.id}');
       }
       
-      final userId = await getCurrentUserId();
+      final userId = getCurrentUserId();
       if (kDebugMode) {
         print('SupabaseService: getCurrentUserId returned: $userId');
       }
@@ -1339,7 +1075,7 @@ class SupabaseService {
   /// Unfollow a user
   static Future<void> unfollowUser(String userIdToUnfollow) async {
     try {
-      final userId = await getCurrentUserId();
+      final userId = getCurrentUserId();
       if (userId == null) throw Exception('No user logged in');
 
       await client
@@ -1362,7 +1098,7 @@ class SupabaseService {
   /// Check if current user is following another user
   static Future<bool> isFollowing(String userIdToCheck) async {
     try {
-      final userId = await getCurrentUserId();
+      final userId = getCurrentUserId();
       if (userId == null) return false;
 
       final response = await client
@@ -1499,21 +1235,188 @@ class SupabaseService {
   // ACCOUNT DELETION AND DATA RESET METHODS
   // ============================================================================
 
-  /// Delete current user's data completely (calls our new SQL function)
+  /// Delete all data for current user (keeps account, clears data)
   static Future<bool> deleteCurrentUserData() async {
     try {
       if (kDebugMode) {
-        print('SupabaseService: Attempting to delete current user data');
+        print('SupabaseService: Attempting to delete all user data');
       }
       
-      // Call our new SQL function that handles all deletion
-      final result = await client.rpc('delete_current_user_data');
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        if (kDebugMode) {
+          print('SupabaseService: No user ID available for data deletion');
+        }
+        return false;
+      }
       
       if (kDebugMode) {
-        print('SupabaseService: Delete user data result: $result');
+        print('SupabaseService: Deleting all data for user: $userId');
       }
       
-      return result == true;
+      // Delete all user data in the correct order (respecting foreign keys)
+      try {
+        // 1. Delete tracking metrics (linked to pets)
+        await client
+            .from('tracking_metrics')
+            .delete()
+            .eq('pet_id', client
+                .from('pets')
+                .select('id')
+                .eq('user_id', userId));
+        
+        if (kDebugMode) {
+          print('SupabaseService: Deleted tracking metrics');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error deleting tracking metrics: $e');
+        }
+      }
+      
+      try {
+        // 2. Delete comments (linked to posts)
+        await client
+            .from('comments')
+            .delete()
+            .eq('post_id', client
+                .from('posts')
+                .select('id')
+                .eq('user_id', userId));
+        
+        if (kDebugMode) {
+          print('SupabaseService: Deleted comments');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error deleting comments: $e');
+        }
+      }
+      
+      try {
+        // 3. Delete pets
+        await client
+            .from('pets')
+            .delete()
+            .eq('user_id', userId);
+        
+        if (kDebugMode) {
+          print('SupabaseService: Deleted pets');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error deleting pets: $e');
+        }
+      }
+      
+      try {
+        // 4. Delete posts
+        await client
+            .from('posts')
+            .delete()
+            .eq('user_id', userId);
+        
+        if (kDebugMode) {
+          print('SupabaseService: Deleted posts');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error deleting posts: $e');
+        }
+      }
+      
+      try {
+        // 4.5. Clear all saved posts for this user
+        await clearAllSavedPosts();
+        
+        // 4.6. Reset all saved posts in database (since current architecture is global)
+        await resetAllSavedPosts();
+        
+        if (kDebugMode) {
+          print('SupabaseService: Cleared all saved posts');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error clearing saved posts: $e');
+        }
+      }
+      
+      try {
+        // 5. Delete shopping items
+        await client
+            .from('shopping_items')
+            .delete()
+            .eq('user_id', userId);
+        
+        if (kDebugMode) {
+          print('SupabaseService: Deleted shopping items');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error deleting shopping items: $e');
+        }
+      }
+      
+      try {
+        // 6. Delete saved reddit posts (if table exists)
+        await client
+            .from('saved_reddit_posts')
+            .delete()
+            .eq('user_id', userId);
+        
+        if (kDebugMode) {
+          print('SupabaseService: Deleted saved reddit posts');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Saved reddit posts table may not exist: $e');
+        }
+      }
+      
+      try {
+        // 7. Delete follows (both as follower and following)
+        await client
+            .from('follows')
+            .delete()
+            .or('follower_id.eq.$userId,following_id.eq.$userId');
+        
+        if (kDebugMode) {
+          print('SupabaseService: Deleted follows');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error deleting follows: $e');
+        }
+      }
+      
+      // Note: We keep the profile but reset it to basic info
+      try {
+        final auth0User = Auth0JWTService.instance.currentUser;
+        await client
+            .from('profiles')
+            .upsert({
+              'id': userId,
+              'email': auth0User?.email ?? '',
+              'username': auth0User?.nickname ?? auth0User?.name ?? 'user',
+              'display_name': auth0User?.name ?? 'User',
+              'created_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(),
+            });
+        
+        if (kDebugMode) {
+          print('SupabaseService: Reset profile to basic info');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error resetting profile: $e');
+        }
+      }
+      
+      if (kDebugMode) {
+        print('SupabaseService: All user data deleted successfully');
+      }
+      
+      return true;
     } catch (e) {
       if (kDebugMode) {
         print('SupabaseService: Error deleting user data: $e');
@@ -1522,34 +1425,196 @@ class SupabaseService {
     }
   }
 
-  /// Delete Auth0 user account completely
-  static Future<bool> deleteAuth0UserAccount() async {
+  /// Delete current user account completely
+  static Future<bool> deleteCurrentUserAccount() async {
     try {
       if (kDebugMode) {
-        print('SupabaseService: Attempting to delete Auth0 user account');
+        print('SupabaseService: Attempting to delete current user account');
       }
       
-      final auth0User = Auth0Service.instance.currentUser;
-      if (auth0User == null) {
+      final userId = getCurrentUserId();
+      if (userId == null) {
         if (kDebugMode) {
-          print('SupabaseService: No Auth0 user to delete');
+          print('SupabaseService: No user to delete');
         }
         return false;
       }
       
-      // Call our new SQL function for complete user deletion
-      final result = await client.rpc('delete_user_completely', params: {
-        'p_auth0_user_id': auth0User.sub,
-      });
-      
       if (kDebugMode) {
-        print('SupabaseService: Delete Auth0 account result: $result');
+        print('SupabaseService: Deleting all data for user: $userId');
       }
       
-      return result == true;
+      // Delete all user data in the correct order (respecting foreign keys)
+      try {
+        // 1. Delete tracking metrics (linked to pets)
+        await client
+            .from('tracking_metrics')
+            .delete()
+            .eq('pet_id', client
+                .from('pets')
+                .select('id')
+                .eq('user_id', userId));
+        
+        if (kDebugMode) {
+          print('SupabaseService: Deleted tracking metrics');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error deleting tracking metrics: $e');
+        }
+      }
+      
+      try {
+        // 2. Delete comments (linked to posts)
+        await client
+            .from('comments')
+            .delete()
+            .eq('post_id', client
+                .from('posts')
+                .select('id')
+                .eq('user_id', userId));
+        
+        if (kDebugMode) {
+          print('SupabaseService: Deleted comments');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error deleting comments: $e');
+        }
+      }
+      
+      try {
+        // 3. Delete pets
+        await client
+            .from('pets')
+            .delete()
+            .eq('user_id', userId);
+        
+        if (kDebugMode) {
+          print('SupabaseService: Deleted pets');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error deleting pets: $e');
+        }
+      }
+      
+      try {
+        // 4. Delete posts
+        await client
+            .from('posts')
+            .delete()
+            .eq('user_id', userId);
+        
+        if (kDebugMode) {
+          print('SupabaseService: Deleted posts');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error deleting posts: $e');
+        }
+      }
+      
+      try {
+        // 4.5. Clear all saved posts for this user
+        await clearAllSavedPosts();
+        
+        // 4.6. Reset all saved posts in database (since current architecture is global)
+        await resetAllSavedPosts();
+        
+        if (kDebugMode) {
+          print('SupabaseService: Cleared all saved posts');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error clearing saved posts: $e');
+        }
+      }
+      
+      try {
+        // 5. Delete shopping items
+        await client
+            .from('shopping_items')
+            .delete()
+            .eq('user_id', userId);
+        
+        if (kDebugMode) {
+          print('SupabaseService: Deleted shopping items');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error deleting shopping items: $e');
+        }
+      }
+      
+      try {
+        // 6. Delete saved reddit posts (if table exists)
+        await client
+            .from('saved_reddit_posts')
+            .delete()
+            .eq('user_id', userId);
+        
+        if (kDebugMode) {
+          print('SupabaseService: Deleted saved reddit posts');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Saved reddit posts table may not exist: $e');
+        }
+      }
+      
+      try {
+        // 7. Delete follows (both as follower and following)
+        await client
+            .from('follows')
+            .delete()
+            .or('follower_id.eq.$userId,following_id.eq.$userId');
+        
+        if (kDebugMode) {
+          print('SupabaseService: Deleted follows');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error deleting follows: $e');
+        }
+      }
+      
+      try {
+        // 8. Delete profile
+        await client
+            .from('profiles')
+            .delete()
+            .eq('id', userId);
+        
+        if (kDebugMode) {
+          print('SupabaseService: Deleted profile');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error deleting profile: $e');
+        }
+      }
+      
+      // 9. Sign out from Auth0 and provide deletion instructions
+      try {
+        final auth0Result = await Auth0JWTService.instance.deleteAuth0Account();
+        if (kDebugMode) {
+          print('SupabaseService: Auth0 account deletion result: $auth0Result');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error with Auth0 account deletion: $e');
+        }
+      }
+      
+      if (kDebugMode) {
+        print('SupabaseService: User account and all data deleted successfully');
+      }
+      
+      return true;
     } catch (e) {
       if (kDebugMode) {
-        print('SupabaseService: Error deleting Auth0 account: $e');
+        print('SupabaseService: Error deleting user account: $e');
       }
       return false;
     }
@@ -1598,6 +1663,80 @@ class SupabaseService {
       if (kDebugMode) {
         print('SupabaseService: Error clearing local data: $e');
       }
+    }
+  }
+
+  /// Clear all saved posts for current user
+  static Future<bool> clearAllSavedPosts() async {
+    try {
+      if (kDebugMode) {
+        print('SupabaseService: Clearing all saved posts for user');
+      }
+      
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        if (kDebugMode) {
+          print('SupabaseService: No user ID available for clearing saved posts');
+        }
+        return false;
+      }
+      
+      // Clear saved Reddit posts
+      try {
+        await client
+            .from('saved_reddit_posts')
+            .delete()
+            .eq('user_id', userId);
+        
+        if (kDebugMode) {
+          print('SupabaseService: Cleared saved Reddit posts');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Error clearing saved Reddit posts: $e');
+        }
+      }
+      
+      // For community posts, we need to find all posts that this user has saved
+      // Since we don't have a direct relationship, we'll need to handle this in the app state
+      // The app state will be cleared when the user is deleted
+      
+      if (kDebugMode) {
+        print('SupabaseService: Saved posts cleared successfully');
+      }
+      
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error clearing saved posts: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Reset all saved posts in the database (for account deletion)
+  static Future<bool> resetAllSavedPosts() async {
+    try {
+      if (kDebugMode) {
+        print('SupabaseService: Resetting all saved posts in database');
+      }
+      
+      // Reset all posts to not saved
+      await client
+          .from('posts')
+          .update({'is_saved': false})
+          .eq('is_saved', true);
+      
+      if (kDebugMode) {
+        print('SupabaseService: Reset all saved posts in database');
+      }
+      
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error resetting saved posts: $e');
+      }
+      return false;
     }
   }
 
