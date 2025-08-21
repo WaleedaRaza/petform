@@ -12,7 +12,6 @@
 
 > **Comprehensive pet management app with AI-powered insights, health tracking, community engagement, and smart shopping. Built with Flutter, Auth0, Supabase, and OpenAI GPT-4.**
 
-## 📱 Screenshots
 
 
 ## 📊 Project Overview
