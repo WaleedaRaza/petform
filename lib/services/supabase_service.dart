@@ -244,19 +244,66 @@ class SupabaseService {
         throw Exception('No user logged in');
       }
       
-      await client.from('profiles').insert({
-        'id': userId,
-        'email': email,
-        'username': username,
-        'display_name': username,
-      });
-      
       if (kDebugMode) {
-        print('SupabaseService: Profile created successfully');
+        print('SupabaseService: Creating profile for user $userId with username: $username');
+      }
+      
+      // Check if username is already taken by another user
+      final existingUser = await client
+          .from('profiles')
+          .select('id, username')
+          .eq('username', username)
+          .maybeSingle();
+      
+      if (existingUser != null && existingUser['id'] != userId) {
+        if (kDebugMode) {
+          print('SupabaseService: Username $username is already taken by user ${existingUser['id']}');
+        }
+        throw Exception('Username "$username" is already taken. Please choose a different username.');
+      }
+      
+      // Check if profile already exists for this user
+      final existingProfile = await client
+          .from('profiles')
+          .select('id, username')
+          .eq('id', userId)
+          .maybeSingle();
+      
+      if (existingProfile != null) {
+        // Profile exists - update username if different
+        if (existingProfile['username'] != username) {
+          await client.from('profiles').update({
+            'username': username,
+            'display_name': username,
+            'updated_at': DateTime.now().toIso8601String(),
+          }).eq('id', userId);
+          
+          if (kDebugMode) {
+            print('SupabaseService: Updated existing profile with new username: $username');
+          }
+        } else {
+          if (kDebugMode) {
+            print('SupabaseService: Profile already exists with correct username: $username');
+          }
+        }
+      } else {
+        // Create new profile
+        await client.from('profiles').insert({
+          'id': userId,
+          'email': email,
+          'username': username,
+          'display_name': username,
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+        
+        if (kDebugMode) {
+          print('SupabaseService: Created new profile with username: $username');
+        }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('SupabaseService: Error creating profile: $e');
+        print('SupabaseService: Error creating/updating profile: $e');
       }
       rethrow;
     }
@@ -300,6 +347,48 @@ class SupabaseService {
         print('SupabaseService: Error updating profile: $e');
       }
       rethrow;
+    }
+  }
+
+  /// Check if username is available
+  static Future<bool> isUsernameAvailable(String username) async {
+    try {
+      final userId = getCurrentUserId();
+      
+      final response = await client
+          .from('profiles')
+          .select('id')
+          .eq('username', username)
+          .maybeSingle();
+      
+      // Username is available if no one has it, or if current user has it
+      return response == null || response['id'] == userId;
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error checking username availability: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Get username for current user from database
+  static Future<String?> getCurrentUsername() async {
+    try {
+      final userId = getCurrentUserId();
+      if (userId == null) return null;
+      
+      final response = await client
+          .from('profiles')
+          .select('username')
+          .eq('id', userId)
+          .maybeSingle();
+      
+      return response?['username'];
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error getting current username: $e');
+      }
+      return null;
     }
   }
   
@@ -358,6 +447,22 @@ class SupabaseService {
       if (userId == null) throw Exception('No user logged in');
       
       petData['user_id'] = userId;
+      
+      // Add public author field for cross-user visibility
+      final auth0User = Auth0JWTService.instance.currentUser;
+      if (auth0User != null) {
+        // Get username from database first (for consistency with posts)
+        String? author = await getCurrentUsername();
+        if (author == null || author.isEmpty) {
+          // Fallback to Auth0 data
+          author = auth0User.nickname ?? auth0User.name ?? auth0User.email?.split('@')[0] ?? 'User';
+        }
+        petData['author'] = author;
+        
+        if (kDebugMode) {
+          print('SupabaseService: Adding author field to pet: $author');
+        }
+      }
       
       if (kDebugMode) {
         print('SupabaseService: Creating pet with data: $petData');
@@ -583,41 +688,65 @@ class SupabaseService {
   
   static Future<List<Map<String, dynamic>>> getTrackingMetrics(String userId) async {
     try {
+      if (kDebugMode) {
+        print('SupabaseService: Getting tracking metrics for user: $userId');
+      }
+      
       final response = await client
           .from('tracking_metrics')
           .select()
           .eq('user_id', userId);
+          
+      if (kDebugMode) {
+        print('SupabaseService: Retrieved ${response.length} tracking metrics for user $userId');
+      }
+      
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
       if (kDebugMode) {
         print('SupabaseService: Error getting tracking metrics: $e');
       }
-      rethrow;
+      return [];
     }
   }
 
   static Future<List<Map<String, dynamic>>> getTrackingMetricsForPet(String petId) async {
     try {
+      if (kDebugMode) {
+        print('SupabaseService: Getting tracking metrics for pet: $petId');
+      }
+      
       final response = await client
           .from('tracking_metrics')
           .select()
           .eq('pet_id', petId);
+          
+      if (kDebugMode) {
+        print('SupabaseService: Retrieved ${response.length} tracking metrics for pet $petId');
+      }
+      
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
       if (kDebugMode) {
         print('SupabaseService: Error getting tracking metrics for pet: $e');
       }
-      rethrow;
+      return [];
     }
   }
 
   static Future<void> createTrackingMetric(Map<String, dynamic> metricData) async {
     try {
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        throw Exception('No user ID available for creating tracking metric');
+      }
+      
       // Ensure all required fields are present with defaults
       final safeData = {
         'name': metricData['name'] ?? 'Unknown Metric',
         'category': metricData['category'] ?? 'Health',
         'pet_id': metricData['pet_id'] ?? '',
+        'user_id': userId, // Add user_id to the metric
         'target_value': metricData['target_value'] ?? 0.0,
         'current_value': metricData['current_value'] ?? 0.0,
         'frequency': metricData['frequency'] ?? 'daily',
@@ -632,12 +761,32 @@ class SupabaseService {
         print('SupabaseService: Creating tracking metric with data: $safeData');
       }
       
-      await client
-          .from('tracking_metrics')
-          .insert(safeData);
-          
-      if (kDebugMode) {
-        print('SupabaseService: Tracking metric created successfully');
+      // Try direct insert first
+      try {
+        await client
+            .from('tracking_metrics')
+            .insert(safeData);
+            
+        if (kDebugMode) {
+          print('SupabaseService: Tracking metric created successfully');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: Direct insert failed: $e');
+          print('SupabaseService: Trying without user_id field...');
+        }
+        
+        // Remove user_id field and try again
+        final dataWithoutUserId = Map<String, dynamic>.from(safeData);
+        dataWithoutUserId.remove('user_id');
+        
+        await client
+            .from('tracking_metrics')
+            .insert(dataWithoutUserId);
+            
+        if (kDebugMode) {
+          print('SupabaseService: Tracking metric created without user_id');
+        }
       }
     } catch (e) {
       if (kDebugMode) {
@@ -877,6 +1026,22 @@ class SupabaseService {
       
       final dbData = _shoppingItemToDb(item, includeId: false);
       dbData['user_id'] = userId;
+      
+      // Add public author field for cross-user visibility
+      final auth0User = Auth0JWTService.instance.currentUser;
+      if (auth0User != null) {
+        // Get username from database first (for consistency with posts)
+        String? author = await getCurrentUsername();
+        if (author == null || author.isEmpty) {
+          // Fallback to Auth0 data
+          author = auth0User.nickname ?? auth0User.name ?? auth0User.email?.split('@')[0] ?? 'User';
+        }
+        dbData['author'] = author;
+        
+        if (kDebugMode) {
+          print('SupabaseService: Adding author field to shopping item: $author');
+        }
+      }
       await client.from('shopping_items').insert(dbData);
       
       if (kDebugMode) {
@@ -966,15 +1131,23 @@ class SupabaseService {
       final String? userId = getCurrentUserId();
       if (userId == null) throw Exception('No user logged in');
       
-      // Use only the most basic columns that definitely exist
-      await client.from('posts').upsert({
+      if (kDebugMode) {
+        print('SupabaseService: Saving Reddit post to saved_reddit_posts table: $redditUrl');
+      }
+      
+      // Save to dedicated saved_reddit_posts table
+      await client.from('saved_reddit_posts').upsert({
         'user_id': userId,
+        'reddit_url': redditUrl,
         'title': title,
-        'content': redditUrl, // Store URL in content
+        'pet_type': petType,
+        'saved_at': DateTime.now().toIso8601String(),
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
       });
       
       if (kDebugMode) {
-        print('SupabaseService: Saved Reddit post: $redditUrl');
+        print('SupabaseService: Successfully saved Reddit post: $redditUrl');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -989,14 +1162,18 @@ class SupabaseService {
       final String? userId = getCurrentUserId();
       if (userId == null) throw Exception('No user logged in');
       
-      // Delete by content (which contains the URL)
-      await client.from('posts')
+      if (kDebugMode) {
+        print('SupabaseService: Unsaving Reddit post from saved_reddit_posts table: $redditUrl');
+      }
+      
+      // Delete from dedicated saved_reddit_posts table
+      await client.from('saved_reddit_posts')
           .delete()
           .eq('user_id', userId)
-          .eq('content', redditUrl);
+          .eq('reddit_url', redditUrl);
       
       if (kDebugMode) {
-        print('SupabaseService: Unsaved Reddit post: $redditUrl');
+        print('SupabaseService: Successfully unsaved Reddit post: $redditUrl');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -1011,16 +1188,19 @@ class SupabaseService {
       final String? userId = getCurrentUserId();
       if (userId == null) throw Exception('No user logged in');
       
-      // Get posts where content starts with http (Reddit URLs)
+      if (kDebugMode) {
+        print('SupabaseService: Getting saved Reddit posts for user: $userId');
+      }
+      
+      // Get saved Reddit posts from dedicated table
       final response = await client
-          .from('posts')
+          .from('saved_reddit_posts')
           .select()
           .eq('user_id', userId)
-          .like('content', 'http%')
           .order('created_at', ascending: false);
       
       if (kDebugMode) {
-        print('SupabaseService: Loaded ${response.length} saved Reddit posts');
+        print('SupabaseService: Loaded ${response.length} saved Reddit posts from saved_reddit_posts table');
       }
       
       return (response as List).cast<Map<String, dynamic>>();
@@ -1028,7 +1208,8 @@ class SupabaseService {
       if (kDebugMode) {
         print('SupabaseService: Error getting saved Reddit posts: $e');
       }
-      rethrow;
+      // Return empty list instead of throwing to prevent app crashes
+      return [];
     }
   }
 
@@ -1156,13 +1337,114 @@ class SupabaseService {
   /// Get user ID by username/display name
   static Future<String?> getUserIdByUsername(String username) async {
     try {
-      final response = await client
+      if (kDebugMode) {
+        print('SupabaseService: Looking up user ID for username: $username');
+      }
+      
+      // Try multiple search strategies to find the user
+      
+      // 1. Exact match on username
+      var response = await client
           .from('profiles')
-          .select('id')
+          .select('id, username, display_name, email')
+          .eq('username', username)
+          .maybeSingle();
+
+      if (response != null) {
+        if (kDebugMode) {
+          print('SupabaseService: Found user by exact username match: ${response['id']}');
+        }
+        return response['id'];
+      }
+
+      // 2. Exact match on display_name
+      response = await client
+          .from('profiles')
+          .select('id, username, display_name, email')
           .eq('display_name', username)
           .maybeSingle();
 
-      return response?['id'];
+      if (response != null) {
+        if (kDebugMode) {
+          print('SupabaseService: Found user by exact display_name match: ${response['id']}');
+        }
+        return response['id'];
+      }
+
+      // 3. Case-insensitive search on username
+      response = await client
+          .from('profiles')
+          .select('id, username, display_name, email')
+          .ilike('username', username)
+          .maybeSingle();
+
+      if (response != null) {
+        if (kDebugMode) {
+          print('SupabaseService: Found user by case-insensitive username: ${response['id']}');
+        }
+        return response['id'];
+      }
+
+      // 4. Case-insensitive search on display_name
+      response = await client
+          .from('profiles')
+          .select('id, username, display_name, email')
+          .ilike('display_name', username)
+          .maybeSingle();
+
+      if (response != null) {
+        if (kDebugMode) {
+          print('SupabaseService: Found user by case-insensitive display_name: ${response['id']}');
+        }
+        return response['id'];
+      }
+
+      // 5. Try email prefix search (for cases where author is email prefix)
+      response = await client
+          .from('profiles')
+          .select('id, username, display_name, email')
+          .like('email', '$username%')
+          .maybeSingle();
+
+      if (response != null) {
+        if (kDebugMode) {
+          print('SupabaseService: Found user by email prefix: ${response['id']}');
+        }
+        return response['id'];
+      }
+
+      // 6. Try full email search
+      response = await client
+          .from('profiles')
+          .select('id, username, display_name, email')
+          .eq('email', username)
+          .maybeSingle();
+
+      if (response != null) {
+        if (kDebugMode) {
+          print('SupabaseService: Found user by full email: ${response['id']}');
+        }
+        return response['id'];
+      }
+
+      // 7. Show debug info to help diagnose
+      if (kDebugMode) {
+        print('SupabaseService: No user found for username: $username');
+        // Debug: Show all users to help diagnose
+        try {
+          final allUsers = await client
+              .from('profiles')
+              .select('id, username, display_name, email')
+              .limit(10);
+          print('SupabaseService: Available users in database:');
+          for (var user in allUsers) {
+            print('  - Username: "${user['username']}", Display: "${user['display_name']}", Email: "${user['email']}"');
+          }
+        } catch (debugError) {
+          print('SupabaseService: Error fetching debug info: $debugError');
+        }
+      }
+      return null;
     } catch (e) {
       if (kDebugMode) {
         print('SupabaseService: Error getting user ID by username: $e');
@@ -1178,6 +1460,10 @@ class SupabaseService {
   /// Get pets by user ID (public method for viewing other users' pets)
   static Future<List<Map<String, dynamic>>> getPetsByUserId(String userId) async {
     try {
+      if (kDebugMode) {
+        print('SupabaseService: Getting pets for user ID: $userId');
+      }
+      
       final response = await client
           .from('pets')
           .select('*')
@@ -1191,6 +1477,31 @@ class SupabaseService {
     } catch (e) {
       if (kDebugMode) {
         print('SupabaseService: Error getting pets by user ID: $e');
+      }
+      return [];
+    }
+  }
+
+  /// Get pets by author name (alternative public method)
+  static Future<List<Map<String, dynamic>>> getPetsByAuthor(String author) async {
+    try {
+      if (kDebugMode) {
+        print('SupabaseService: Getting pets for author: $author');
+      }
+      
+      final response = await client
+          .from('pets')
+          .select('*')
+          .eq('author', author)
+          .order('created_at', ascending: false);
+
+      if (kDebugMode) {
+        print('SupabaseService: Retrieved ${response.length} pets for author $author');
+      }
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error getting pets by author: $e');
       }
       return [];
     }
@@ -1225,6 +1536,41 @@ class SupabaseService {
     } catch (e) {
       if (kDebugMode) {
         print('SupabaseService: Error getting shopping items by user ID: $e');
+        print('SupabaseService: Stack trace: ${StackTrace.current}');
+      }
+      return [];
+    }
+  }
+
+  /// Get shopping items by author name (alternative public method)
+  static Future<List<ShoppingItem>> getShoppingItemsByAuthor(String author) async {
+    try {
+      if (kDebugMode) {
+        print('SupabaseService: Getting shopping items for author: $author');
+      }
+      
+      final response = await client
+          .from('shopping_items')
+          .select('*')
+          .eq('author', author)
+          .order('created_at', ascending: false);
+
+      if (kDebugMode) {
+        print('SupabaseService: Raw response: $response');
+      }
+
+      final items = response.map((item) => _dbToShoppingItem(item)).toList();
+      
+      if (kDebugMode) {
+        print('SupabaseService: Retrieved ${items.length} shopping items for author $author');
+        if (items.isNotEmpty) {
+          print('SupabaseService: First item: ${items.first.name}');
+        }
+      }
+      return items;
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Error getting shopping items by author: $e');
         print('SupabaseService: Stack trace: ${StackTrace.current}');
       }
       return [];
@@ -1425,198 +1771,103 @@ class SupabaseService {
     }
   }
 
-  /// Delete current user account completely
-  static Future<bool> deleteCurrentUserAccount() async {
+  /// Delete current user account completely - BULLETPROOF VERSION
+  static Future<Map<String, dynamic>> deleteCurrentUserAccount() async {
+    // Declare variables in outer scope so they're accessible in all catch blocks
+    String? userId;
+    String? userEmail;
+    
     try {
       if (kDebugMode) {
-        print('SupabaseService: Attempting to delete current user account');
+        print('SupabaseService: BULLETPROOF ACCOUNT DELETION starting...');
       }
       
-      final userId = getCurrentUserId();
+      userId = getCurrentUserId();
+      final auth0User = Auth0JWTService.instance.currentUser;
+      userEmail = auth0User?.email;
+      
       if (userId == null) {
         if (kDebugMode) {
           print('SupabaseService: No user to delete');
         }
-        return false;
+        return {
+          'success': false,
+          'error': 'No user authenticated',
+          'message': 'Cannot delete account: no user found'
+        };
       }
       
       if (kDebugMode) {
-        print('SupabaseService: Deleting all data for user: $userId');
+        print('SupabaseService: BULLETPROOF DELETION for user: $userId, email: $userEmail');
       }
       
-      // Delete all user data in the correct order (respecting foreign keys)
-      try {
-        // 1. Delete tracking metrics (linked to pets)
-        await client
-            .from('tracking_metrics')
-            .delete()
-            .eq('pet_id', client
-                .from('pets')
-                .select('id')
-                .eq('user_id', userId));
-        
-        if (kDebugMode) {
-          print('SupabaseService: Deleted tracking metrics');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('SupabaseService: Error deleting tracking metrics: $e');
-        }
-      }
-      
-      try {
-        // 2. Delete comments (linked to posts)
-        await client
-            .from('comments')
-            .delete()
-            .eq('post_id', client
-                .from('posts')
-                .select('id')
-                .eq('user_id', userId));
-        
-        if (kDebugMode) {
-          print('SupabaseService: Deleted comments');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('SupabaseService: Error deleting comments: $e');
-        }
-      }
-      
-      try {
-        // 3. Delete pets
-        await client
-            .from('pets')
-            .delete()
-            .eq('user_id', userId);
-        
-        if (kDebugMode) {
-          print('SupabaseService: Deleted pets');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('SupabaseService: Error deleting pets: $e');
-        }
-      }
-      
-      try {
-        // 4. Delete posts
-        await client
-            .from('posts')
-            .delete()
-            .eq('user_id', userId);
-        
-        if (kDebugMode) {
-          print('SupabaseService: Deleted posts');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('SupabaseService: Error deleting posts: $e');
-        }
-      }
-      
-      try {
-        // 4.5. Clear all saved posts for this user
-        await clearAllSavedPosts();
-        
-        // 4.6. Reset all saved posts in database (since current architecture is global)
-        await resetAllSavedPosts();
-        
-        if (kDebugMode) {
-          print('SupabaseService: Cleared all saved posts');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('SupabaseService: Error clearing saved posts: $e');
-        }
-      }
-      
-      try {
-        // 5. Delete shopping items
-        await client
-            .from('shopping_items')
-            .delete()
-            .eq('user_id', userId);
-        
-        if (kDebugMode) {
-          print('SupabaseService: Deleted shopping items');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('SupabaseService: Error deleting shopping items: $e');
-        }
-      }
-      
-      try {
-        // 6. Delete saved reddit posts (if table exists)
-        await client
-            .from('saved_reddit_posts')
-            .delete()
-            .eq('user_id', userId);
-        
-        if (kDebugMode) {
-          print('SupabaseService: Deleted saved reddit posts');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('SupabaseService: Saved reddit posts table may not exist: $e');
-        }
-      }
-      
-      try {
-        // 7. Delete follows (both as follower and following)
-        await client
-            .from('follows')
-            .delete()
-            .or('follower_id.eq.$userId,following_id.eq.$userId');
-        
-        if (kDebugMode) {
-          print('SupabaseService: Deleted follows');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('SupabaseService: Error deleting follows: $e');
-        }
-      }
-      
-      try {
-        // 8. Delete profile
-        await client
-            .from('profiles')
-            .delete()
-            .eq('id', userId);
-        
-        if (kDebugMode) {
-          print('SupabaseService: Deleted profile');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('SupabaseService: Error deleting profile: $e');
-        }
-      }
-      
-      // 9. Sign out from Auth0 and provide deletion instructions
-      try {
-        final auth0Result = await Auth0JWTService.instance.deleteAuth0Account();
-        if (kDebugMode) {
-          print('SupabaseService: Auth0 account deletion result: $auth0Result');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('SupabaseService: Error with Auth0 account deletion: $e');
-        }
+      // Extract the actual Auth0 user ID without the 'auth0_' prefix
+      String cleanUserId = userId;
+      if (userId.startsWith('auth0_')) {
+        cleanUserId = userId.substring(6); // Remove 'auth0_' prefix
       }
       
       if (kDebugMode) {
-        print('SupabaseService: User account and all data deleted successfully');
+        print('SupabaseService: Clean Auth0 user ID: $cleanUserId');
       }
       
-      return true;
+      // Use the ULTIMATE nuclear deletion function
+      try {
+        final result = await client.rpc('ultimate_nuclear_delete_user', 
+          params: {
+            'user_identifier': cleanUserId,
+            'user_email': userEmail,
+            'deletion_reason': 'user_requested_app_deletion'
+          }
+        );
+        
+        if (kDebugMode) {
+          print('SupabaseService: BULLETPROOF deletion result: $result');
+        }
+        
+        // Ensure the function succeeded
+        if (result is Map && result['success'] == true) {
+          if (kDebugMode) {
+            print('SupabaseService: User successfully deleted and blacklisted');
+          }
+          
+          return {
+            'success': true,
+            'message': 'Account permanently deleted',
+            'details': result,
+            'blacklisted': true,
+            'total_deleted': result['total_records_deleted'] ?? 0
+          };
+        } else {
+          throw Exception('Ultimate deletion function returned failure: $result');
+        }
+        
+      } catch (e) {
+        if (kDebugMode) {
+          print('SupabaseService: BULLETPROOF deletion function error: $e');
+        }
+        
+        // Return error with details
+        return {
+          'success': false,
+          'error': e.toString(),
+          'message': 'Account deletion failed',
+          'user_id': userId,
+          'email': userEmail
+        };
+      }
     } catch (e) {
       if (kDebugMode) {
-        print('SupabaseService: Error deleting user account: $e');
+        print('SupabaseService: CRITICAL ERROR during bulletproof deletion: $e');
       }
-      return false;
+      
+      return {
+        'success': false,
+        'error': e.toString(),
+        'message': 'Critical error during account deletion',
+        'user_id': userId,
+        'email': userEmail
+      };
     }
   }
 
@@ -1650,14 +1901,12 @@ class SupabaseService {
         print('SupabaseService: Force clearing all local data and cache');
       }
       
-      // Clear any cached user data
+      // This is already a no-op since we use Supabase for data storage
+      // But we keep it for compatibility with existing code
       await client.auth.signOut();
       
-      // Clear any local storage or cached data
-      // This ensures no old data persists when user is deleted
-      
       if (kDebugMode) {
-        print('SupabaseService: All local data cleared successfully');
+        print('SupabaseService: Local data cleared (signed out from Supabase)');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -1670,7 +1919,7 @@ class SupabaseService {
   static Future<bool> clearAllSavedPosts() async {
     try {
       if (kDebugMode) {
-        print('SupabaseService: Clearing all saved posts for user');
+        print('SupabaseService: Clearing all saved posts for current user');
       }
       
       final userId = getCurrentUserId();
@@ -1693,13 +1942,9 @@ class SupabaseService {
         }
       } catch (e) {
         if (kDebugMode) {
-          print('SupabaseService: Error clearing saved Reddit posts: $e');
+          print('SupabaseService: Error clearing saved Reddit posts (table may not exist): $e');
         }
       }
-      
-      // For community posts, we need to find all posts that this user has saved
-      // Since we don't have a direct relationship, we'll need to handle this in the app state
-      // The app state will be cleared when the user is deleted
       
       if (kDebugMode) {
         print('SupabaseService: Saved posts cleared successfully');
@@ -1721,11 +1966,11 @@ class SupabaseService {
         print('SupabaseService: Resetting all saved posts in database');
       }
       
-      // Reset all posts to not saved
+      // This is a global reset - use with caution
       await client
-          .from('posts')
-          .update({'is_saved': false})
-          .eq('is_saved', true);
+          .from('saved_reddit_posts')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
       
       if (kDebugMode) {
         print('SupabaseService: Reset all saved posts in database');
@@ -1740,5 +1985,49 @@ class SupabaseService {
     }
   }
 
-
-} 
+  static Future<void> testCreateTrackingMetric() async {
+    try {
+      if (kDebugMode) {
+        print('SupabaseService: Testing tracking metric creation...');
+      }
+      
+      final userId = getCurrentUserId();
+      if (userId == null) {
+        throw Exception('No user ID available for testing');
+      }
+      
+      // Get first pet
+      final pets = await getPets();
+      if (pets.isEmpty) {
+        throw Exception('No pets available for testing');
+      }
+      
+      final petId = pets.first['id'];
+      
+      final testData = {
+        'name': 'Test Weight Tracking',
+        'category': 'Health',
+        'pet_id': petId,
+        'target_value': 25.0,
+        'current_value': 0.0,
+        'frequency': 'daily',
+        'description': 'Test tracking metric',
+        'is_active': true,
+        'unit': 'lbs',
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      
+      await createTrackingMetric(testData);
+      
+      if (kDebugMode) {
+        print('SupabaseService: Test tracking metric created successfully!');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('SupabaseService: Test tracking metric failed: $e');
+      }
+      rethrow;
+    }
+  }
+}

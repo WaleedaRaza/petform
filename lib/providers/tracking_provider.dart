@@ -10,14 +10,25 @@ class TrackingProvider with ChangeNotifier {
 
   Future<void> loadMetrics() async {
     try {
-      final metrics = await SupabaseService.getTrackingMetrics('current_user_id');
+      final userId = SupabaseService.getCurrentUserId();
+      if (userId == null) {
+        if (kDebugMode) {
+          print('TrackingProvider: No user ID available for loading metrics');
+        }
+        _metrics = [];
+        notifyListeners();
+        return;
+      }
+      
+      final metrics = await SupabaseService.getTrackingMetrics(userId);
       _metrics = metrics.map((m) => TrackingMetric.fromJson(m)).toList();
       notifyListeners();
     } catch (e) {
       if (kDebugMode) {
         print('TrackingProvider: Error loading metrics: $e');
       }
-      rethrow;
+      _metrics = [];
+      notifyListeners();
     }
   }
 

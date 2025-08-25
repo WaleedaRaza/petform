@@ -67,6 +67,18 @@ class Auth0JWTService {
       _credentials = await _auth0.credentialsManager.credentials();
       
       if (_credentials != null) {
+        // Check if credentials are still valid
+        final expiresAt = _credentials!.expiresAt;
+        if (expiresAt != null && DateTime.now().isAfter(expiresAt)) {
+          if (kDebugMode) {
+            print('Auth0JWTService: Credentials expired, clearing session');
+          }
+          await _auth0.credentialsManager.clearCredentials();
+          _credentials = null;
+          _userProfile = null;
+          return false;
+        }
+        
         // For now, create a basic user profile from credentials
         _userProfile = UserProfile(
           sub: _credentials!.user?.sub ?? '',
@@ -78,7 +90,7 @@ class Auth0JWTService {
         );
         
         if (kDebugMode) {
-          print('Auth0JWTService: Found existing session for: ${_userProfile?.email}');
+          print('Auth0JWTService: Found valid existing session for: ${_userProfile?.email}');
         }
         return true;
       }
@@ -99,8 +111,11 @@ class Auth0JWTService {
         print('Auth0JWTService: Starting Auth0 Universal Login...');
       }
 
-      // Auth0 Universal Login handles both signup and login automatically
-      _credentials = await _auth0.webAuthentication().login();
+      // Always show login screen - don't auto-login
+      // This ensures users can choose their account
+      _credentials = await _auth0.webAuthentication().login(
+        audience: 'https://petform.api',
+      );
       
       // Create user profile from credentials
       _userProfile = UserProfile(
@@ -148,6 +163,33 @@ class Auth0JWTService {
         print('Auth0JWTService: Sign out error: $e');
       }
       rethrow;
+    }
+  }
+  
+  // Clear session and force fresh login (fixes auto-login issue)
+  Future<void> clearSessionAndForceLogin() async {
+    try {
+      if (kDebugMode) {
+        print('Auth0JWTService: Clearing session and forcing fresh login...');
+      }
+      
+      // Clear stored credentials without calling logout (which shows UI)
+      await _auth0.credentialsManager.clearCredentials();
+      
+      // Clear local variables
+      _credentials = null;
+      _userProfile = null;
+      
+      if (kDebugMode) {
+        print('Auth0JWTService: Session cleared successfully');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Auth0JWTService: Error clearing session: $e');
+      }
+      // Continue anyway - clear local variables
+      _credentials = null;
+      _userProfile = null;
     }
   }
   

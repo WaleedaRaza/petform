@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class TrackingMetric {
   final String id;
   final String name;
@@ -29,24 +31,42 @@ class TrackingMetric {
        history = history ?? [];
 
   factory TrackingMetric.fromJson(Map<String, dynamic> json) {
-    return TrackingMetric(
-      id: json['id'] as String? ?? '',
-      name: json['name'] as String? ?? 'Unknown Metric',
-      frequency: json['frequency'] as String? ?? 'daily',
-      petId: json['pet_id'] as String? ?? '',
-      targetValue: (json['target_value'] as num?)?.toDouble() ?? 10.0,
-      currentValue: (json['current_value'] as num?)?.toDouble() ?? 0.0,
-      createdAt: json['created_at'] != null 
-          ? DateTime.parse(json['created_at'] as String)
-          : DateTime.now(),
-      lastUpdated: json['updated_at'] != null 
-          ? DateTime.parse(json['updated_at'] as String) 
-          : null,
-      history: [], // Empty history since it's not stored in DB
-      description: json['description'] as String?,
-      isActive: json['is_active'] as bool? ?? true,
-      category: json['category'] as String?,
-    );
+    try {
+      // Handle both pet_id and petId field names
+      final petId = json['pet_id'] as String? ?? json['petId'] as String? ?? '';
+      
+      return TrackingMetric(
+        id: json['id'] as String? ?? '',
+        name: json['name'] as String? ?? 'Unknown Metric',
+        frequency: json['frequency'] as String? ?? 'daily',
+        petId: petId,
+        targetValue: (json['target_value'] as num?)?.toDouble() ?? 10.0,
+        currentValue: (json['current_value'] as num?)?.toDouble() ?? 0.0,
+        createdAt: json['created_at'] != null 
+            ? DateTime.parse(json['created_at'] as String)
+            : DateTime.now(),
+        lastUpdated: json['updated_at'] != null 
+            ? DateTime.parse(json['updated_at'] as String) 
+            : null,
+        history: [], // Empty history since it's not stored in DB
+        description: json['description'] as String?,
+        isActive: json['is_active'] as bool? ?? true,
+        category: json['category'] as String?,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('TrackingMetric.fromJson: Error parsing JSON: $e');
+        print('TrackingMetric.fromJson: JSON data: $json');
+      }
+      // Return a default metric if parsing fails
+      return TrackingMetric(
+        id: json['id'] as String? ?? '',
+        name: json['name'] as String? ?? 'Unknown Metric',
+        frequency: 'daily',
+        petId: json['pet_id'] as String? ?? '',
+        targetValue: 10.0,
+      );
+    }
   }
 
   Map<String, dynamic> toJson() {

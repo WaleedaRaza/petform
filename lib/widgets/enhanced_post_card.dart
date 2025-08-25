@@ -11,7 +11,8 @@ import 'package:flutter/foundation.dart';
 import '../providers/feed_provider.dart';
 import '../providers/user_provider.dart';
 import '../views/create_post_screen.dart';
-import '../views/user_detail_screen.dart';
+
+
 
 class EnhancedPostCard extends StatelessWidget {
   final Post post;
@@ -190,40 +191,14 @@ class EnhancedPostCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                GestureDetector(
-                  onTap: () async {
-                    // Only make community post authors clickable (not Reddit posts)
-                    if (post.postType.toLowerCase() == 'community') {
-                      try {
-                        final userId = await SupabaseService.getUserIdByUsername(post.author);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => UserDetailScreen(
-                              username: post.author,
-                              userId: userId,
-                            ),
-                          ),
-                        );
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Could not load user profile: $e')),
-                        );
-                      }
-                    }
-                  },
-                  child: Text(
-                    post.author,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: post.postType.toLowerCase() == 'community' 
-                          ? Theme.of(context).colorScheme.secondary
-                          : null,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                Text(
+                  post.author,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Row(
                   children: [
@@ -239,6 +214,7 @@ class EnhancedPostCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
+
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
@@ -285,14 +261,28 @@ class EnhancedPostCard extends StatelessWidget {
                 print('EnhancedPostCard: Save button pressed for post ${post.id}');
                 print('EnhancedPostCard: Current saved state: $isSaved');
               }
-              if (isSaved) {
-                await appState.unsavePost(post);
-              } else {
-                await appState.savePost(post);
-              }
               
-              // Update FeedProvider to reflect the new saved state
-              Provider.of<FeedProvider>(context, listen: false).updateRedditPostsSavedState(context);
+              try {
+                if (isSaved) {
+                  await appState.unsavePost(post);
+                } else {
+                  await appState.savePost(post);
+                }
+                
+                // Update FeedProvider to reflect the new saved state
+                Provider.of<FeedProvider>(context, listen: false).updateRedditPostsSavedState(context);
+              } catch (e) {
+                if (kDebugMode) {
+                  print('EnhancedPostCard: Error saving/unsaving post: $e');
+                }
+                // Show error to user
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error ${isSaved ? 'unsaving' : 'saving'} post: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             icon: Icon(
               isSaved ? Icons.bookmark : Icons.bookmark_border,

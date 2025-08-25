@@ -104,26 +104,26 @@ class _LoginScreenState extends State<LoginScreen> {
             _isLoading
                 ? const CircularProgressIndicator()
                 : RoundedButton(text: 'Log In', onPressed: _signIn),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
-                          );
-                        },
-                        child: const Text(
-                          'Forgot Password?',
-                          style: TextStyle(color: Colors.orange),
-                        ),
-                      ),
-                    ],
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+                );
+              },
+              child: const Text(
+                'Forgot Password?',
+                style: TextStyle(color: Colors.orange),
+              ),
+            ),
+          ],
                   ),
                 ),
               ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

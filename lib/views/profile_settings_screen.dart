@@ -637,12 +637,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                   _isLoading = true;
                                 });
                                 
-                                // ACTUALLY DELETE THE ACCOUNT AND DATA
-                                final success = await SupabaseService.deleteCurrentUserAccount();
+                                // BULLETPROOF ACCOUNT DELETION
+                                final deletionResult = await SupabaseService.deleteCurrentUserAccount();
                                 
-                                if (success) {
+                                if (deletionResult['success'] == true) {
                                   if (kDebugMode) {
-                                    print('ProfileSettingsScreen: Account deleted successfully');
+                                    print('ProfileSettingsScreen: Account permanently deleted and blacklisted');
+                                    print('ProfileSettingsScreen: Total records deleted: ${deletionResult['total_deleted']}');
                                   }
                                   
                                   // Clear local state
@@ -654,12 +655,18 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                   
                                   if (!mounted) return;
                                   
-                                  // Show Auth0 deletion instructions
-                                  final auth0Result = await Auth0JWTService.instance.deleteAuth0Account();
+                                  // Sign out from Auth0
+                                  try {
+                                    await Auth0JWTService.instance.signOut();
+                                  } catch (e) {
+                                    if (kDebugMode) {
+                                      print('ProfileSettingsScreen: Auth0 sign out error (non-critical): $e');
+                                    }
+                                  }
                                   
                                   if (!mounted) return;
                                   
-                                  // Show simple success dialog
+                                  // Show bulletproof success dialog
                                   await showDialog(
                                     context: context,
                                     barrierDismissible: false,
@@ -667,31 +674,64 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                       title: Row(
                                         children: [
                                           Icon(
-                                            Icons.check_circle,
-                                            color: Colors.green,
+                                            Icons.security,
+                                            color: Colors.red,
                                             size: 28,
                                           ),
                                           const SizedBox(width: 12),
-                                          const Text('Account Deleted'),
+                                          Expanded(
+                                            child: Text(
+                                              'Account Permanently Deleted',
+                                              style: TextStyle(
+                                              color: Colors.red,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            ),
+                                          ),
                                         ],
                                       ),
                                       content: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            auth0Result['message'] as String? ?? 'Your Petform account has been completely deleted.',
-                                            style: const TextStyle(
+                                          const Text(
+                                            '🚨 BULLETPROOF DELETION COMPLETED',
+                                            style: TextStyle(
                                               fontSize: 16,
-                                              fontWeight: FontWeight.w500,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.red,
                                             ),
                                           ),
-                                          const SizedBox(height: 12),
+                                          const SizedBox(height: 16),
                                           Text(
-                                            auth0Result['note'] as String? ?? 'You have been signed out and all your data has been permanently removed.',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.grey.shade600,
+                                            '✅ ${deletionResult['total_deleted'] ?? 0} records permanently deleted',
+                                            style: const TextStyle(fontSize: 14),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          const Text(
+                                            '🔒 Account blacklisted - cannot be restored',
+                                            style: TextStyle(fontSize: 14),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          const Text(
+                                            '🚪 Signed out from all devices',
+                                            style: TextStyle(fontSize: 14),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Container(
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: Colors.red.withOpacity(0.3)),
+                                            ),
+                                            child: const Text(
+                                              'WARNING: This deletion is irreversible. Even if you try to log back in with the same credentials, you will NOT be able to restore your data.',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                                color: Colors.red,
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -706,11 +746,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                             );
                                           },
                                           style: TextButton.styleFrom(
-                                            backgroundColor: Colors.green,
+                                            backgroundColor: Colors.red,
                                             foregroundColor: Colors.white,
                                             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                                           ),
-                                          child: const Text('Continue'),
+                                          child: const Text('I Understand'),
                                         ),
                                       ],
                                     ),
@@ -722,7 +762,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                     MaterialPageRoute(builder: (context) => const WelcomeScreen()),
                                   );
                                 } else {
-                                  throw Exception('Failed to delete account');
+                                  throw Exception(deletionResult['message'] ?? 'Failed to delete account');
                                 }
                               } catch (e) {
                                 if (!mounted) return;

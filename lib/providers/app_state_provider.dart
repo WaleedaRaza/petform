@@ -300,7 +300,9 @@ class AppStateProvider with ChangeNotifier {
       if (kDebugMode) {
         print('AppStateProvider.savePost: Error saving post: $e');
       }
-      return;
+      // Show error to user instead of failing silently
+      _setError('Failed to save post: $e');
+      rethrow;
     }
   }
   
@@ -354,7 +356,9 @@ class AppStateProvider with ChangeNotifier {
       if (kDebugMode) {
         print('AppStateProvider.unsavePost: Error unsaving post: $e');
       }
-      return;
+      // Show error to user instead of failing silently
+      _setError('Failed to unsave post: $e');
+      rethrow;
     }
   }
   
@@ -400,19 +404,27 @@ class AppStateProvider with ChangeNotifier {
   
   Future<void> _loadSavedRedditUrls() async {
     try {
+      if (kDebugMode) {
+        print('AppStateProvider._loadSavedRedditUrls: Loading saved Reddit URLs from database');
+      }
+      
       final savedPosts = await SupabaseService.getSavedRedditPosts();
       _savedRedditUrls = savedPosts
-          .map((post) => post['content'] as String) // Get URL from content field
+          .map((post) => post['reddit_url'] as String) // Get URL from reddit_url field
           .toSet();
-      notifyListeners();
       
       if (kDebugMode) {
-        print('AppStateProvider: Loaded ${savedPosts.length} saved Reddit posts');
+        print('AppStateProvider._loadSavedRedditUrls: Loaded ${savedPosts.length} saved Reddit posts');
+        print('AppStateProvider._loadSavedRedditUrls: URLs: ${_savedRedditUrls.join(", ")}');
       }
+      
+      notifyListeners();
     } catch (e) {
       if (kDebugMode) {
-        print('AppStateProvider: Error loading saved Reddit posts: $e');
+        print('AppStateProvider._loadSavedRedditUrls: Error loading saved Reddit posts: $e');
       }
+      // Don't rethrow - let the app continue with empty saved posts
+      _savedRedditUrls = {};
     }
   }
   
@@ -624,33 +636,60 @@ class AppStateProvider with ChangeNotifier {
     try {
       if (kDebugMode) {
         print('AppStateProvider: Adding tracking metric: ${metric.name}');
+        print('AppStateProvider: Pet ID: ${metric.petId}');
+        print('AppStateProvider: Current user ID: ${SupabaseService.getCurrentUserId()}');
+        print('AppStateProvider: Current metrics count: ${_trackingMetrics.length}');
       }
       
-      // Create a bulletproof metric data object
-      final metricData = {
-        'name': metric.name,
-        'category': metric.category ?? 'Health',
-        'pet_id': metric.petId,
-        'target_value': metric.targetValue,
-        'current_value': metric.currentValue,
-        'frequency': metric.frequency,
-        'description': metric.description ?? '',
-        'is_active': metric.isActive,
-        'unit': metric.description ?? '',
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      };
+      // Create metric with temporary ID for immediate display
+      final displayMetric = TrackingMetric(
+        id: DateTime.now().millisecondsSinceEpoch.toString(), // Temporary ID
+        name: metric.name,
+        frequency: metric.frequency,
+        petId: metric.petId,
+        targetValue: metric.targetValue,
+        currentValue: metric.currentValue,
+        description: metric.description,
+        isActive: metric.isActive,
+        category: metric.category,
+      );
+      
+      // IMMEDIATELY add to local list and update UI
+      _trackingMetrics.add(displayMetric);
+      notifyListeners(); // CRITICAL: Update UI FIRST
       
       if (kDebugMode) {
-        print('AppStateProvider: Metric data: $metricData');
+        print('AppStateProvider: IMMEDIATELY added metric to UI, total metrics now: ${_trackingMetrics.length}');
       }
       
-      await SupabaseService.createTrackingMetric(metricData);
-      await _loadTrackingMetrics();
-      
-      if (kDebugMode) {
-        print('AppStateProvider: Successfully added tracking metric');
+      // Now try to save to database in background
+      try {
+        final metricData = {
+          'name': metric.name,
+          'category': metric.category ?? 'Health',
+          'pet_id': metric.petId,
+          'target_value': metric.targetValue,
+          'current_value': metric.currentValue,
+          'frequency': metric.frequency,
+          'description': metric.description ?? '',
+          'is_active': metric.isActive,
+          'unit': metric.description ?? '',
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        };
+        
+        await SupabaseService.createTrackingMetric(metricData);
+        
+        if (kDebugMode) {
+          print('AppStateProvider: Successfully saved tracking metric to database');
+        }
+      } catch (dbError) {
+        if (kDebugMode) {
+          print('AppStateProvider: Database save failed but metric is still visible: $dbError');
+        }
+        // Keep the metric in UI even if database save fails
       }
+      
     } catch (e) {
       if (kDebugMode) {
         print('AppStateProvider: Error adding tracking metric: $e');
@@ -681,6 +720,13 @@ class AppStateProvider with ChangeNotifier {
       }
       rethrow;
     }
+  }
+
+  Future<void> refreshTrackingMetrics() async {
+    if (kDebugMode) {
+      print('AppStateProvider: Refreshing tracking metrics...');
+    }
+    await _loadTrackingMetrics();
   }
 
   List<TrackingMetric> getMetricsByPet(String petId) {

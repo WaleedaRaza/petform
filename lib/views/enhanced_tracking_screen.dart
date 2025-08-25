@@ -24,13 +24,16 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
     super.initState();
     // Defer initialization to avoid setState during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-    _initializeAppState();
+      _initializeAppState();
     });
   }
 
   Future<void> _initializeAppState() async {
     final appState = Provider.of<AppStateProvider>(context, listen: false);
     await appState.initialize();
+    
+    // Force refresh of tracking metrics
+    await appState.refreshTrackingMetrics();
   }
 
   Widget _buildSearchSection() {
@@ -86,6 +89,7 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
       print('EnhancedTrackingScreen: Pets count: ${pets.length}');
       print('EnhancedTrackingScreen: Metrics count: ${metrics.length}');
       print('EnhancedTrackingScreen: Pets: ${pets.map((p) => '${p.name} (${p.id})').toList()}');
+      print('EnhancedTrackingScreen: Metrics: ${metrics.map((m) => '${m.name} (${m.petId})').toList()}');
       print('EnhancedTrackingScreen: Building with search+add row...');
     }
 
@@ -388,6 +392,8 @@ class _EnhancedTrackingScreenState extends State<EnhancedTrackingScreen> {
       SnackBar(content: Text('Deleted ${metric.name}')),
     );
   }
+
+  
 }
 
 class _AddMetricDialog extends StatefulWidget {
@@ -460,7 +466,7 @@ class _AddMetricDialogState extends State<_AddMetricDialog> {
     );
   }
 
-  void _createMetric() {
+  void _createMetric() async {
     if (_nameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a metric name')),
@@ -491,8 +497,23 @@ class _AddMetricDialogState extends State<_AddMetricDialog> {
       targetValue: targetValue,
     );
 
+    if (kDebugMode) {
+      print('EnhancedTrackingScreen: Creating new metric: ${newMetric.name}');
+      print('EnhancedTrackingScreen: Pet ID: ${newMetric.petId}');
+      print('EnhancedTrackingScreen: Target value: ${newMetric.targetValue}');
+    }
+
     final appState = Provider.of<AppStateProvider>(context, listen: false);
-    appState.addTrackingMetric(newMetric);
+    await appState.addTrackingMetric(newMetric);
+    
+    if (kDebugMode) {
+      print('EnhancedTrackingScreen: Metric creation completed');
+    }
+    
+    // Force rebuild of the screen
+    if (mounted) {
+      setState(() {});
+    }
     
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(

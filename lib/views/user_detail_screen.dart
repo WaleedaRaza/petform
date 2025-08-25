@@ -32,9 +32,7 @@ class _UserDetailScreenState extends State<UserDetailScreen>
   List<ShoppingItem> _userShoppingItems = [];
   bool _isLoading = true;
   String? _userDisplayName;
-  bool _isFollowing = false;
-  int _followerCount = 0;
-  int _followingCount = 0;
+
   bool _isOwnProfile = false;
 
   @override
@@ -60,24 +58,31 @@ class _UserDetailScreenState extends State<UserDetailScreen>
       // Check if this is the current user's profile
       final currentUserId = await SupabaseService.getCurrentUserId();
       _isOwnProfile = currentUserId == widget.userId;
-
-      // Load user's pets (public data - everyone can see everyone's pets)
-      if (widget.userId != null) {
-        try {
-          if (_isOwnProfile) {
-            // Use current user's method for own profile
-            final petsData = await SupabaseService.getPets();
-            _userPets = petsData.map((p) => Pet.fromJson(p)).toList();
-          } else {
-            // Use public method for other users' profiles
-            final petsData = await SupabaseService.getPetsByUserId(widget.userId!);
-            _userPets = petsData.map((p) => Pet.fromJson(p)).toList();
-          }
-        } catch (e) {
-          if (kDebugMode) print('Error loading pets: $e');
-          _userPets = [];
+      
+      // CRITICAL: Find the actual user_id for this profile
+      String? profileUserId = widget.userId;
+      if (profileUserId == null) {
+        // Try to find user_id by looking up the profile
+        profileUserId = await SupabaseService.getUserIdByUsername(widget.username);
+        if (kDebugMode) {
+          print('UserDetailScreen: Found user_id for ${widget.username}: $profileUserId');
         }
-      } else {
+      }
+
+      // Load user's pets - SAME AS POSTS (get all, filter by author)
+      try {
+        if (kDebugMode) {
+          print('UserDetailScreen: Getting ALL pets and filtering by author: ${widget.username}');
+        }
+        
+        final allPetsData = await SupabaseService.getPetsByAuthor(widget.username);
+        _userPets = allPetsData.map((p) => Pet.fromJson(p)).toList();
+        
+        if (kDebugMode) {
+          print('UserDetailScreen: Found ${_userPets.length} pets for author ${widget.username}');
+        }
+      } catch (e) {
+        if (kDebugMode) print('Error loading pets for profile: $e');
         _userPets = [];
       }
 
@@ -95,47 +100,23 @@ class _UserDetailScreenState extends State<UserDetailScreen>
         _userPosts = [];
       }
 
-      // Load user's shopping items (public data - everyone can see everyone's shopping lists)
-      if (widget.userId != null) {
-        try {
-          if (kDebugMode) {
-            print('UserDetailScreen: Loading shopping items for user ${widget.username} (ID: ${widget.userId})');
-            print('UserDetailScreen: Is own profile: $_isOwnProfile');
-          }
-          
-          if (_isOwnProfile) {
-            // Use current user's method for own profile
-            final shoppingData = await SupabaseService.getShoppingItems();
-            _userShoppingItems = shoppingData;
-            if (kDebugMode) {
-              print('UserDetailScreen: Loaded ${_userShoppingItems.length} shopping items for own profile');
-            }
-          } else {
-            // Use public method for other users' profiles
-            _userShoppingItems = await SupabaseService.getShoppingItemsByUserId(widget.userId!);
-            if (kDebugMode) {
-              print('UserDetailScreen: Loaded ${_userShoppingItems.length} shopping items for other user');
-            }
-          }
-        } catch (e) {
-          if (kDebugMode) print('Error loading shopping items: $e');
-          _userShoppingItems = [];
+      // Load user's shopping items - SAME AS POSTS (get all, filter by author)
+      try {
+        if (kDebugMode) {
+          print('UserDetailScreen: Getting ALL shopping items and filtering by author: ${widget.username}');
         }
-      } else {
+        
+        _userShoppingItems = await SupabaseService.getShoppingItemsByAuthor(widget.username);
+        
+        if (kDebugMode) {
+          print('UserDetailScreen: Found ${_userShoppingItems.length} shopping items for author ${widget.username}');
+        }
+      } catch (e) {
+        if (kDebugMode) print('Error loading shopping items for profile: $e');
         _userShoppingItems = [];
-        if (kDebugMode) print('UserDetailScreen: No userId provided, cannot load shopping items');
       }
 
-      // Load follow information
-      if (widget.userId != null) {
-        try {
-          _isFollowing = await SupabaseService.isFollowing(widget.userId!);
-          _followerCount = await SupabaseService.getFollowerCount(widget.userId!);
-          _followingCount = await SupabaseService.getFollowingCount(widget.userId!);
-        } catch (e) {
-          if (kDebugMode) print('Error loading follow data: $e');
-        }
-      }
+
     } catch (e) {
       if (kDebugMode) print('Error loading user data: $e');
     }
@@ -143,39 +124,7 @@ class _UserDetailScreenState extends State<UserDetailScreen>
     setState(() => _isLoading = false);
   }
 
-  Future<void> _toggleFollow() async {
-    if (widget.userId == null) return;
 
-    try {
-      setState(() => _isLoading = true);
-      
-      if (_isFollowing) {
-        await SupabaseService.unfollowUser(widget.userId!);
-        setState(() {
-          _isFollowing = false;
-          _followerCount = _followerCount > 0 ? _followerCount - 1 : 0;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Unfollowed ${widget.username}')),
-        );
-      } else {
-        await SupabaseService.followUser(widget.userId!);
-        setState(() {
-          _isFollowing = true;
-          _followerCount++;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Following ${widget.username}')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -249,15 +198,13 @@ class _UserDetailScreenState extends State<UserDetailScreen>
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  Row(
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 4,
                                     children: [
                                       _buildStatChip('${_userPets.length} Pets'),
-                                      const SizedBox(width: 8),
                                       _buildStatChip('${_userPosts.length} Posts'),
-                                      const SizedBox(width: 8),
-                                      _buildStatChip('$_followerCount Followers'),
-                                      const SizedBox(width: 8),
-                                      _buildStatChip('$_followingCount Following'),
+                                      _buildStatChip('${_userShoppingItems.length} Items'),
                                     ],
                                   ),
                                 ],
@@ -268,26 +215,7 @@ class _UserDetailScreenState extends State<UserDetailScreen>
                       ),
                     ),
                   ),
-                  // Follow Button (only show for other users)
-                  if (widget.userId != null && !_isOwnProfile)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: _isLoading ? null : _toggleFollow,
-                          icon: Icon(_isFollowing ? Icons.person_remove : Icons.person_add),
-                          label: Text(_isFollowing ? 'Unfollow' : 'Follow'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _isFollowing 
-                                ? Colors.grey[600] 
-                                : Theme.of(context).colorScheme.secondary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
-                    ),
+
                   const SizedBox(height: 16),
                   // Tab Content
                   Expanded(

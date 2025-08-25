@@ -329,7 +329,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Login or create an account with Auth0',
+                  'Login or create an account',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.white70,
