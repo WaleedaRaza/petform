@@ -24,10 +24,13 @@ export PATH="$PYTHONUSERBASE/bin:$PATH"
 
 # Example: only run CocoaPods if a Podfile exists
 if [[ -f "ios/Podfile" || -f "Podfile" ]]; then
-  echo "Podfile found – running pod install"
+  echo "Podfile found – attempting pod install"
   # CocoaPods is preinstalled in Xcode Cloud; avoid sudo and verbose noise
-  pod repo update --silent || true
-  pod install --project-directory=ios || pod install
+  # Use || true to prevent script failure if pod commands fail
+  pod repo update --silent || echo "⚠️ pod repo update failed, continuing..."
+  pod install --project-directory=ios || echo "⚠️ pod install failed, continuing..."
+else
+  echo "No Podfile found, skipping CocoaPods setup"
 fi
 
 # Example: install SwiftLint if used and not present
