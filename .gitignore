@@ -46,3 +46,6 @@ app.*.map.json
 
 # API Keys and sensitive configuration
 lib/config/ai_config.dart
+
+# Xcode Cloud CI scripts (keep these in git)
+!ios/ci_scripts/
