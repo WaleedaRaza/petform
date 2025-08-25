@@ -1,190 +1,72 @@
 #!/bin/bash
+# ci_post_clone.sh (root level for Xcode Cloud)
+# Fail fast and log commands
+set -euo pipefail
+IFS=$'\n\t'
+echo "===== ci_post_clone: start ====="
 
-# Debug Xcode Cloud CI Post-Clone Script
-# This script identifies exactly why builds are failing
-
-echo "🔍 DEBUG: Xcode Cloud environment analysis..."
-echo "================================================"
-
-# Environment variables
-echo "📋 Environment Variables:"
-echo "CI_WORKSPACE: $CI_WORKSPACE"
-echo "CI_BUILD_ID: $CI_BUILD_ID"
-echo "CI_COMMIT: $CI_COMMIT"
-echo "CI_BRANCH: $CI_BRANCH"
+# Helpful logging
+echo "SHELL: $SHELL"
 echo "PWD: $(pwd)"
-echo ""
-
-# System information
-echo "🖥️ System Information:"
-echo "OS: $(uname -a)"
-echo "Architecture: $(uname -m)"
-echo "Available memory: $(free -h 2>/dev/null || echo 'free command not available')"
-echo "Disk space: $(df -h . 2>/dev/null || echo 'df command not available')"
-echo ""
-
-# Flutter detection
-echo "🔍 Flutter Detection:"
+echo "Xcode version: $(xcodebuild -version || true)"
+echo "Swift version: $(swift --version || true)"
 echo "PATH: $PATH"
-echo ""
 
-# Check multiple Flutter locations
-FLUTTER_LOCATIONS=(
-    "/usr/local/bin/flutter"
-    "/opt/homebrew/bin/flutter"
-    "/usr/local/flutter/bin/flutter"
-    "/Users/runner/flutter/bin/flutter"
-    "/Users/ci/flutter/bin/flutter"
-    "/usr/bin/flutter"
-)
+# If you need Ruby gems (e.g., CocoaPods plugins), use the system Ruby and a local GEM_HOME
+export GEM_HOME="$PWD/.gem"
+export GEM_PATH="$GEM_HOME"
+export PATH="$GEM_HOME/bin:$PATH"
 
-echo "📍 Checking Flutter locations:"
-for location in "${FLUTTER_LOCATIONS[@]}"; do
-    if [ -x "$location" ]; then
-        echo "✅ $location - EXISTS and EXECUTABLE"
-        echo "   Version: $($location --version 2>/dev/null | head -n1 || echo 'Version check failed')"
-    elif [ -f "$location" ]; then
-        echo "⚠️ $location - EXISTS but NOT EXECUTABLE"
-        ls -la "$location"
-    else
-        echo "❌ $location - NOT FOUND"
-    fi
-done
-echo ""
+# If you need Python tools
+export PIP_USER=no
+export PYTHONUSERBASE="$PWD/.pypkg"
+export PATH="$PYTHONUSERBASE/bin:$PATH"
 
-# Check which command
-echo "🔍 'which flutter' results:"
-which flutter 2>/dev/null || echo "which flutter: not found"
-echo ""
-
-# Check command availability
-echo "🔍 Available commands:"
-echo "flutter: $(command -v flutter 2>/dev/null || echo 'not found')"
-echo "dart: $(command -v dart 2>/dev/null || echo 'not found')"
-echo "git: $(command -v git 2>/dev/null || echo 'not found')"
-echo ""
-
-# Navigate to workspace
-echo "📁 Navigating to CI workspace..."
-cd $CI_WORKSPACE
-echo "Current directory: $(pwd)"
-echo ""
-
-# Check repository contents
-echo "📋 Repository contents:"
-ls -la
-echo ""
-
-# Check iOS directory
-echo "📱 iOS directory contents:"
-if [ -d "ios" ]; then
-    ls -la ios/
-    echo ""
-    echo "📁 Flutter subdirectory:"
-    if [ -d "ios/Flutter" ]; then
-        ls -la ios/Flutter/
-    else
-        echo "❌ ios/Flutter directory not found"
-    fi
-    echo ""
-    echo "📁 Pods directory:"
-    if [ -d "ios/Pods" ]; then
-        ls -la ios/Pods/Target\ Support\ Files/Pods-Runner/ 2>/dev/null || echo "Pods-Runner directory not found"
-    else
-        echo "❌ ios/Pods directory not found"
-    fi
-else
-    echo "❌ ios directory not found"
-fi
-echo ""
-
-# Check pubspec.yaml
-echo "📦 pubspec.yaml check:"
-if [ -f "pubspec.yaml" ]; then
-    echo "✅ pubspec.yaml exists"
-    echo "First few lines:"
-    head -5 pubspec.yaml
-else
-    echo "❌ pubspec.yaml not found"
-fi
-echo ""
-
-# Try to run Flutter if available
-if command -v flutter &> /dev/null; then
-    echo "🚀 Flutter found, attempting basic commands..."
-    
-    echo "📋 Flutter version:"
-    flutter --version 2>&1 || echo "Flutter version failed"
-    echo ""
-    
-    echo "📦 Flutter doctor:"
-    flutter doctor 2>&1 || echo "Flutter doctor failed"
-    echo ""
-    
-    echo "🔧 Flutter pub get:"
-    flutter pub get 2>&1 || echo "Flutter pub get failed"
-    echo ""
-    
-    echo "📱 Flutter build ios:"
-    flutter build ios --no-codesign --debug 2>&1 || echo "Flutter build failed"
-    echo ""
-    
-    echo "📁 After Flutter commands - Flutter directory:"
-    if [ -d "ios/Flutter" ]; then
-        ls -la ios/Flutter/
-    fi
-    echo ""
-    
-    echo "📁 After Flutter commands - Pods directory:"
-    if [ -d "ios/Pods" ]; then
-        ls -la ios/Pods/Target\ Support\ Files/Pods-Runner/ 2>/dev/null || echo "Pods-Runner directory not found"
-    fi
-else
-    echo "❌ Flutter not available in PATH"
-    echo "🔍 Trying to find Flutter in common locations..."
-    
-    # Try to add Flutter to PATH
-    for location in "${FLUTTER_LOCATIONS[@]}"; do
-        if [ -x "$location" ]; then
-            echo "✅ Found Flutter at $location, adding to PATH..."
-            export PATH="$(dirname $location):$PATH"
-            break
-        fi
-    done
-    
-    # Try again
-    if command -v flutter &> /dev/null; then
-        echo "🚀 Flutter now available, attempting commands..."
-        flutter --version 2>&1 || echo "Flutter version failed"
-    else
-        echo "❌ Still cannot find Flutter"
-    fi
+# Example: only run CocoaPods if a Podfile exists
+if [[ -f "ios/Podfile" || -f "Podfile" ]]; then
+  echo "Podfile found – running pod install"
+  # CocoaPods is preinstalled in Xcode Cloud; avoid sudo and verbose noise
+  pod repo update --silent || true
+  pod install --project-directory=ios || pod install
 fi
 
-echo "================================================"
-echo "🔍 DEBUG: End of environment analysis"
-echo ""
-
-# Final status
-echo "📊 FINAL STATUS:"
-if command -v flutter &> /dev/null; then
-    echo "✅ Flutter: AVAILABLE"
-else
-    echo "❌ Flutter: NOT AVAILABLE"
+# Example: install SwiftLint if used and not present
+if grep -Riq "swiftlint" .; then
+  if ! command -v swiftlint >/dev/null 2>&1; then
+    echo "Installing SwiftLint via Mint (local vendor)"
+    # Vendor Mint in repo or fetch a prebuilt binary you commit to Tools/
+    # Safe fallback: use SwiftPM to build a local tool cache
+    mkdir -p Tools
+    pushd Tools
+    if ! command -v xcrun >/dev/null; then echo "xcrun not found"; exit 1; fi
+    if [ ! -f ./swiftlint ]; then
+      echo "Building SwiftLint with SwiftPM (may take a bit)"
+      git clone --depth 1 https://github.com/realm/SwiftLint.git
+      pushd SwiftLint
+      swift build -c release
+      cp .build/release/swiftlint ../swiftlint
+      popd
+    fi
+    export PATH="$PWD:$PATH"
+    popd
+  fi
+  echo "SwiftLint version: $(swiftlint version)"
 fi
 
-if [ -f "ios/Flutter/Generated.xcconfig" ]; then
-    echo "✅ Generated.xcconfig: EXISTS"
+# Example: set default env vars if not provided (avoid -u crashes)
+: "${CONFIGURATION:=Release}"
+: "${SCHEME:=Runner}"
+: "${WORKSPACE:=Runner.xcworkspace}"
+
+echo "CONFIGURATION=$CONFIGURATION"
+echo "SCHEME=$SCHEME"
+echo "WORKSPACE=$WORKSPACE"
+
+# If you decrypt or read secrets, guard missing values
+if [[ -n "${MY_SECRET:-}" ]]; then
+  echo "Secret present (length: ${#MY_SECRET})"
 else
-    echo "❌ Generated.xcconfig: MISSING"
+  echo "MY_SECRET not set; skipping secret-dependent steps"
 fi
 
-if [ -f "ios/Pods/Target Support Files/Pods-Runner/Pods-Runner-frameworks-Release-input-files.xcfilelist" ]; then
-    echo "✅ Pods framework files: EXIST"
-else
-    echo "❌ Pods framework files: MISSING"
-fi
-
-echo ""
-echo "🚀 Proceeding with build attempt..."
-exit 0
+echo "===== ci_post_clone: complete ====="

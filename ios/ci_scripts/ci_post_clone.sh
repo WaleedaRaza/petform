@@ -1,79 +1,72 @@
 #!/bin/bash
+# ci_scripts/ci_post_clone.sh
+# Fail fast and log commands
+set -euo pipefail
+IFS=$'\n\t'
+echo "===== ci_post_clone: start ====="
 
-# Xcode Cloud CI Post-Clone Script
-# This script runs after the repository is cloned in Xcode Cloud
+# Helpful logging
+echo "SHELL: $SHELL"
+echo "PWD: $(pwd)"
+echo "Xcode version: $(xcodebuild -version || true)"
+echo "Swift version: $(swift --version || true)"
+echo "PATH: $PATH"
 
-echo "🚀 Setting up Flutter for Xcode Cloud build..."
+# If you need Ruby gems (e.g., CocoaPods plugins), use the system Ruby and a local GEM_HOME
+export GEM_HOME="$PWD/.gem"
+export GEM_PATH="$GEM_HOME"
+export PATH="$GEM_HOME/bin:$PATH"
 
-# Set multiple possible Flutter paths
-export PATH="$PATH:/usr/local/bin:/opt/homebrew/bin:/usr/local/flutter/bin"
+# If you need Python tools
+export PIP_USER=no
+export PYTHONUSERBASE="$PWD/.pypkg"
+export PATH="$PYTHONUSERBASE/bin:$PATH"
 
-# Try to find Flutter in common locations
-FLUTTER_PATH=""
-for path in "/usr/local/bin/flutter" "/opt/homebrew/bin/flutter" "/usr/local/flutter/bin/flutter" "$(which flutter)"; do
-    if [ -x "$path" ]; then
-        FLUTTER_PATH="$path"
-        echo "✅ Found Flutter at: $path"
-        break
-    fi
-done
-
-# If Flutter not found, try to install it
-if [ -z "$FLUTTER_PATH" ]; then
-    echo "⚠️ Flutter not found in common paths, attempting to install..."
-    
-    # Try to install Flutter using different methods
-    if command -v brew &> /dev/null; then
-        echo "📦 Installing Flutter via Homebrew..."
-        brew install --cask flutter
-        export PATH="$PATH:/opt/homebrew/bin"
-    elif [ -d "/usr/local/flutter" ]; then
-        echo "📦 Using system Flutter installation..."
-        export PATH="$PATH:/usr/local/flutter/bin"
-    else
-        echo "❌ Could not find or install Flutter"
-        echo "🔍 Available commands:"
-        which -a flutter || echo "No flutter found"
-        echo "🔍 PATH: $PATH"
-        echo "🔍 Available in /usr/local/bin:"
-        ls -la /usr/local/bin/ | grep flutter || echo "No flutter in /usr/local/bin"
-        exit 1
-    fi
+# Example: only run CocoaPods if a Podfile exists
+if [[ -f "ios/Podfile" || -f "Podfile" ]]; then
+  echo "Podfile found – running pod install"
+  # CocoaPods is preinstalled in Xcode Cloud; avoid sudo and verbose noise
+  pod repo update --silent || true
+  pod install --project-directory=ios || pod install
 fi
 
-# Verify Flutter installation
-if ! command -v flutter &> /dev/null; then
-    echo "❌ Flutter still not found after setup attempts"
-    echo "🔍 Final PATH: $PATH"
-    echo "🔍 Available commands:"
-    which -a flutter || echo "No flutter found"
-    exit 1
+# Example: install SwiftLint if used and not present
+if grep -Riq "swiftlint" .; then
+  if ! command -v swiftlint >/dev/null 2>&1; then
+    echo "Installing SwiftLint via Mint (local vendor)"
+    # Vendor Mint in repo or fetch a prebuilt binary you commit to Tools/
+    # Safe fallback: use SwiftPM to build a local tool cache
+    mkdir -p Tools
+    pushd Tools
+    if ! command -v xcrun >/dev/null; then echo "xcrun not found"; exit 1; fi
+    if [ ! -f ./swiftlint ]; then
+      echo "Building SwiftLint with SwiftPM (may take a bit)"
+      git clone --depth 1 https://github.com/realm/SwiftLint.git
+      pushd SwiftLint
+      swift build -c release
+      cp .build/release/swiftlint ../swiftlint
+      popd
+    fi
+    export PATH="$PWD:$PATH"
+    popd
+  fi
+  echo "SwiftLint version: $(swiftlint version)"
 fi
 
-echo "✅ Flutter found: $(flutter --version | head -n1)"
+# Example: set default env vars if not provided (avoid -u crashes)
+: "${CONFIGURATION:=Release}"
+: "${SCHEME:=Runner}"
+: "${WORKSPACE:=Runner.xcworkspace}"
 
-# Navigate to project root
-cd $CI_WORKSPACE
-echo "📁 Working directory: $(pwd)"
+echo "CONFIGURATION=$CONFIGURATION"
+echo "SCHEME=$SCHEME"
+echo "WORKSPACE=$WORKSPACE"
 
-# Clean and regenerate Flutter files
-echo "🧹 Cleaning Flutter build cache..."
-flutter clean || echo "⚠️ Flutter clean failed, continuing..."
+# If you decrypt or read secrets, guard missing values
+if [[ -n "${MY_SECRET:-}" ]]; then
+  echo "Secret present (length: ${#MY_SECRET})"
+else
+  echo "MY_SECRET not set; skipping secret-dependent steps"
+fi
 
-echo "📦 Getting Flutter dependencies..."
-flutter pub get || {
-    echo "❌ Flutter pub get failed"
-    exit 1
-}
-
-echo "🔧 Generating iOS configuration files..."
-flutter build ios --no-codesign --debug || {
-    echo "❌ Flutter build failed"
-    echo "🔍 Checking what files exist:"
-    ls -la ios/Flutter/ || echo "No Flutter directory"
-    exit 1
-}
-
-echo "✅ Flutter setup complete for Xcode Cloud!"
-echo "📁 Generated files:"
-ls -la ios/Flutter/
+echo "===== ci_post_clone: complete ====="
