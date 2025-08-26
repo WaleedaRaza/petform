@@ -12,64 +12,51 @@ echo "Xcode version: $(xcodebuild -version || true)"
 echo "Swift version: $(swift --version || true)"
 echo "PATH: $PATH"
 
-# If you need Ruby gems (e.g., CocoaPods plugins), use the system Ruby and a local GEM_HOME
-export GEM_HOME="$PWD/.gem"
-export GEM_PATH="$GEM_HOME"
-export PATH="$GEM_HOME/bin:$PATH"
-
-# If you need Python tools
-export PIP_USER=no
-export PYTHONUSERBASE="$PWD/.pypkg"
-export PATH="$PYTHONUSERBASE/bin:$PATH"
-
-# Example: only run CocoaPods if a Podfile exists
-if [[ -f "ios/Podfile" || -f "Podfile" ]]; then
-  echo "Podfile found – attempting pod install"
-  # CocoaPods is preinstalled in Xcode Cloud; avoid sudo and verbose noise
-  # Use || true to prevent script failure if pod commands fail
-  pod repo update --silent || echo "⚠️ pod repo update failed, continuing..."
-  pod install --project-directory=ios || echo "⚠️ pod install failed, continuing..."
-else
-  echo "No Podfile found, skipping CocoaPods setup"
+# CocoaPods: prefer the system one, but ensure we can run it
+if ! command -v pod >/dev/null 2>&1; then
+  export GEM_HOME="$PWD/.gem"
+  export GEM_PATH="$GEM_HOME"
+  export PATH="$GEM_HOME/bin:$PATH"
+  gem install cocoapods -N
 fi
 
-# Example: install SwiftLint if used and not present
-if grep -Riq "swiftlint" .; then
-  if ! command -v swiftlint >/dev/null 2>&1; then
-    echo "Installing SwiftLint via Mint (local vendor)"
-    # Vendor Mint in repo or fetch a prebuilt binary you commit to Tools/
-    # Safe fallback: use SwiftPM to build a local tool cache
-    mkdir -p Tools
-    pushd Tools
-    if ! command -v xcrun >/dev/null; then echo "xcrun not found"; exit 1; fi
-    if [ ! -f ./swiftlint ]; then
-      echo "Building SwiftLint with SwiftPM (may take a bit)"
-      git clone --depth 1 https://github.com/realm/SwiftLint.git
-      pushd SwiftLint
-      swift build -c release
-      cp .build/release/swiftlint ../swiftlint
-      popd
+# Run pods inside ios/ directory
+if [ -d "ios" ]; then
+  echo "📱 Installing CocoaPods in ios/ directory..."
+  pushd ios
+  
+  # If your repo doesn't commit Pods/, always generate them fresh
+  pod repo update --silent || true
+  pod install
+  
+  # Verify the filelists exist (helps catch mis-path issues early)
+  echo "🔍 Verifying CocoaPods framework filelists..."
+  ls "Pods/Target Support Files/Pods-Runner/"Pods-Runner-frameworks-*-input-files.xcfilelist || echo "⚠️ Some input filelists missing"
+  ls "Pods/Target Support Files/Pods-Runner/"Pods-Runner-frameworks-*-output-files.xcfilelist || echo "⚠️ Some output filelists missing"
+  
+  popd
+else
+  echo "❌ ios directory not found"
+  exit 1
+fi
+
+# Verify Flutter configuration files exist
+echo "🔍 Verifying Flutter configuration files..."
+REQUIRED_FILES=(
+    "ios/Flutter/Generated.xcconfig"
+    "ios/Flutter/flutter_export_environment.sh"
+    "ios/Flutter/Flutter.podspec"
+    "ios/Flutter/Debug.xcconfig"
+    "ios/Flutter/Release.xcconfig"
+    "ios/Flutter/Profile.xcconfig"
+)
+
+for file in "${REQUIRED_FILES[@]}"; do
+    if [ -f "$file" ]; then
+        echo "✅ $file exists"
+    else
+        echo "❌ $file missing"
     fi
-    export PATH="$PWD:$PATH"
-    popd
-  fi
-  echo "SwiftLint version: $(swiftlint version)"
-fi
-
-# Example: set default env vars if not provided (avoid -u crashes)
-: "${CONFIGURATION:=Release}"
-: "${SCHEME:=Runner}"
-: "${WORKSPACE:=Runner.xcworkspace}"
-
-echo "CONFIGURATION=$CONFIGURATION"
-echo "SCHEME=$SCHEME"
-echo "WORKSPACE=$WORKSPACE"
-
-# If you decrypt or read secrets, guard missing values
-if [[ -n "${MY_SECRET:-}" ]]; then
-  echo "Secret present (length: ${#MY_SECRET})"
-else
-  echo "MY_SECRET not set; skipping secret-dependent steps"
-fi
+done
 
 echo "===== ci_post_clone: complete ====="
