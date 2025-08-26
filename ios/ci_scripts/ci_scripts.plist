@@ -7,11 +7,29 @@
         <key>ci_post_clone</key>
         <dict>
             <key>script</key>
-            <string>ci_post_clone_debug.sh</string>
+            <string>ci_post_clone.sh</string>
             <key>name</key>
-            <string>Debug Flutter Environment</string>
+            <string>Post-Clone Setup</string>
             <key>description</key>
-            <string>Comprehensive debugging of Xcode Cloud Flutter environment</string>
+            <string>Setup Flutter environment and dependencies</string>
+        </dict>
+        <key>ci_pre_xcodebuild</key>
+        <dict>
+            <key>script</key>
+            <string>ci_pre_xcodebuild.sh</string>
+            <key>name</key>
+            <string>Pre-Build CocoaPods Setup</string>
+            <key>description</key>
+            <string>Handle CocoaPods manifest and framework files before build</string>
+        </dict>
+        <key>ci_post_xcodebuild</key>
+        <dict>
+            <key>script</key>
+            <string>ci_post_xcodebuild.sh</string>
+            <key>name</key>
+            <string>Post-Build Verification</string>
+            <key>description</key>
+            <string>Verify build artifacts and file status</string>
         </dict>
     </dict>
 </dict>
