@@ -8,9 +8,9 @@ class Auth0JWTService {
   
   Auth0JWTService._();
 
-  // Auth0 application credentials
-  static const String _auth0Domain = 'dev-2lm6p70udixry057.us.auth0.com';
-  static const String _auth0ClientId = '1wC0uAnPpxCMC9LRBJRoBVgZJSelm5ky';
+  // Auth0 application credentials - NEW TENANT
+  static const String _auth0Domain = 'dev-1oqy858cbx2koxsg.us.auth0.com';
+  static const String _auth0ClientId = 'ibEbLPi8m7LbUpJs5ocRSehygzS7ZUGb';
 
   late Auth0 _auth0;
   Credentials? _credentials;
