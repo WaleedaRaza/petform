@@ -181,20 +181,23 @@ class Auth0JWTService {
         print('Auth0JWTService: Signing out from Auth0...');
       }
       
-      await _auth0.webAuthentication().logout();
+      // Use silent logout - clear credentials without showing popup
+      await _auth0.credentialsManager.clearCredentials();
       
-      // Clear stored credentials
+      // Clear local state
       _credentials = null;
       _userProfile = null;
       
       if (kDebugMode) {
-        print('Auth0JWTService: Sign out successful');
+        print('Auth0JWTService: Sign out successful (silent)');
       }
     } catch (e) {
       if (kDebugMode) {
         print('Auth0JWTService: Sign out error: $e');
       }
-      rethrow;
+      // Even if clearing fails, clear local state
+      _credentials = null;
+      _userProfile = null;
     }
   }
   
