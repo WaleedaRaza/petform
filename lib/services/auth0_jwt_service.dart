@@ -60,39 +60,49 @@ class Auth0JWTService {
     }
   }
   
-  // Check for existing session
+  // Check for existing session WITHOUT triggering auto-popup
   Future<bool> checkExistingSession() async {
     try {
-      // Try to get stored credentials
-      _credentials = await _auth0.credentialsManager.credentials();
+      // Check if we have valid credentials WITHOUT refreshing them
+      final hasValidCredentials = await _auth0.credentialsManager.hasValidCredentials();
       
-      if (_credentials != null) {
-        // Check if credentials are still valid
-        final expiresAt = _credentials!.expiresAt;
-        if (expiresAt != null && DateTime.now().isAfter(expiresAt)) {
-          if (kDebugMode) {
-            print('Auth0JWTService: Credentials expired, clearing session');
-          }
-          await _auth0.credentialsManager.clearCredentials();
-          _credentials = null;
-          _userProfile = null;
-          return false;
-        }
-        
-        // For now, create a basic user profile from credentials
-        _userProfile = UserProfile(
-          sub: _credentials!.user?.sub ?? '',
-          email: _credentials!.user?.email,
-          name: _credentials!.user?.name,
-          nickname: _credentials!.user?.nickname,
-          pictureUrl: _credentials!.user?.pictureUrl,
-          isEmailVerified: _credentials!.user?.isEmailVerified ?? false,
-        );
-        
+      if (!hasValidCredentials) {
         if (kDebugMode) {
-          print('Auth0JWTService: Found valid existing session for: ${_userProfile?.email}');
+          print('Auth0JWTService: No valid stored credentials');
         }
-        return true;
+        return false;
+      }
+      
+      // Only get credentials if we confirmed they're valid
+      try {
+        _credentials = await _auth0.credentialsManager.credentials();
+        
+        if (_credentials != null) {
+          // Create user profile from stored credentials
+          _userProfile = UserProfile(
+            sub: _credentials!.user?.sub ?? '',
+            email: _credentials!.user?.email,
+            name: _credentials!.user?.name,
+            nickname: _credentials!.user?.nickname,
+            pictureUrl: _credentials!.user?.pictureUrl,
+            isEmailVerified: _credentials!.user?.isEmailVerified ?? false,
+          );
+          
+          if (kDebugMode) {
+            print('Auth0JWTService: Found valid existing session for: ${_userProfile?.email}');
+          }
+          return true;
+        }
+      } catch (e) {
+        // If getting credentials fails (e.g., refresh token expired), clear session
+        if (kDebugMode) {
+          print('Auth0JWTService: Error getting credentials: $e');
+          print('Auth0JWTService: Clearing expired session');
+        }
+        await _auth0.credentialsManager.clearCredentials();
+        _credentials = null;
+        _userProfile = null;
+        return false;
       }
       
       return false;
