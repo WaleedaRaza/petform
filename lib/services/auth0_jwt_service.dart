@@ -63,57 +63,71 @@ class Auth0JWTService {
   // Check for existing session WITHOUT triggering auto-popup
   Future<bool> checkExistingSession() async {
     try {
-      // Check if we have valid credentials WITHOUT refreshing them
-      final hasValidCredentials = await _auth0.credentialsManager.hasValidCredentials();
-      
-      if (!hasValidCredentials) {
-        if (kDebugMode) {
-          print('Auth0JWTService: No valid stored credentials');
-        }
-        return false;
+      // COMPLETELY SKIP credential checking on startup to avoid auto-popup
+      // Only check credentials when user manually requests login
+      if (kDebugMode) {
+        print('Auth0JWTService: Skipping automatic credential check to prevent auto-popup');
+        print('Auth0JWTService: User must manually login');
       }
       
-      // Only get credentials if we confirmed they're valid
-      try {
-        _credentials = await _auth0.credentialsManager.credentials();
-        
-        if (_credentials != null) {
-          // Create user profile from stored credentials
-          _userProfile = UserProfile(
-            sub: _credentials!.user?.sub ?? '',
-            email: _credentials!.user?.email,
-            name: _credentials!.user?.name,
-            nickname: _credentials!.user?.nickname,
-            pictureUrl: _credentials!.user?.pictureUrl,
-            isEmailVerified: _credentials!.user?.isEmailVerified ?? false,
-          );
-          
-          if (kDebugMode) {
-            print('Auth0JWTService: Found valid existing session for: ${_userProfile?.email}');
-          }
-          return true;
-        }
-      } catch (e) {
-        // If getting credentials fails (e.g., refresh token expired), clear session
-        if (kDebugMode) {
-          print('Auth0JWTService: Error getting credentials: $e');
-          print('Auth0JWTService: Clearing expired session');
-        }
-        await _auth0.credentialsManager.clearCredentials();
-        _credentials = null;
-        _userProfile = null;
-        return false;
-      }
+      // Clear any existing state
+      _credentials = null;
+      _userProfile = null;
       
       return false;
     } catch (e) {
       if (kDebugMode) {
-        print('Auth0JWTService: No existing session found: $e');
+        print('Auth0JWTService: Session check error: $e');
       }
       return false;
     }
   }
   
+  // Check for stored credentials manually (when user explicitly wants to restore session)
+  Future<bool> tryRestoreSession() async {
+    try {
+      // Check if we have valid credentials
+      final hasValidCredentials = await _auth0.credentialsManager.hasValidCredentials();
+      
+      if (!hasValidCredentials) {
+        if (kDebugMode) {
+          print('Auth0JWTService: No valid stored credentials for restoration');
+        }
+        return false;
+      }
+      
+      // Get credentials if they exist
+      _credentials = await _auth0.credentialsManager.credentials();
+      
+      if (_credentials != null) {
+        // Create user profile from stored credentials
+        _userProfile = UserProfile(
+          sub: _credentials!.user?.sub ?? '',
+          email: _credentials!.user?.email,
+          name: _credentials!.user?.name,
+          nickname: _credentials!.user?.nickname,
+          pictureUrl: _credentials!.user?.pictureUrl,
+          isEmailVerified: _credentials!.user?.isEmailVerified ?? false,
+        );
+        
+        if (kDebugMode) {
+          print('Auth0JWTService: Successfully restored session for: ${_userProfile?.email}');
+        }
+        return true;
+      }
+      
+      return false;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Auth0JWTService: Error restoring session: $e');
+      }
+      // Clear any partial state
+      _credentials = null;
+      _userProfile = null;
+      return false;
+    }
+  }
+
   // Sign in with Auth0 and get JWT token
   Future<Credentials> signIn() async {
     try {
@@ -121,8 +135,16 @@ class Auth0JWTService {
         print('Auth0JWTService: Starting Auth0 Universal Login...');
       }
 
-      // Always show login screen - don't auto-login
-      // This ensures users can choose their account
+      // First try to restore existing session silently
+      final restored = await tryRestoreSession();
+      if (restored && _credentials != null) {
+        if (kDebugMode) {
+          print('Auth0JWTService: Using restored session, no login required');
+        }
+        return _credentials!;
+      }
+
+      // If no valid session, show login screen
       _credentials = await _auth0.webAuthentication().login(
         audience: 'https://petform.api',
       );
